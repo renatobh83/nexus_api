@@ -1,11 +1,7 @@
-export class ChannelManager {
+import { ChannelsService } from "../../core/Channels/channelsServices";
 
-    /**
-   * Orquestra a criação de uma nova conexão de WhatsApp.
-   * Recebe o DTO, aplica a lógica de negócio e chama o repositório.
-   * @param _dto - O Data Transfer Object vindo do Controller.
-   */
-  async create(): Promise<void> {}
+
+export class ChannelManager {
 
    /**
    * Inicia as sessões de todas as conexões de WhatsApp ativas e prontas.
@@ -20,9 +16,29 @@ export class ChannelManager {
    * iniciar todas as sessões for concluída.
    */
   async startAllReadySessions(): Promise<void>{
-    console.log('Iniciando WhatsApp...');
+    const channelService = new ChannelsService()
+    const readyChannels = await channelService.findAll()
+    
+
+     await Promise.all(
+      readyChannels.map(async (channel) => {
+        try {
+
+          console.log(channel)
+          
+        } catch (error) {
+          console.error(
+            `ERROR: Falha ao iniciar a sessão para '${channel.name}' (ID: ${channel.id}).`,
+            error
+          );
+        }
+      })
+    );
     // Aqui entra o código real de conexão (ex: usar venom-bot, whatsapp-web.js, etc.)
-    await new Promise(resolve => setTimeout(resolve, 100));
-    console.log('WhatsApp conectado!');
+    // await new Promise(resolve => setTimeout(resolve, 100));
+    // await initWppWeb("Wpp")
+    // const w = await prisma.whatsapp.findMany()
+    // console.log(w)
+    // console.log('WhatsApp conectado!');
   }
 }
