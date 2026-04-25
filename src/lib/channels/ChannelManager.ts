@@ -34,11 +34,9 @@ export class ChannelManager {
         }
       })
     );
-    // Aqui entra o código real de conexão (ex: usar venom-bot, whatsapp-web.js, etc.)
-    // await new Promise(resolve => setTimeout(resolve, 100));
-    // await initWppWeb("Wpp")
-    // const w = await prisma.whatsapp.findMany()
-    // console.log(w)
-    // console.log('WhatsApp conectado!');
+  }
+  async startReadySession(id: string): Promise<void>{
+    
+
   }
 }
