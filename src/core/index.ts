@@ -1,7 +1,7 @@
 import fastify, { FastifyInstance } from "fastify";
 import { Server as SocketIOServer } from 'socket.io'
-import { prisma } from "../../lib/prisma";
-import { ChannelManager } from "../../modules/channels/ChannelManager";
+import { prisma } from "../lib/prisma";
+import { ChannelManager } from "../modules/channels/ChannelManager";
 
 // 🔧 Extensão do tipo para o Fastify reconhecer a propriedade 'io'
 declare module 'fastify' {

@@ -1,9 +1,12 @@
 import path from "node:path";
 import fs, { promises } from "node:fs";
 import { create, defaultOptions, Whatsapp } from "wbotconnect";
-import { ChannelsService } from "./services";
-import { Prisma, Whatsapp as wppClient } from "../../generated/prisma/client";
-import { wbotWebListener } from "../wppWeb/wppWebListener";
+
+
+
+import { ChannelsService } from "../../channels/services";
+import { wbotWebListener } from "../../wppWeb/wppWebListener";
+import { Whatsapp as wppClient  } from "../../../generated/prisma/client";
 
 
 function extractQrCode(url: string): string | null {

@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { start } from "./core/api";
+import { start } from "./core";
 
 
 (BigInt.prototype as any).toJSON = function () {

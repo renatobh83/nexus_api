@@ -1,5 +1,6 @@
 import { ChannelsService } from "../../modules/channels/services";
-import { initWppWeb } from "../../modules/channels/WppWebChannel";
+import { initWppWeb } from "../providers/wpp-web/Wpp-web";
+
 
 
 export class ChannelManager {
