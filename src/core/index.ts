@@ -49,17 +49,7 @@ async function buildServer(): Promise<FastifyInstance> {
     
   prisma.$on('info', async () => {
   console.log('🔌 Cliente Prisma está prestes a desconectar');
-  server.decorate('verifyApiKey', async (request: any, reply: any) => {
-  const apiKey = request.headers['x-key'] || request.headers['x_api_key'];
-  const expectedKey = process.env.API_KEY;
 
-  if (!apiKey || apiKey !== expectedKey) {
-    return reply.status(401).send({ 
-      error: 'Unauthorized', 
-      message: 'Invalid or missing X-Key header' 
-    });
-  }
-});
  
 });
     return server
