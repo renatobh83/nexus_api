@@ -1,6 +1,7 @@
 import { Message } from "wbotconnect";
-import { Session } from "../channels/WppWebChannel";
+
 import { handleMessageReceived, handleMessageSend } from "./handleMessagesWppWeb";
+import { Session } from "../providers/wpp-web/Wpp-web";
 
 export const wbotWebListener = async (wbot: Session): Promise<void> => {
      /**
@@ -9,6 +10,7 @@ export const wbotWebListener = async (wbot: Session): Promise<void> => {
      *  Nao pega mensagem de status 
      *  Nao pega mensagem de listas
      */
+
     wbot.onAnyMessage(async (message: Message)=>{
 
         if (message.chatId === "status@broadcast") return;
@@ -17,6 +19,8 @@ export const wbotWebListener = async (wbot: Session): Promise<void> => {
         const messageContent = message.body || message.caption || "";
         
         await handleMessageSend(message, wbot)
+
+        
 
 
     })
@@ -27,6 +31,13 @@ export const wbotWebListener = async (wbot: Session): Promise<void> => {
     wbot.onMessage(async (message: Message): Promise<void> => {
         if (message.chatId === "status@broadcast") return;
         await handleMessageReceived(message, wbot)
+
+        const body = "Teste "
+        const { phoneNumber} = await wbot.getPnLidEntry(message.from)
+        const to =phoneNumber._serialized
+        const msgSended = await wbot.sendText(to, body)
+        console.log(msgSended)
+        
         
     })
 }

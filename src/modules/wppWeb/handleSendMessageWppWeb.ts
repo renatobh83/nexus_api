@@ -2,9 +2,10 @@ import { Message } from "wbotconnect";
 
 export const handleSendMessageWppWeb = async (
     body: string,
+    botId?: number,
     quotedMsg?: Message,
-    userId?: number,
-    botId: number
+    userId?: number
 ) => {
-    console.log(botId)
+   
 }
+

@@ -1,5 +1,6 @@
 import { Message } from "wbotconnect";
-import { Session } from "../channels/WppWebChannel";
+import { Session } from "../providers/wpp-web/Wpp-web";
+
 
 export const handleMessageReceived = async (message: Message, session: Session) => {
     
