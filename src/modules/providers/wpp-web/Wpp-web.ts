@@ -6,7 +6,7 @@ import { create, defaultOptions, Whatsapp } from "wbotconnect";
 
 import { ChannelsService } from "../../channels/services";
 import { wbotWebListener } from "../../wppWeb/wppWebListener";
-import { Whatsapp as wppClient  } from "../../../generated/prisma/client";
+import { Prisma, Whatsapp as wppClient  } from "../../../generated/prisma/client";
 
 
 function extractQrCode(url: string): string | null {
