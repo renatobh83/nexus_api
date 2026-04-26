@@ -1,5 +1,5 @@
-import { ChannelsService } from "../../core/Channels/channelsServices";
-import { initWppWeb } from "./WppWebChannel";
+import { ChannelsService } from "../../modules/channels/services";
+import { initWppWeb } from "../../modules/channels/WppWebChannel";
 
 
 export class ChannelManager {
@@ -30,7 +30,10 @@ export class ChannelManager {
       readyChannels.map(async (channel) => {
         try {
 
-          console.log(channel)
+
+          if(channel.type  === "whatsapp") {
+            initWppWeb(channel, this.channelService)
+          }
           
         } catch (error) {
           console.error(

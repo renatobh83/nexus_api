@@ -1,5 +1,5 @@
 import { Prisma, Whatsapp } from "../../generated/prisma/client";
-import { ChannelsRepository } from "./channlesRepository";
+import { ChannelsRepository } from "./repository";
 
 
 export class ChannelsService {

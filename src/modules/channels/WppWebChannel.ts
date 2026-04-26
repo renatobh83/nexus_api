@@ -1,8 +1,9 @@
 import path from "node:path";
 import fs, { promises } from "node:fs";
 import { create, defaultOptions, Whatsapp } from "wbotconnect";
-import { ChannelsService } from "../../core/Channels/channelsServices";
-import { Whatsapp as wppClient } from "../../generated/prisma/client";
+import { ChannelsService } from "./services";
+import { Prisma, Whatsapp as wppClient } from "../../generated/prisma/client";
+import { wbotWebListener } from "../wppWeb/wppWebListener";
 
 
 function extractQrCode(url: string): string | null {
@@ -30,7 +31,7 @@ let channelSession: wppClient;
 export const initWppWeb = async (
   channel: wppClient,
   channelService: ChannelsService
-): Promise<void> => {
+): Promise<Session> => {
   try {
     let wbot: Session;
     
@@ -81,16 +82,16 @@ export const initWppWeb = async (
           switch (statusSession) {
             case "autocloseCalled":
             case "desconnectedMobile":
-            case "browserClose":
+            // case "browserClose":
             case "serverClose":
               // Todos esses status levam a uma desconexão.
+              console.log(statusSession)
               await channelService.update(channel.id,{
-             status: "CONNECTED",
+              status: "DISCONNECTED",
               qrcode: "",
-              retries: 0,
-              // phone: phoneInfo,
-              session: sessionName,
+              session: "",
               pairingCode: "",
+              phone: Prisma.JsonNull, // Limpa o campo JSON
             
               
             })
@@ -125,9 +126,10 @@ export const initWppWeb = async (
       sessions[sessionIndex] = wbot;
     }
     start(wbot, channelService);
-    // return wbot;
+    return wbot;
     } catch (error) {
-        
+        removeSession(channel.name);
+        throw new Error("ERR_INICIAR_SESSAO_WPWEB");
     }
 }
 async function waitForApiValue(apiCall: Session, interval = 1000) {
@@ -167,7 +169,7 @@ const start = async (client: Session, service: ChannelsService) => {
       const profileSession: any = await waitForApiValue(client, 1000);
       
 
-       await service.update(channelSession.id,{
+      await service.update(channelSession.id,{
              status: "CONNECTED",
               qrcode: "",
               retries: 0,
@@ -178,8 +180,35 @@ const start = async (client: Session, service: ChannelsService) => {
             })
 
       if (await client.isAuthenticated()) {
-        // await wbotMessageListener(client);
+
+        await wbotWebListener(client);
       }
     }
   } catch (_error) {}
+};
+
+export async function removeSession(session: string) {
+  try {
+    // Defina o caminho da pasta com base no sessionId
+    const sessionPath = path.join(
+      __dirname,
+      "..",
+      "..",
+      "userDataDir",
+      session
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    await promises.access(sessionPath);
+    fs.rmSync(sessionPath, { recursive: true, force: true });
+  } catch (error) {
+    console.log(error);
+  }
+}
+export const getWbot = (channelId: number): Session => {
+  const sessionIndex = sessions.findIndex((s) => s.id === Number(channelId));
+  if (sessionIndex === -1) {
+    throw new Error("ERR_WAPP_NOT_INITIALIZED");
+  }
+  return sessions[sessionIndex];
 };

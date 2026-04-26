@@ -1,7 +1,7 @@
 import fastify, { FastifyInstance } from "fastify";
 import { Server as SocketIOServer } from 'socket.io'
-import { ChannelManager } from "../../lib/channels/ChannelManager";
 import { prisma } from "../../lib/prisma";
+import { ChannelManager } from "../../modules/channels/ChannelManager";
 
 // 🔧 Extensão do tipo para o Fastify reconhecer a propriedade 'io'
 declare module 'fastify' {
@@ -58,9 +58,9 @@ export async function start() {
     app.server.keepAliveTimeout = 5 * 60 * 1000;
     
     const channelManager = new ChannelManager();
-    // await channelManager.startAllReadySessions()
     // await channelManager.startSession(2)
-
+    await channelManager.startAllReadySessions()
+    
   } catch (err: any) {
     if (app) {
       app.log.error(err, "❌ Falha ao iniciar o servidor.");
