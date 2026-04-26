@@ -59,7 +59,7 @@ export async function start() {
     
     const channelManager = new ChannelManager();
     // await channelManager.startAllReadySessions()
-    await channelManager.startSession(2)
+    // await channelManager.startSession(2)
 
   } catch (err: any) {
     if (app) {

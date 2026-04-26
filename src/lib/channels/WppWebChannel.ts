@@ -124,25 +124,54 @@ export const initWppWeb = async (
     } else {
       sessions[sessionIndex] = wbot;
     }
+    start(wbot, channelService);
+    // return wbot;
     } catch (error) {
         
     }
 }
+async function waitForApiValue(apiCall: Session, interval = 1000) {
+  return new Promise((resolve, reject) => {
+    const checkValue = async () => {
+      try {
+        const profileSession = await apiCall.getProfileName();
 
-const start = async (client: Session, io: any, service: ChannelsService) => {
+        const wbotVersion = await apiCall.getWAVersion();
+        const number = await apiCall.getWid();
+        const result = {
+          wbotVersion,
+          profileSession,
+          number,
+        };
+
+        if (result !== null) {
+          resolve(result); // Retorna o valor assim que não for null
+        } else {
+          setTimeout(checkValue, interval); // Recheca após o intervalo
+        }
+      } catch (error) {
+        reject(error); // Rejeita a promise em caso de erro
+      }
+    };
+    checkValue(); // Inicia a verificação
+  });
+}
+
+const start = async (client: Session, service: ChannelsService) => {
   try {
     const isReady = await client.isAuthenticated();
 
     if (isReady) {
       
       client.startTyping;
-      // const profileSession = await waitForApiValue(client, 1000);
+      const profileSession: any = await waitForApiValue(client, 1000);
+      
 
        await service.update(channelSession.id,{
              status: "CONNECTED",
               qrcode: "",
               retries: 0,
-              // phone: phoneInfo,
+              phone: profileSession,
               session: channelSession.name,
               pairingCode: "",
               
