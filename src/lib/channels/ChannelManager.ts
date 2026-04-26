@@ -1,7 +1,13 @@
 import { ChannelsService } from "../../core/Channels/channelsServices";
+import { initWppWeb } from "./WppWebChannel";
 
 
 export class ChannelManager {
+
+    private channelService: ChannelsService;
+      constructor() {
+        this.channelService = new ChannelsService();   
+      }
 
    /**
    * Inicia as sessões de todas as conexões de WhatsApp ativas e prontas.
@@ -16,8 +22,8 @@ export class ChannelManager {
    * iniciar todas as sessões for concluída.
    */
   async startAllReadySessions(): Promise<void>{
-    const channelService = new ChannelsService()
-    const readyChannels = await channelService.findAll()
+
+    const readyChannels = await this.channelService.findAll()
     
 
      await Promise.all(
@@ -35,7 +41,18 @@ export class ChannelManager {
       })
     );
   }
-  async startReadySession(id: string): Promise<void>{
+  async startSession(id: number): Promise<void>{
+    try {
+       const channel = await this.channelService.update(id,{
+        status: 'OPENING'
+      })
+      if (channel.type === "whatsapp") {
+        await initWppWeb(channel, this.channelService);
+      }
+    } catch (error) {
+      console.error(`Erro ao iniciar seção para ${id}`)
+    }
+     
     
 
   }

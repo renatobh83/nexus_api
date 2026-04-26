@@ -58,7 +58,8 @@ export async function start() {
     app.server.keepAliveTimeout = 5 * 60 * 1000;
     
     const channelManager = new ChannelManager();
-    await channelManager.startAllReadySessions()
+    // await channelManager.startAllReadySessions()
+    await channelManager.startSession(2)
 
   } catch (err: any) {
     if (app) {

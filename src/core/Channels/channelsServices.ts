@@ -1,4 +1,4 @@
-import { Whatsapp } from "../../generated/prisma/client";
+import { Prisma, Whatsapp } from "../../generated/prisma/client";
 import { ChannelsRepository } from "./channlesRepository";
 
 
@@ -14,5 +14,15 @@ export class ChannelsService {
    */
   async findAll(): Promise<Whatsapp[]> {
     return this.channelsRepository.findMany();
+  }
+
+
+  async update(id: number, data: Prisma.WhatsappUpdateInput): Promise<Whatsapp> {
+    try {
+      
+      return await this.channelsRepository.udpateChannel(id, data)
+    } catch (error) {
+      throw error;
+    }
   }
 }

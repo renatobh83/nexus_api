@@ -12,7 +12,6 @@ const prisma = new PrismaClient({
   // Habilita os logs
   adapter: adapter,
     log: [
-    { level: 'query', emit: 'stdout' },
     { level: 'info', emit: 'stdout' },
     { level: 'warn', emit: 'stdout' },
     { level: 'error', emit: 'stdout' },
