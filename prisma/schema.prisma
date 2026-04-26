@@ -41,6 +41,7 @@ model Whatsapp {
   updatedAt DateTime @updatedAt
 
   // --- Relações ---
+  tickets Ticket[]
 
   // // Relação com Tenant: Uma conexão pertence a um Tenant.
   // tenant   Tenant @relation(fields: [tenantId], references: [id])
@@ -51,4 +52,74 @@ model Whatsapp {
 
   // Mapeia para o nome da tabela existente no banco de dados.
   @@map("Whatsapp")
+}
+
+model Ticket {
+  // --- Campos Diretos ---
+  id                   Int       @id @default(autoincrement()) // Equivalente a: INTEGER, autoIncrement, primaryKey
+  status               String    @default("pending")
+  unreadMessages       Int? // O '?' torna o campo opcional (pode ser null), como no Sequelize por padrão
+  lastMessage          String?
+  channel              String?
+  answered             Boolean   @default(true)
+  isGroup              Boolean   @default(false)
+  associatedCalls      Boolean   @default(false)
+  isActiveDemand       Boolean   @default(false)
+  isFarewellMessage    Boolean   @default(false)
+  sendWelcomeFlow      Boolean   @default(true)
+  isTransference       Boolean   @default(false)
+  lastInteractionBot   DateTime?
+  botRetries           Int?
+  closedAt             BigInt? // Prisma suporta BigInt para números muito grandes
+  lastMessageAt        BigInt?
+  startedAttendanceAt  BigInt?
+  chamadoId            BigInt?
+  lastAbsenceMessageAt DateTime?
+  chatClient           Boolean?
+  socketId             String?
+  stepChatFlow         String? // Equivalente a TEXT
+  chatFlowStatus       String    @default("not_started") // Usando o ENUM definido acima
+  apiConfig            Json? // Prisma tem um tipo nativo para JSONB
+  contato              String?
+
+  // --- Timestamps ---
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt // O Prisma gerencia o 'updatedAt' automaticamente
+
+  // --- Relações e Chaves Estrangeiras (Onde a mágica acontece) ---
+
+  // // Relação com User (um Ticket pertence a um User opcional)
+  // user   User? @relation(fields: [userId], references: [id])
+  // userId Int? // Chave estrangeira opcional
+
+  // // Relação com Contact (um Ticket pertence a um Contact)
+  // contact   Contact @relation(fields: [contactId], references: [id])
+  // contactId Int // Chave estrangeira obrigatória
+
+  // Relação com Whatsapp (um Ticket pertence a um Whatsapp opcional)
+  whatsapp   Whatsapp? @relation(fields: [whatsappId], references: [id])
+  whatsappId Int?
+
+  // // Relação com ChatFlow (um Ticket pertence a um ChatFlow opcional)
+  // chatFlow   ChatFlow? @relation(fields: [chatFlowId], references: [id])
+  // chatFlowId Int?
+
+  // // Relação com Empresa (um Ticket pertence a uma Empresa)
+  // empresa   Empresa? @relation(fields: [empresaId], references: [id])
+  // empresaId Int?
+
+  // // Relação com Queue (um Ticket pertence a uma Queue opcional)
+  // queue   Queue? @relation(fields: [queueId], references: [id])
+  // queueId Int?
+
+  // // // Relação com Tenant (um Ticket pertence a um Tenant)
+  // tenant              Tenant    @relation(fields: [tenantId], references: [id])
+  // tenantId            Int
+
+  // chamado    Chamado[]
+  // messages   Message[]
+  // logTickets LogTicket[]
+
+  // Mapeia o nome do modelo para o nome da tabela no banco de dados
+  @@map("Tickets")
 }

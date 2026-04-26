@@ -1,12 +1,20 @@
-import fastify, { FastifyInstance } from "fastify";
+import fastify, { FastifyInstance, FastifyReply } from "fastify";
 import { Server as SocketIOServer } from 'socket.io'
 import { prisma } from "../lib/prisma";
 import { ChannelManager } from "../modules/channels/ChannelManager";
+import { TicketService } from "../modules/tickets/tickets.services";
+import routes from "./routes";
 
 // 🔧 Extensão do tipo para o Fastify reconhecer a propriedade 'io'
 declare module 'fastify' {
   interface FastifyInstance {
     io: SocketIOServer
+  }
+   interface FastifyRequest {
+    apiKey?: string;
+  }
+  interface FastifyInstance {
+    verifyApiKey: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
   }
 }
 let fastifyApp: FastifyInstance;
@@ -20,6 +28,8 @@ async function buildServer(): Promise<FastifyInstance> {
   const server = fastify({
     logger: true // habilita logs bonitos
   })
+
+  await server.register(routes)
 
   const io = new SocketIOServer(server.server, {
     cors: { origin: '*' }
@@ -39,6 +49,18 @@ async function buildServer(): Promise<FastifyInstance> {
     
   prisma.$on('info', async () => {
   console.log('🔌 Cliente Prisma está prestes a desconectar');
+  server.decorate('verifyApiKey', async (request: any, reply: any) => {
+  const apiKey = request.headers['x-key'] || request.headers['x_api_key'];
+  const expectedKey = process.env.API_KEY;
+
+  if (!apiKey || apiKey !== expectedKey) {
+    return reply.status(401).send({ 
+      error: 'Unauthorized', 
+      message: 'Invalid or missing X-Key header' 
+    });
+  }
+});
+ 
 });
     return server
 }
@@ -56,8 +78,18 @@ export async function start() {
     await app.listen({ port: 3000, host: "0.0.0.0" });
     app.log.info("Servidor rodando em http://localhost:3000");
     app.server.keepAliveTimeout = 5 * 60 * 1000;
+
+  
     
     const channelManager = new ChannelManager();
+    // const ticket = new TicketService()
+    // const t = await ticket.findTicketId({
+    //   contato: "553798385008@c.us",
+    //   status: {
+    //     notIn: ["closed"]
+    //   }
+    // })
+    // // console.log(t)
     // await channelManager.startSession(2)
     await channelManager.startAllReadySessions()
     

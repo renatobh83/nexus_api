@@ -1,5 +1,5 @@
 import { Prisma, Whatsapp } from "../../generated/prisma/client";
-import { ChannelsRepository } from "./repository";
+import { ChannelsRepository } from "./channel.repository";
 
 
 export class ChannelsService {
@@ -24,5 +24,9 @@ export class ChannelsService {
     } catch (error) {
       throw error;
     }
+  }
+
+  async create(data: Prisma.WhatsappCreateInput){
+    return await this.channelsRepository.create(data)
   }
 }

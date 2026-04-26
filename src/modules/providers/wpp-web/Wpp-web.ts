@@ -4,7 +4,7 @@ import { create, defaultOptions, Whatsapp } from "wbotconnect";
 
 
 
-import { ChannelsService } from "../../channels/services";
+import { ChannelsService } from "../../channels/channel.services";
 import { wbotWebListener } from "../../wppWeb/wppWebListener";
 import { Prisma, Whatsapp as wppClient  } from "../../../generated/prisma/client";
 

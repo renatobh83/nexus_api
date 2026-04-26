@@ -1,4 +1,4 @@
-import { ChannelsService } from "../../modules/channels/services";
+import { ChannelsService } from "./channel.services";
 import { initWppWeb } from "../providers/wpp-web/Wpp-web";
 
 

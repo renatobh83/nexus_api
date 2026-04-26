@@ -6,6 +6,17 @@ import { prisma } from "../../lib/prisma";
 export class ChannelsRepository {
 
   /**
+   * Cria uma nova conexão de WhatsApp no banco de dados.
+   * @param data - Os dados já formatados no tipo Prisma.WhatsappCreateInput.
+   */
+  async create(data: Prisma.WhatsappCreateInput) {
+    // Agora sim, está correto. 'data' já está no formato que o Prisma entende.
+    return prisma.whatsapp.create({
+      data: data,
+    });
+  }
+
+  /**
    * Atualiza um canal
    * @returns retorna o canal atualizado
   */ 
