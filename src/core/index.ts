@@ -134,7 +134,7 @@ export async function start() {
     // // console.log(t)
 
     // await channelManager.startSession(1);
-    // await channelManager.startAllReadySessions();
+    await channelManager.startAllReadySessions();
   } catch (err: any) {
     if (app) {
       app.log.error(err, "❌ Falha ao iniciar o servidor.");

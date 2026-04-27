@@ -20,4 +20,13 @@ export async function ticketController(fastify: FastifyInstance) {
       reply.status(200).send(ticket);
     },
   );
+  fastify.post("/", async (request: FastifyRequest, reply: FastifyReply) => {
+    // const { ticketId } = request.params as any;
+    // const numberTicket = parseInt(ticketId);
+    // const service = new TicketService();
+    // const ticket = await service.findTicket({
+    //   id: numberTicket,
+    // });
+    reply.status(200).send("Rota ainda não esta pronta");
+  });
 }

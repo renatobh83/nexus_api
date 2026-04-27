@@ -61,10 +61,10 @@ model Ticket {
   stepChatFlow         String?
   chatFlowStatus       String    @default("not_started")
   apiConfig            Json?
-  contato              String?
+  contato              String
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
-  channelId            Int?
+  channelId            Int
   isInteraction        Boolean   @default(false)
   messages             Message[]
   channel              Channel?  @relation(fields: [channelId], references: [id])

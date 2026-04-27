@@ -1,4 +1,6 @@
 import { Prisma } from "../../generated/prisma/client";
+import { SendMessageSystemProxy } from "../wppWeb/handleSendMessageSystemProxy";
+import { buildMessageBody } from "./message.utils";
 import { MessageRepository } from "./messages.repository";
 
 export class MessageService {
@@ -24,5 +26,17 @@ export class MessageService {
 
   async findMessagesTicket(where: Prisma.MessageWhereInput) {
     return await this.messageRepository.findAllMessageTicket(where);
+  }
+
+  async createMessageSystem(data: any) {
+    const body = buildMessageBody(data.message.body, data.ticket);
+    await Promise.all(
+      (data.filesArray && data.filesArray.length
+        ? data.filesArray
+        : [null]
+      ).map(async (media: string) => {
+        SendMessageSystemProxy(body, data.ticket, media);
+      }),
+    );
   }
 }

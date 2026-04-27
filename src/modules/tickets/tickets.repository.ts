@@ -25,6 +25,11 @@ export class TicketsRepository {
             createdAt: "desc", // ou id: "asc"
           },
         },
+        channel: {
+          select: {
+            name: true,
+          },
+        },
       },
     });
   }
