@@ -36,10 +36,10 @@ export const VerifyMessage = async (
   let ext = getSafeExtension(message.caption!, message.mimetype);
   const filename = buildFilename(message, ext);
   if (media) {
-    // await writeFileAsync(
-    //   join(__dirname, "..", "..", "..", "public", filename),
-    //   fileData,
-    // );
+    await writeFileAsync(
+      join(__dirname, "..", "..", "..", "public", filename),
+      fileData,
+    );
   }
   const messageData: Prisma.MessageCreateInput = {
     messageId: message.id,
