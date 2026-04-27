@@ -22,6 +22,7 @@ export const VerifyMessage = async (
   ticketId: number,
   session: Session,
 ) => {
+  console.log(message)
   const body =
     message.type === "list" ? "message.list.description" : message.content;
   if (message.type !== "chat") {

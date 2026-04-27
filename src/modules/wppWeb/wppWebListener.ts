@@ -13,7 +13,7 @@ export const wbotWebListener = async (wbot: Session): Promise<void> => {
 
   wbot.onAnyMessage(async (message: Message) => {
     if (message.chatId === "status@broadcast") return;
-    if (message.type === "list") return;
+    if (message.type === "list" || message.type === 'unknown') return;
     const messageContent = message.body || message.caption || "";
 
     await handleMessage(message, wbot);
