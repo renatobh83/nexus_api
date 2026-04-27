@@ -3,4 +3,4 @@ node_modules
 pnpm-lock.*
 /src/generated/prisma
 userDataDir
-prisma/generated
+prisma/migrations

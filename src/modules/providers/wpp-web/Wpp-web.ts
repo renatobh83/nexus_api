@@ -2,12 +2,9 @@ import path from "node:path";
 import fs, { promises } from "node:fs";
 import { create, defaultOptions, Whatsapp } from "wbotconnect";
 
-
-
-import { ChannelsService } from "../../channels/channel.services";
+import { ChannelService } from "../../channels/channel.services";
 import { wbotWebListener } from "../../wppWeb/wppWebListener";
-import { Prisma, Whatsapp as wppClient  } from "../../../generated/prisma/client";
-
+import { Prisma, Channel as wppClient } from "../../../generated/prisma/client";
 
 function extractQrCode(url: string): string | null {
   if (!url) return null;
@@ -33,21 +30,21 @@ let channelSession: wppClient;
  */
 export const initWppWeb = async (
   channel: wppClient,
-  channelService: ChannelsService
+  channelService: ChannelService,
 ): Promise<Session> => {
   try {
     let wbot: Session;
-    
+
     sessionName = channel.name;
     channelSession = channel;
     const qrCodePath = path.join(
-    __dirname,
-    "..",
-    "..",
-    "public",
-    `qrCode-${channel.id}.png`
-  );
-      
+      __dirname,
+      "..",
+      "..",
+      "public",
+      `qrCode-${channel.id}.png`,
+    );
+
     const options = {
       logQR: true,
       headless: true,
@@ -57,30 +54,27 @@ export const initWppWeb = async (
       },
     };
     const mergedOptions = { ...defaultOptions, ...options };
-   
+
     wbot = (await create(
-        Object.assign({}, mergedOptions,
-          {
-          catchQR: async (
+      Object.assign({}, mergedOptions, {
+        catchQR: async (
           base64Qrimg: any,
           asciiQR: any,
           attempts: any,
-          urlCode: any
+          urlCode: any,
         ) => {
           const qrCode = extractQrCode(urlCode);
-          if (qrCode){
-
-            channelService.update(channel.id,{
+          if (qrCode) {
+            channelService.update(channel.id, {
               qrcode: qrCode,
               status: "qrcode",
               retries: attempts,
-              
-            })
+            });
           }
         },
         statusFind: async (statusSession: any) => {
           console.log(
-            `INFO: Status da sessão '${channel.name}': ${statusSession}`
+            `INFO: Status da sessão '${channel.name}': ${statusSession}`,
           );
           switch (statusSession) {
             case "autocloseCalled":
@@ -88,16 +82,14 @@ export const initWppWeb = async (
             // case "browserClose":
             case "serverClose":
               // Todos esses status levam a uma desconexão.
-              console.log(statusSession)
-              await channelService.update(channel.id,{
-              status: "DISCONNECTED",
-              qrcode: "",
-              session: "",
-              pairingCode: "",
-              phone: Prisma.JsonNull, // Limpa o campo JSON
-            
-              
-            })
+              console.log(statusSession);
+              await channelService.update(channel.id, {
+                status: "DISCONNECTED",
+                qrcode: "",
+                session: "",
+                pairingCode: "",
+                phone: Prisma.JsonNull, // Limpa o campo JSON
+              });
               // Lógica para remover a sessão do array local e limpar arquivos pode ser chamada aqui.
               break;
 
@@ -112,29 +104,27 @@ export const initWppWeb = async (
           }
         },
         catchLinkCode: async (code: any) => {
-          await channelService.update(channel.id,{
-             pairingCode: code,
-              status: "qrcode"
-              
-            })
+          await channelService.update(channel.id, {
+            pairingCode: code,
+            status: "qrcode",
+          });
         },
-        }
-      )
-    )) as unknown as Session
-        const sessionIndex = sessions.findIndex((s) => s.id === channel.id);
-         if (sessionIndex === -1) {
-          wbot.id = channel.id;
-          sessions.push(wbot);
+      }),
+    )) as unknown as Session;
+    const sessionIndex = sessions.findIndex((s) => s.id === channel.id);
+    if (sessionIndex === -1) {
+      wbot.id = channel.id;
+      sessions.push(wbot);
     } else {
       sessions[sessionIndex] = wbot;
     }
     start(wbot, channelService);
     return wbot;
-    } catch (error) {
-        removeSession(channel.name);
-        throw new Error("ERR_INICIAR_SESSAO_WPWEB");
-    }
-}
+  } catch (error) {
+    removeSession(channel.name);
+    throw new Error("ERR_INICIAR_SESSAO_WPWEB");
+  }
+};
 async function waitForApiValue(apiCall: Session, interval = 1000) {
   return new Promise((resolve, reject) => {
     const checkValue = async () => {
@@ -162,28 +152,24 @@ async function waitForApiValue(apiCall: Session, interval = 1000) {
   });
 }
 
-const start = async (client: Session, service: ChannelsService) => {
+const start = async (client: Session, service: ChannelService) => {
   try {
     const isReady = await client.isAuthenticated();
 
     if (isReady) {
-      
       client.startTyping;
       const profileSession: any = await waitForApiValue(client, 1000);
-      
 
-      await service.update(channelSession.id,{
-             status: "CONNECTED",
-              qrcode: "",
-              retries: 0,
-              phone: profileSession,
-              session: channelSession.name,
-              pairingCode: "",
-              
-            })
+      await service.update(channelSession.id, {
+        status: "CONNECTED",
+        qrcode: "",
+        retries: 0,
+        phone: profileSession,
+        session: channelSession.name,
+        pairingCode: "",
+      });
 
       if (await client.isAuthenticated()) {
-
         await wbotWebListener(client);
       }
     }
@@ -198,7 +184,7 @@ export async function removeSession(session: string) {
       "..",
       "..",
       "userDataDir",
-      session
+      session,
     );
 
     await new Promise((resolve) => setTimeout(resolve, 2000));

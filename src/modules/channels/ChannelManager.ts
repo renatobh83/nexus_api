@@ -1,16 +1,13 @@
-import { ChannelsService } from "./channel.services";
+import { ChannelService } from "./channel.services";
 import { initWppWeb } from "../providers/wpp-web/Wpp-web";
 
-
-
 export class ChannelManager {
+  private channelService: ChannelService;
+  constructor() {
+    this.channelService = new ChannelService();
+  }
 
-    private channelService: ChannelsService;
-      constructor() {
-        this.channelService = new ChannelsService();   
-      }
-
-   /**
+  /**
    * Inicia as sessões de todas as conexões de WhatsApp ativas e prontas.
    *
    * Este método busca no banco de dados todas as conexões que estão em um
@@ -22,42 +19,34 @@ export class ChannelManager {
    * @returns {Promise<void>} Uma Promise que resolve quando a tentativa de
    * iniciar todas as sessões for concluída.
    */
-  async startAllReadySessions(): Promise<void>{
+  async startAllReadySessions(): Promise<void> {
+    const readyChannels = await this.channelService.findAll();
 
-    const readyChannels = await this.channelService.findAll()
-    
-
-     await Promise.all(
+    await Promise.all(
       readyChannels.map(async (channel) => {
         try {
-
-
-          if(channel.type  === "whatsapp") {
-            initWppWeb(channel, this.channelService)
+          if (channel.type === "whatsapp") {
+            initWppWeb(channel, this.channelService);
           }
-          
         } catch (error) {
           console.error(
             `ERROR: Falha ao iniciar a sessão para '${channel.name}' (ID: ${channel.id}).`,
-            error
+            error,
           );
         }
-      })
+      }),
     );
   }
-  async startSession(id: number): Promise<void>{
+  async startSession(id: number): Promise<void> {
     try {
-       const channel = await this.channelService.update(id,{
-        status: 'OPENING'
-      })
+      const channel = await this.channelService.update(id, {
+        status: "OPENING",
+      });
       if (channel.type === "whatsapp") {
         await initWppWeb(channel, this.channelService);
       }
     } catch (error) {
-      console.error(`Erro ao iniciar seção para ${id}`)
+      console.error(`Erro ao iniciar seção para ${id}`);
     }
-     
-    
-
   }
 }

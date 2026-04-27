@@ -1,32 +1,31 @@
-import { Prisma, Whatsapp } from "../../generated/prisma/client";
+import { Prisma, Channel } from "../../generated/prisma/client";
 import { ChannelsRepository } from "./channel.repository";
 
-
-export class ChannelsService {
+export class ChannelService {
   private channelsRepository: ChannelsRepository;
   constructor() {
-    this.channelsRepository = new ChannelsRepository();   
+    this.channelsRepository = new ChannelsRepository();
   }
   /**
    * Retorna uma lista de todas as conexões de WhatsApp.
    *
    * @returns {Promise<Whatsapp[]>} Um array com todas as conexões. Retorna um array vazio se não houver nenhuma.
    */
-  async findAll(): Promise<Whatsapp[]> {
+  async findAll(): Promise<Channel[]> {
     return this.channelsRepository.findMany();
   }
-
-
-  async update(id: number, data: Prisma.WhatsappUpdateInput): Promise<Whatsapp> {
+  async listaAllChannles(): Promise<Channel[]> {
+    return await this.channelsRepository.listaAll();
+  }
+  async update(id: number, data: Prisma.ChannelUpdateInput): Promise<Channel> {
     try {
-      
-      return await this.channelsRepository.udpateChannel(id, data)
+      return await this.channelsRepository.udpateChannel(id, data);
     } catch (error) {
       throw error;
     }
   }
 
-  async create(data: Prisma.WhatsappCreateInput){
-    return await this.channelsRepository.create(data)
+  async create(data: Prisma.ChannelCreateInput) {
+    return await this.channelsRepository.create(data);
   }
 }

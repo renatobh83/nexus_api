@@ -1,24 +1,18 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
-   output   = "../src/generated/prisma" 
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
 }
 
-
-model Whatsapp {
+model Channel {
   id                 Int      @id @default(autoincrement())
   name               String   @unique
-  session            String? // Opcional, pode não ser aplicável a todos os tipos
-  qrcode             String? // Opcional, usado para pareamento via QR Code
-  status             String? // Ex: 'CONNECTED', 'DISCONNECTED', 'QRCODE'
+  session            String?
+  qrcode             String?
+  status             String?
   battery            String?
   plugged            Boolean?
   isActive           Boolean  @default(true)
@@ -26,41 +20,28 @@ model Whatsapp {
   retries            Int?     @default(0)
   isDefault          Boolean  @default(false)
   tokenTelegram      String?
-  type               String   @default("whatsapp") // 'whatsapp', 'waba', 'telegram', 'messenger'
-  number             String? // Número de telefone associado à conexão
-  wppUser            String? // ID do usuário no WhatsApp (ex: '5511999998888@c.us')
+  type               String   @default("whatsapp")
+  number             String?
+  wppUser            String?
   pairingCodeEnabled Boolean  @default(false)
   pairingCode        String?
-  phone              Json? // Armazena informações detalhadas do telefone como um objeto JSON
-  wabaBSP            String? // Nome do Business Solution Provider (ex: '360dialog')
-  tokenAPI           String? // Token para a API oficial do WhatsApp
-  tokenHook          String? // Token JWT para autenticar webhooks recebidos
+  phone              Json?
+  wabaBSP            String?
+  tokenAPI           String?
+  tokenHook          String?
   farewellMessage    String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  tickets            Ticket[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // --- Relações ---
-  tickets Ticket[]
-
-  // // Relação com Tenant: Uma conexão pertence a um Tenant.
-  // tenant   Tenant @relation(fields: [tenantId], references: [id])
-  // tenantId Int
-
-  // Relação com ChatFlow: Uma conexão pode ter um ChatFlow padrão.
-  // O campo é opcional, então a relação também deve ser.
-
-  // Mapeia para o nome da tabela existente no banco de dados.
-  @@map("Whatsapp")
+  @@map("Channel")
 }
 
 model Ticket {
-  // --- Campos Diretos ---
-  id                   Int       @id @default(autoincrement()) // Equivalente a: INTEGER, autoIncrement, primaryKey
+  id                   Int       @id @default(autoincrement())
   status               String    @default("pending")
-  unreadMessages       Int? // O '?' torna o campo opcional (pode ser null), como no Sequelize por padrão
+  unreadMessages       Int?
   lastMessage          String?
-  channel              String?
   answered             Boolean   @default(true)
   isGroup              Boolean   @default(false)
   associatedCalls      Boolean   @default(false)
@@ -70,56 +51,61 @@ model Ticket {
   isTransference       Boolean   @default(false)
   lastInteractionBot   DateTime?
   botRetries           Int?
-  closedAt             BigInt? // Prisma suporta BigInt para números muito grandes
+  closedAt             BigInt?
   lastMessageAt        BigInt?
   startedAttendanceAt  BigInt?
   chamadoId            BigInt?
   lastAbsenceMessageAt DateTime?
   chatClient           Boolean?
   socketId             String?
-  stepChatFlow         String? // Equivalente a TEXT
-  chatFlowStatus       String    @default("not_started") // Usando o ENUM definido acima
-  apiConfig            Json? // Prisma tem um tipo nativo para JSONB
+  stepChatFlow         String?
+  chatFlowStatus       String    @default("not_started")
+  apiConfig            Json?
   contato              String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  channelId            Int?
+  isInteraction        Boolean   @default(false)
+  messages             Message[]
+  channel              Channel?  @relation(fields: [channelId], references: [id])
 
-  // --- Timestamps ---
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt // O Prisma gerencia o 'updatedAt' automaticamente
-
-  // --- Relações e Chaves Estrangeiras (Onde a mágica acontece) ---
-
-  // // Relação com User (um Ticket pertence a um User opcional)
-  // user   User? @relation(fields: [userId], references: [id])
-  // userId Int? // Chave estrangeira opcional
-
-  // // Relação com Contact (um Ticket pertence a um Contact)
-  // contact   Contact @relation(fields: [contactId], references: [id])
-  // contactId Int // Chave estrangeira obrigatória
-
-  // Relação com Whatsapp (um Ticket pertence a um Whatsapp opcional)
-  whatsapp   Whatsapp? @relation(fields: [whatsappId], references: [id])
-  whatsappId Int?
-
-  // // Relação com ChatFlow (um Ticket pertence a um ChatFlow opcional)
-  // chatFlow   ChatFlow? @relation(fields: [chatFlowId], references: [id])
-  // chatFlowId Int?
-
-  // // Relação com Empresa (um Ticket pertence a uma Empresa)
-  // empresa   Empresa? @relation(fields: [empresaId], references: [id])
-  // empresaId Int?
-
-  // // Relação com Queue (um Ticket pertence a uma Queue opcional)
-  // queue   Queue? @relation(fields: [queueId], references: [id])
-  // queueId Int?
-
-  // // // Relação com Tenant (um Ticket pertence a um Tenant)
-  // tenant              Tenant    @relation(fields: [tenantId], references: [id])
-  // tenantId            Int
-
-  // chamado    Chamado[]
-  // messages   Message[]
-  // logTickets LogTicket[]
-
-  // Mapeia o nome do modelo para o nome da tabela no banco de dados
   @@map("Tickets")
+}
+
+model Message {
+  id             String                 @id @default(uuid()) @db.Uuid
+  messageId      String                 @unique
+  ack            Int                    @default(1)
+  status         String
+  wabaMediaId    String?
+  read           Boolean                @default(false)
+  fromMe         Boolean                @default(false)
+  body           String
+  mediaUrl       String?
+  mediaType      String?
+  reaction       String?
+  reactionFromMe String?
+  timestamp      BigInt?
+  scheduleDate   DateTime?
+  sendType       enum_Messages_sendType @default(chat)
+  idFront        String?
+  isDeleted      Boolean                @default(false)
+  isForwarded    Boolean                @default(false)
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  ticketid       Int?
+  contato        String
+  ticket         Ticket?                @relation(fields: [ticketid], references: [id])
+
+  @@unique([messageId, ticketid])
+  @@map("Messages")
+}
+
+enum enum_Messages_sendType {
+  campaign
+  chat
+  external
+  schedule
+  bot
+  sync
 }

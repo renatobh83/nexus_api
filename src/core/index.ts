@@ -1,20 +1,29 @@
-import fastify, { FastifyInstance, FastifyReply } from "fastify";
-import { Server as SocketIOServer } from 'socket.io'
+import fastify, {
+  FastifyError,
+  FastifyInstance,
+  FastifyReply,
+  FastifyRequest,
+} from "fastify";
+import { Server as SocketIOServer } from "socket.io";
 import { prisma } from "../lib/prisma";
 import { ChannelManager } from "../modules/channels/ChannelManager";
 import { TicketService } from "../modules/tickets/tickets.services";
 import routes from "./routes";
+import fastifyModule from "./plugins/fastifyModules";
 
 // 🔧 Extensão do tipo para o Fastify reconhecer a propriedade 'io'
-declare module 'fastify' {
+declare module "fastify" {
   interface FastifyInstance {
-    io: SocketIOServer
+    io: SocketIOServer;
   }
-   interface FastifyRequest {
+  interface FastifyRequest {
     apiKey?: string;
   }
   interface FastifyInstance {
-    verifyApiKey: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+    verifyApiKey: (
+      request: FastifyRequest,
+      reply: FastifyReply,
+    ) => Promise<void>;
   }
 }
 let fastifyApp: FastifyInstance;
@@ -26,33 +35,78 @@ let fastifyApp: FastifyInstance;
  */
 async function buildServer(): Promise<FastifyInstance> {
   const server = fastify({
-    logger: true // habilita logs bonitos
-  })
+    logger: true, // habilita logs bonitos
+    // bodyLimit: 10485760, // 10MB
+  });
 
-  await server.register(routes)
+  server.get("/", async () => {
+    return { message: "Bem-vindo ao Nexus API!" };
+  });
 
+  server.register(async (instance) => {
+    try {
+      instance.log.info("🔌 Tentando conectar ao banco de dados...");
+      await prisma.$connect();
+      instance.log.info("✅ Banco de dados conectado com sucesso!");
+    } catch (err) {
+      instance.log.error(err, "❌ Erro ao conectar no banco");
+      throw err; // deixa claro no log
+    }
+  });
+  await server.register(fastifyModule);
+
+  server.setErrorHandler(
+    (error: FastifyError, request: FastifyRequest, reply: FastifyReply) => {
+      console.error("ERRO REAL DETECTADO:", error);
+      request.log.error(error);
+
+      if (error.code === "FST_CORS_ERROR") {
+        return reply.status(400).send({ error: "CORS não permitido" });
+      }
+
+      // Resposta padrão para outros erros
+      return reply.status(error.statusCode || 500).send({
+        error: error.message || "Erro interno no servidor",
+      });
+    },
+  );
+  await server.register(routes);
+
+  server.setNotFoundHandler((request, reply) => {
+    reply.status(404).send({
+      error: "Not Found",
+      message: `A rota ${request.url} não existe`,
+    });
+  });
   const io = new SocketIOServer(server.server, {
-    cors: { origin: '*' }
-  })
+    cors: { origin: "*" },
+  });
+  io.on("connection", (socket) => {
+    console.log("cliente conectado:", socket.id);
 
-  io.on('connection', (socket) => {
-    console.log('cliente conectado:', socket.id)
+    socket.on("message", (data) => {
+      console.log("mensagem:", data);
+    });
+  });
 
-    socket.on('message', (data) => {
-      console.log('mensagem:', data)
-    })
-  })
+  server.decorate("io", io);
 
-  server.decorate('io', io)
-  await prisma.$connect();
-  console.log('✅ Conexão com o banco de dados estabelecida com sucesso!');
-    
-  prisma.$on('info', async () => {
-  console.log('🔌 Cliente Prisma está prestes a desconectar');
+  const signals: NodeJS.Signals[] = ["SIGINT", "SIGTERM"];
 
- 
-});
-    return server
+  signals.forEach((signal) => {
+    process.on(signal, async () => {
+      try {
+        await server.close();
+        // await shutdown();
+        server.log.error(`Closed application on ${signal}`);
+        process.exit(0);
+      } catch (err: any) {
+        server.log.error(`Error closing application on ${signal}`, err);
+        process.exit(1);
+      }
+    });
+  });
+  return server;
 }
 
 /**
@@ -62,15 +116,13 @@ async function buildServer(): Promise<FastifyInstance> {
  */
 export async function start() {
   const app = await buildServer();
-  
+
   fastifyApp = app;
   try {
     await app.listen({ port: 3000, host: "0.0.0.0" });
     app.log.info("Servidor rodando em http://localhost:3000");
     app.server.keepAliveTimeout = 5 * 60 * 1000;
 
-  
-    
     const channelManager = new ChannelManager();
     // const ticket = new TicketService()
     // const t = await ticket.findTicketId({
@@ -80,9 +132,9 @@ export async function start() {
     //   }
     // })
     // // console.log(t)
-    // await channelManager.startSession(2)
-    await channelManager.startAllReadySessions()
-    
+
+    // await channelManager.startSession(1);
+    // await channelManager.startAllReadySessions();
   } catch (err: any) {
     if (app) {
       app.log.error(err, "❌ Falha ao iniciar o servidor.");
