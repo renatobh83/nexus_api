@@ -54,21 +54,12 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
     // ... outras configurações do helmet
     xPoweredBy: false, // Sempre desativar para não expor a tecnologia do servidor.
   });
-
   await fastify.register(cors, {
-    origin: true, // Permite todas origens (APENAS PARA TESTE!)
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "x-csrf-token",
-      "api-key",
-    ],
+    origin: true, // Permite todas origens temporariamente
     credentials: true,
-    preflightContinue: false,
-    optionsSuccessStatus: 204,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["*"], // Permite todos headers
   });
-
   // --- 3. Servidor de Arquivos Estáticos ---
   await fastify.register(fastifyStatic, {
     root: path.join(__dirname, "..", "..", "..", "public"),
