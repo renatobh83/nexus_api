@@ -2,8 +2,6 @@ import fp from "fastify-plugin";
 import helmet from "@fastify/helmet";
 import cors from "@fastify/cors";
 import cookie from "@fastify/cookie";
-
-import compress from "@fastify/compress";
 import formbody from "@fastify/formbody";
 import multipart from "@fastify/multipart";
 import rateLimit from "@fastify/rate-limit";
@@ -67,6 +65,7 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
 
   await fastify.register(cors, {
     origin: (origin, cb) => {
+      console.log(origin);
       if (
         !origin ||
         allowedOrigins.includes("*") ||
@@ -80,7 +79,7 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
     },
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "x-csrf-token"],
-    credentials: true,
+    // credentials: true,
   });
 
   // --- 3. Servidor de Arquivos Estáticos ---
@@ -102,11 +101,6 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
   await fastify.register(cookie, { secret: process.env.COOKIE_SECRET });
   await fastify.register(formbody);
   await fastify.register(multipart, { limits: { fileSize: 10 * 1024 * 1024 } }); // Limite de 10MB para uploads
-  await fastify.register(compress, {
-    global: false,
-    threshold: 2048,
-    encodings: ["gzip"],
-  });
 
   // --- 6. Proteção contra Poluição de Parâmetros HTTP (HPP) ---
   // Previne que um atacante sobrescreva parâmetros enviando múltiplos valores para o mesmo parâmetro de query.
