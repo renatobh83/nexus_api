@@ -10,7 +10,8 @@ import { ChannelManager } from "../modules/channels/ChannelManager";
 import { TicketService } from "../modules/tickets/tickets.services";
 import routes from "./routes";
 import fastifyModule from "./plugins/fastifyModules";
-
+import { initSocket } from "../lib/socket";
+let io: SocketIOServer | null = null;
 // 🔧 Extensão do tipo para o Fastify reconhecer a propriedade 'io'
 declare module "fastify" {
   interface FastifyInstance {
@@ -78,21 +79,8 @@ async function buildServer(): Promise<FastifyInstance> {
       message: `A rota ${request.url} não existe`,
     });
   });
-  const io = new SocketIOServer(server.server, {
-    cors: { origin: "*" },
-  });
-  io.on("connection", (socket) => {
-    console.log("cliente conectado:", socket.id);
-
-    socket.on("message", (data) => {
-      console.log("mensagem:", data);
-    });
-  });
-
-  server.decorate("io", io);
 
   const signals: NodeJS.Signals[] = ["SIGINT", "SIGTERM"];
-
   signals.forEach((signal) => {
     process.on(signal, async () => {
       try {
@@ -105,6 +93,14 @@ async function buildServer(): Promise<FastifyInstance> {
         process.exit(1);
       }
     });
+  });
+  server.addHook("onReady", async () => {
+    // Inicializa Socket apenas quando o servidor estiver pronto
+    if (!io) {
+      io = initSocket(server.server);
+      server.decorate("io", io);
+      console.log("✅ Socket.IO inicializado com sucesso!");
+    }
   });
   return server;
 }

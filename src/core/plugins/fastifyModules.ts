@@ -102,7 +102,11 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
   await fastify.register(cookie, { secret: process.env.COOKIE_SECRET });
   await fastify.register(formbody);
   await fastify.register(multipart, { limits: { fileSize: 10 * 1024 * 1024 } }); // Limite de 10MB para uploads
-  await fastify.register(compress, { global: false });
+  await fastify.register(compress, {
+    global: false,
+    threshold: 2048,
+    encodings: ["gzip"],
+  });
 
   // --- 6. Proteção contra Poluição de Parâmetros HTTP (HPP) ---
   // Previne que um atacante sobrescreva parâmetros enviando múltiplos valores para o mesmo parâmetro de query.

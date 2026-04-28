@@ -1,4 +1,5 @@
 import { Prisma } from "../../generated/prisma/client";
+import { waitForSocket } from "../../lib/socket";
 import { SendMessageSystemProxy } from "../wppWeb/handleSendMessageSystemProxy";
 import { buildMessageBody } from "./message.utils";
 import { MessageRepository } from "./messages.repository";
@@ -20,7 +21,8 @@ export class MessageService {
       ...restDto,
     };
     const message = await this.messageRepository.create(messageData);
-
+    const io = await waitForSocket();
+    io.emit("new-message", message);
     return message;
   }
 

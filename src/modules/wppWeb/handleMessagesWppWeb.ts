@@ -2,6 +2,8 @@ import { Contact, Message } from "wbotconnect";
 import { Session } from "../providers/wpp-web/Wpp-web";
 import { createTicket } from "../tickets/Helpers/CreateTicket";
 import { VerifyMessage } from "./handleVerifyMessage";
+import { prisma } from "../../lib/prisma";
+import { waitForSocket } from "../../lib/socket";
 
 export const handleMessage = async (message: Message, session: Session) => {
   const chat = await session.getChatById(message.chatId);
@@ -11,9 +13,12 @@ export const handleMessage = async (message: Message, session: Session) => {
     const grupo = await session.getContact(chat.id._serialized);
     contato = grupo;
   } else if (message.fromMe) {
-    const { phoneNumber } = await session.getPnLidEntry(message.to);
-    const user = await session.getContact(phoneNumber._serialized);
-    contato = user;
+    if (message.to.includes("g.us")) {
+      contato = await session.getContact(message.to);
+    } else {
+      const { phoneNumber } = await session.getPnLidEntry(message.to);
+      contato = await session.getContact(phoneNumber._serialized);
+    }
   } else {
     const { phoneNumber } = await session.getPnLidEntry(message.from);
     const user = await session.getContact(phoneNumber._serialized);
@@ -33,17 +38,25 @@ export const handleMessage = async (message: Message, session: Session) => {
 
   const { ticket, isNew } = await createTicket(
     _serialized,
+    contato,
     session.id,
     message.isGroupMsg,
     lastMessage,
     chat.unreadCount,
   );
 
+  const createdMessage = await VerifyMessage(
+    message,
+    contato,
+    ticket.id,
+    session,
+  );
+  const result = {
+    ...ticket,
+    messages: [createdMessage],
+  };
   if (isNew) {
-    console.log("Is new");
-  } else {
-    console.log("Old Ticket");
+    const io = await waitForSocket();
+    io.emit("ticket-updated", result);
   }
-
-  VerifyMessage(message, contato, ticket.id, session);
 };

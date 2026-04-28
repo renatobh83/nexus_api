@@ -44,6 +44,13 @@ export class TicketsRepository {
   async create(data: Prisma.TicketCreateInput): Promise<any> {
     return await prisma.ticket.create({
       data: data,
+      include: {
+        messages: {
+          orderBy: {
+            createdAt: "desc", // ou id: "asc"
+          },
+        },
+      },
     });
   }
 }

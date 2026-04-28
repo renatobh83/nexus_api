@@ -17,7 +17,10 @@ export async function ticketController(fastify: FastifyInstance) {
       const ticket = await service.findTicket({
         id: numberTicket,
       });
-      reply.status(200).send(ticket);
+      reply
+        .header("content-type", "application/json; charsert=utf8")
+        .status(200)
+        .send(ticket);
     },
   );
   fastify.post("/", async (request: FastifyRequest, reply: FastifyReply) => {

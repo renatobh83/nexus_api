@@ -4,7 +4,7 @@ import { create, defaultOptions, Whatsapp } from "wbotconnect";
 
 import { ChannelService } from "../../channels/channel.services";
 import { wbotWebListener } from "../../wppWeb/wppWebListener";
-import { Prisma, Channel as wppClient } from "../../../generated/prisma/client";
+import { Prisma, Channel as WppClient } from "../../../generated/prisma/client";
 
 function extractQrCode(url: string): string | null {
   if (!url) return null;
@@ -13,174 +13,213 @@ function extractQrCode(url: string): string | null {
 
 export interface Session extends Whatsapp {
   id: number;
+  started?: boolean; // 🔥 controle para evitar start duplicado
 }
 
 const sessions: Session[] = [];
-let sessionName: string;
-let channelSession: wppClient;
 
 /**
- * Inicia uma sessão do wbotconnect para uma determinada conexão de WhatsApp.
- * Esta função configura os callbacks da biblioteca e delega as atualizações de estado
- * para o WhatsappService, mantendo a lógica de negócio separada.
- *
- * @param whatsapp - O objeto da conexão de WhatsApp vindo do banco de dados.
- * @param whatsappService - A instância do serviço para persistir as mudanças.
- * @returns Uma Promise que resolve para a instância do cliente wbot.
+ * Inicializa sessão
  */
 export const initWppWeb = async (
-  channel: wppClient,
+  channel: WppClient,
   channelService: ChannelService,
 ): Promise<Session> => {
   try {
-    let wbot: Session;
-
-    sessionName = channel.name;
-    channelSession = channel;
-    const qrCodePath = path.join(
-      __dirname,
-      "..",
-      "..",
-      "public",
-      `qrCode-${channel.id}.png`,
-    );
-
+    // let wbot: Session;
+    const wbotRef: { current?: Session } = {};
     const options = {
       logQR: true,
       headless: true,
-      // phoneNumber: channel.pairingCodeEnabled ? channel.wppUser : null,
       puppeteerOptions: {
         userDataDir: "./userDataDir/" + channel.name,
       },
     };
+
     const mergedOptions = { ...defaultOptions, ...options };
 
-    wbot = (await create(
-      Object.assign({}, mergedOptions, {
-        catchQR: async (
-          base64Qrimg: any,
-          asciiQR: any,
-          attempts: any,
-          urlCode: any,
-        ) => {
-          const qrCode = extractQrCode(urlCode);
-          if (qrCode) {
-            channelService.update(channel.id, {
-              qrcode: qrCode,
-              status: "qrcode",
-              retries: attempts,
-            });
-          }
-        },
-        statusFind: async (statusSession: any) => {
-          console.log(
-            `INFO: Status da sessão '${channel.name}': ${statusSession}`,
-          );
-          switch (statusSession) {
-            case "autocloseCalled":
-            case "desconnectedMobile":
-            // case "browserClose":
-            case "serverClose":
-              // Todos esses status levam a uma desconexão.
-              console.log(statusSession);
-              await channelService.update(channel.id, {
-                status: "DISCONNECTED",
-                qrcode: "",
-                session: "",
-                pairingCode: "",
-                phone: Prisma.JsonNull, // Limpa o campo JSON
-              });
-              // Lógica para remover a sessão do array local e limpar arquivos pode ser chamada aqui.
-              break;
+    const instance = await create({
+      ...mergedOptions,
 
-            case "inChat":
-              // Se a sessão está conectada, remove o arquivo do QR Code.
-              if (fs.existsSync(qrCodePath)) {
-                fs.unlink(qrCodePath, () => {});
-              }
-              break;
+      catchQR: async (_base64, _ascii, attempts, urlCode) => {
+        const qrCode = extractQrCode(urlCode!);
 
-            // Outros status podem ser tratados aqui se necessário.
-          }
-        },
-        catchLinkCode: async (code: any) => {
+        if (qrCode) {
           await channelService.update(channel.id, {
-            pairingCode: code,
+            qrcode: qrCode,
             status: "qrcode",
+            retries: attempts,
           });
-        },
-      }),
-    )) as unknown as Session;
-    const sessionIndex = sessions.findIndex((s) => s.id === channel.id);
-    if (sessionIndex === -1) {
-      wbot.id = channel.id;
+        }
+      },
+
+      statusFind: async (statusSession: any) => {
+        console.log(
+          `INFO: Status da sessão '${channel.name}': ${statusSession}`,
+        );
+
+        switch (statusSession) {
+          case "autocloseCalled":
+          case "desconnectedMobile":
+            await channelService.update(channel.id, {
+              status: "DISCONNECTED",
+              qrcode: "",
+              session: "",
+              pairingCode: "",
+              phone: Prisma.JsonNull,
+            });
+            break;
+
+          case "qrReadSuccess":
+            // triggerStart(channel.id, channelService, channel);
+            break;
+        }
+      },
+
+      catchLinkCode: async (code: any) => {
+        await channelService.update(channel.id, {
+          pairingCode: code,
+          status: "qrcode",
+        });
+      },
+    });
+    await sleep(200);
+    wbotRef.current = instance as Session;
+    const wbot = wbotRef.current;
+
+    if (!wbot) {
+      console.log("⚠️ wbot ainda não inicializado");
+    }
+    wbot.id = channel.id;
+    wbot.started = false;
+    triggerStart(channel.id, channelService, channel);
+    // salva sessão
+    const index = sessions.findIndex((s) => s.id === channel.id);
+    if (index === -1) {
       sessions.push(wbot);
     } else {
-      sessions[sessionIndex] = wbot;
+      sessions[index] = wbot;
     }
-    start(wbot, channelService);
+
     return wbot;
   } catch (error) {
-    removeSession(channel.name);
+    console.error("Erro ao iniciar sessão:", error);
+    await removeSession(channel.name);
     throw new Error("ERR_INICIAR_SESSAO_WPWEB");
   }
 };
-async function waitForApiValue(apiCall: Session, interval = 1000) {
+
+/**
+ * Aguarda autenticação antes de iniciar
+ */
+const waitUntilAuthenticated = async (
+  client: Session,
+  service: ChannelService,
+  channel: WppClient,
+) => {
+  let attempts = 0;
+
+  const check = async () => {
+    try {
+      if (!client) return;
+
+      const isReady = await client.isAuthenticated();
+
+      if (isReady) {
+        console.log("✅ Cliente autenticado");
+        await start(client, service, channel);
+      } else if (attempts < 10) {
+        attempts++;
+        setTimeout(check, 1000);
+      } else {
+        console.log("❌ Timeout aguardando autenticação");
+      }
+    } catch (err) {
+      console.error("Erro ao verificar autenticação:", err);
+    }
+  };
+
+  check();
+};
+
+/**
+ * Start da sessão (executa apenas 1x)
+ */
+const start = async (
+  client: Session,
+  service: ChannelService,
+  channel: WppClient,
+) => {
+  try {
+    if (!client) {
+      console.log("❌ Client undefined no start");
+      return;
+    }
+
+    if (client.started) {
+      console.log("⚠️ Start já executado, ignorando...");
+      return;
+    }
+
+    client.started = true;
+
+    console.log("🚀 Iniciando sessão...");
+
+    const profileSession: any = await waitForApiValue(client);
+
+    await service.update(channel.id, {
+      status: "CONNECTED",
+      qrcode: "",
+      retries: 0,
+      phone: profileSession,
+      session: channel.name,
+      pairingCode: "",
+    });
+
+    await wbotWebListener(client);
+  } catch (error) {
+    console.error("Erro no start wbot:", error);
+  }
+};
+
+/**
+ * Aguarda dados do perfil
+ */
+async function waitForApiValue(client: Session, interval = 1000) {
   return new Promise((resolve, reject) => {
-    const checkValue = async () => {
+    const check = async () => {
       try {
-        const profileSession = await apiCall.getProfileName();
+        const profileSession = await client.getProfileName();
+        const wbotVersion = await client.getWAVersion();
+        const number = await client.getWid();
 
-        const wbotVersion = await apiCall.getWAVersion();
-        const number = await apiCall.getWid();
-        const result = {
-          wbotVersion,
-          profileSession,
-          number,
-        };
-
-        if (result !== null) {
-          resolve(result); // Retorna o valor assim que não for null
+        if (profileSession) {
+          resolve({
+            profileSession,
+            wbotVersion,
+            number,
+          });
         } else {
-          setTimeout(checkValue, interval); // Recheca após o intervalo
+          setTimeout(check, interval);
         }
       } catch (error) {
-        reject(error); // Rejeita a promise em caso de erro
+        reject(error);
       }
     };
-    checkValue(); // Inicia a verificação
+
+    check();
   });
 }
 
-const start = async (client: Session, service: ChannelService) => {
-  try {
-    const isReady = await client.isAuthenticated();
-
-    if (isReady) {
-      client.startTyping;
-      const profileSession: any = await waitForApiValue(client, 1000);
-
-      await service.update(channelSession.id, {
-        status: "CONNECTED",
-        qrcode: "",
-        retries: 0,
-        phone: profileSession,
-        session: channelSession.name,
-        pairingCode: "",
-      });
-
-      if (await client.isAuthenticated()) {
-        await wbotWebListener(client);
-      }
-    }
-  } catch (_error) {}
-};
-
+/**
+ * Remove sessão local
+ */
 export async function removeSession(session: string) {
   try {
-    // Defina o caminho da pasta com base no sessionId
     const sessionPath = path.join(
       __dirname,
+      "..",
+      "..",
       "..",
       "..",
       "userDataDir",
@@ -188,16 +227,63 @@ export async function removeSession(session: string) {
     );
 
     await new Promise((resolve) => setTimeout(resolve, 2000));
+
     await promises.access(sessionPath);
     fs.rmSync(sessionPath, { recursive: true, force: true });
   } catch (error) {
-    console.log(error);
+    console.log("Erro ao remover sessão:", error);
   }
 }
+
+/**
+ * Recupera sessão
+ */
 export const getWbot = (channelId: number): Session => {
-  const sessionIndex = sessions.findIndex((s) => s.id === Number(channelId));
-  if (sessionIndex === -1) {
+  const session = sessions.find((s) => s.id === Number(channelId));
+
+  if (!session) {
     throw new Error("ERR_WAPP_NOT_INITIALIZED");
   }
-  return sessions[sessionIndex];
+
+  return session;
 };
+
+const triggerStart = async (
+  channelId: number,
+  service: ChannelService,
+  channel: WppClient,
+) => {
+  let attempts = 0;
+
+  const tryStart = async () => {
+    try {
+      const client = getWbot(channelId); // 🔥 pega depois
+
+      if (!client) {
+        throw new Error("Client ainda não disponível");
+      }
+
+      const isReady = await client.isAuthenticated();
+
+      if (isReady) {
+        await start(client, service, channel);
+      } else if (attempts < 10) {
+        attempts++;
+        setTimeout(tryStart, 1000);
+      }
+    } catch (err) {
+      if (attempts < 10) {
+        attempts++;
+        setTimeout(tryStart, 1000);
+      } else {
+        console.error("Erro ao iniciar sessão:", err);
+      }
+    }
+  };
+
+  tryStart();
+};
+
+function sleep(time: number): Promise<void> {
+  return new Promise((resolve: TimerHandler) => setTimeout(resolve, time));
+}

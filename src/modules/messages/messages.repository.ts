@@ -1,5 +1,6 @@
 import { Message, Prisma } from "../../generated/prisma/client";
 import { prisma } from "../../lib/prisma";
+import { waitForSocket } from "../../lib/socket";
 
 export interface ResponseMessages {
   messages: Message[];
@@ -18,8 +19,8 @@ const messageInclude = {
   },
 } satisfies Prisma.MessageInclude;
 export class MessageRepository {
-  create(dto: Prisma.MessageCreateInput) {
-    return prisma.message.create({ data: dto, include: messageInclude });
+  async create(dto: Prisma.MessageCreateInput) {
+    return prisma.message.create({ data: dto });
   }
 
   async findMessage(
@@ -38,13 +39,12 @@ export class MessageRepository {
       orderBy: {
         createdAt: "desc",
       },
-      include: messageInclude,
     });
     const count = messages.length;
     const hasMore = count > DEFAULT_SKIP + messages.length;
-    const safeMessages = messages.map(({ ticket, ...rest }) => rest);
+
     return {
-      messages: safeMessages.reverse(),
+      messages, //: JSON.parse(JSON.stringify(messages)),
       hasMore,
       count,
     };

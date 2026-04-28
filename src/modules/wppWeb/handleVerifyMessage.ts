@@ -22,7 +22,6 @@ export const VerifyMessage = async (
   ticketId: number,
   session: Session,
 ) => {
-  console.log(message)
   const body =
     message.type === "list" ? "message.list.description" : message.content;
   if (message.type !== "chat") {
@@ -61,6 +60,7 @@ export const VerifyMessage = async (
   messageData.ticket = {
     connect: { id: ticketId },
   };
+
   const messageService = new MessageService();
-  messageService.createMessage(messageData);
+  return await messageService.createMessage(messageData);
 };

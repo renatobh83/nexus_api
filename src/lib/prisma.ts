@@ -11,10 +11,10 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({
   // Habilita os logs
   adapter: adapter,
-    log: [
-    { level: 'info', emit: 'stdout' },
-    { level: 'warn', emit: 'stdout' },
-    { level: 'error', emit: 'stdout' },
+  log: [
+    { level: "info", emit: "stdout" },
+    { level: "warn", emit: "stdout" },
+    { level: "error", emit: "stdout" },
   ],
 });
 

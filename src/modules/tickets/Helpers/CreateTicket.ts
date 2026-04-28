@@ -1,8 +1,10 @@
+import { Contact } from "wbotconnect";
 import { Prisma, Ticket } from "../../../generated/prisma/client";
 import { TicketService } from "../tickets.services";
 
 export const createTicket = async (
   contato: string,
+  contactOwer: Contact,
   channelId: number,
   ticketGroup: boolean,
   msg: string,
@@ -14,6 +16,7 @@ export const createTicket = async (
   let ticket: Ticket | null;
 
   const payload: Prisma.TicketCreateInput = {
+    ower: contactOwer.pushname || contactOwer.name || contactOwer.shortName,
     contato,
     unreadMessages,
     lastMessage: msg,
@@ -27,6 +30,7 @@ export const createTicket = async (
   payload.channel = {
     connect: { id: channelId },
   };
+
   // Payload para atualização (apenas os campos que podem mudar)
   const updatePayload: Prisma.TicketUpdateInput = {
     unreadMessages,

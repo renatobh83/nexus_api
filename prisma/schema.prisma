@@ -55,7 +55,7 @@ model Ticket {
   lastMessageAt        BigInt?
   startedAttendanceAt  BigInt?
   chamadoId            BigInt?
-  ower                 String
+  ower                 String?
   lastAbsenceMessageAt DateTime?
   chatClient           Boolean?
   socketId             String?
