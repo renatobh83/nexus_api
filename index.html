@@ -459,7 +459,8 @@
 
   <script>
     // Configurações
-    const SOCKET_URL = 'https://fast.panelapps.site'; // Altere para URL do seu backend
+    const URL_BASE = "https://fast.panelapps.site"
+    const SOCKET_URL = URL_BASE; // Altere para URL do seu backend
     let socket = null;
     let currentTicket = null;
     let allTickets = [];
@@ -687,7 +688,7 @@
       const ticketsList = document.getElementById('tickets-list');
 
       try {
-        const response = await fetch('https://fast.panelapps.site/api/v1/tickets');
+        const response = await fetch(`${URL_BASE}/api/v1/tickets`);
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -869,18 +870,15 @@
 
       sendBtn.disabled = true;
       input.disabled = true;
+      const formData = new FormData();
+      formData.append('body', messageText);
+      formData.append('fromMe', 'true');
+      formData.append('type', 'chat');
 
       try {
-        const response = await fetch(`hhttps://fast.panelapps.site/api/v1/messages/${currentTicket.id}`, {
+        const response = await fetch(`${URL_BASE}/api/v1/messages/${currentTicket.id}`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            body: messageText,
-            fromMe: true,
-            mediaType: 'text'
-          })
+          body: formData
         });
 
         if (!response.ok) {

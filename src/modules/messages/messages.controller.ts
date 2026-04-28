@@ -52,6 +52,7 @@ export async function messagesController(fastify: FastifyInstance) {
         filesArray,
         ticket,
       };
+      console.log(messageData);
       const service = new MessageService();
       service.createMessageSystem(messageData);
     },
