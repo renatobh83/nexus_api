@@ -55,31 +55,18 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
     xPoweredBy: false, // Sempre desativar para não expor a tecnologia do servidor.
   });
 
-  // --- 2. Controle de Acesso Cross-Origin (CORS) ---
-  // Gerencia quais origens externas podem fazer requisições à API.
-  const allowedOriginsString = process.env.CORS_ALLOWED_ORIGINS || '["*"]';
-
-  const allowedOrigins = allowedOriginsString
-    .replace(/[\[\]"]/g, "") // Remove [, ], e " da string
-    .split(",");
-
   await fastify.register(cors, {
-    origin: (origin, cb) => {
-      console.log(origin);
-      if (
-        !origin ||
-        allowedOrigins.includes("*") ||
-        allowedOrigins.includes(origin!)
-      ) {
-        return cb(null, true);
-      }
-
-      // Rejeita a requisição se a origem não estiver na lista de permissões.
-      return cb(new Error("Not allowed by CORS"), false);
-    },
+    origin: true, // Permite todas origens (APENAS PARA TESTE!)
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "x-csrf-token"],
-    // credentials: true,
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "x-csrf-token",
+      "api-key",
+    ],
+    credentials: true,
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   });
 
   // --- 3. Servidor de Arquivos Estáticos ---
