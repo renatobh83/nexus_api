@@ -54,11 +54,35 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
     // ... outras configurações do helmet
     xPoweredBy: false, // Sempre desativar para não expor a tecnologia do servidor.
   });
+  const allowedOrigins = [
+    "http://127.0.0.1:5500", // Live Server
+    "http://localhost:5500", // Live Server alternativo
+    "http://127.0.0.1:3000", // Seu frontend local
+    "http://localhost:3000",
+    // Adicione outras origens necessárias
+  ];
+
   await fastify.register(cors, {
-    origin: true, // Permite todas origens temporariamente
-    credentials: true,
+    origin: (origin, cb) => {
+      console.log("📍 Origem recebida:", origin);
+      console.log("📋 Allowed origins:", allowedOrigins);
+
+      if (!origin || allowedOrigins.includes(origin)) {
+        console.log("✅ CORS permitido");
+        return cb(null, true);
+      }
+
+      console.log("❌ CORS bloqueado");
+      return cb(new Error(`Not allowed by CORS: ${origin}`), false);
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["*"], // Permite todos headers
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "x-csrf-token",
+      "api-key",
+    ],
+    credentials: true,
   });
   // --- 3. Servidor de Arquivos Estáticos ---
   await fastify.register(fastifyStatic, {
