@@ -55,10 +55,30 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
     xPoweredBy: false, // Sempre desativar para não expor a tecnologia do servidor.
   });
   await fastify.register(cors, {
-    origin: true, // Permite todas origens temporariamente
-    credentials: true,
+    origin: (origin, cb) => {
+      console.log("📍 Origem:", origin);
+      // Permite durante teste
+      if (
+        !origin ||
+        allowedOrigins.includes("*") ||
+        allowedOrigins.includes(origin!)
+      ) {
+        return cb(null, true);
+      }
+      return cb(new Error(`CORS bloqueado para: ${origin}`), false);
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["*"], // Permite todos headers
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "x-csrf-token",
+      "api-key",
+      "Api-Key",
+    ],
+    exposedHeaders: ["Content-Type", "api-key"],
+    credentials: true, // Importante se usa cookies/sessão
+    preflight: true,
+    optionsSuccessStatus: 204,
   });
   // --- 3. Servidor de Arquivos Estáticos ---
   await fastify.register(fastifyStatic, {
