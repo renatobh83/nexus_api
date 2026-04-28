@@ -42,6 +42,7 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
     "http://127.0.0.1:8080",
     "http://localhost:8080",
     "undefined",
+    "null",
     // Adicione o IP da sua VPS se for testar remotamente
   ];
 
