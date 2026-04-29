@@ -889,6 +889,109 @@
         transform: scale(1.2);
       }
     }
+
+    .file-preview {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      background: white;
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      max-width: 350px;
+      min-width: 280px;
+      max-height: 400px;
+      overflow-y: auto;
+      z-index: 1000;
+      animation: slideIn 0.3s ease;
+    }
+
+    .file-preview-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 10px;
+      padding: 8px;
+      background: #f0f2f5;
+      border-radius: 8px;
+    }
+
+    .file-preview-remove {
+      background: #e53935;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .file-preview-send {
+      background: #075e54;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 8px;
+      font-weight: 500;
+    }
+
+    .file-caption {
+      width: 100%;
+      margin-top: 5px;
+      padding: 4px 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 11px;
+      font-family: inherit;
+    }
+
+    .send-btn.loading,
+    .attach-btn.loading,
+    .file-preview-send.loading {
+      opacity: 0.7;
+      cursor: wait;
+      position: relative;
+    }
+
+    .send-btn.loading::after,
+    .attach-btn.loading::after,
+    .file-preview-send.loading::after {
+      content: "";
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 0.8s linear infinite;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .send-btn.loading svg,
+    .attach-btn.loading span {
+      display: none;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
   </style>
 </head>
 
@@ -1040,7 +1143,7 @@
     let currentTicket = null;
     let allTickets = [];
     let currentChannelId = null;
-    let selectedFiles = [];
+
     let showOnlyClosed = false;
     let selectedChannelType = null;
 
@@ -1138,27 +1241,65 @@
     }
 
     async function sendMessage() {
-      if (!currentTicket) return alert('Selecione um ticket');
+      if (!currentTicket) {
+        alert('Selecione um ticket primeiro');
+        return;
+      }
+
       const input = document.getElementById('messageInput');
-      const text = input.value.trim();
-      if (!text) return;
+      const messageText = input.value.trim();
+      const sendBtn = document.getElementById('sendBtn');
+
+      if (!messageText) return;
+
+      sendBtn.classList.add('loading');
+      sendBtn.disabled = true;
       input.disabled = true;
+
+      const formData = new FormData();
+      formData.append('body', messageText);
+      formData.append('fromMe', 'true');
+      formData.append('type', 'chat');
+
       try {
-        const formData = new FormData();
-        formData.append('body', text);
-        formData.append('fromMe', 'true');
-        await fetch(`${URL_BASE}/api/v1/messages/${currentTicket.id}`, { method: 'POST', body: formData });
+        const response = await fetch(`${URL_BASE}/api/v1/messages/${currentTicket.id}`, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const tempMessage = {
+          id: 'temp_' + Date.now(),
+          body: messageText,
+          fromMe: true,
+          createdAt: new Date().toISOString(),
+          ack: 0,
+          mediaType: 'text',
+          isDeleted: false,
+          isForwarded: false
+        };
+
+        appendMessageOptimistic(tempMessage);
+
         input.value = '';
+        input.style.height = 'auto';
+
+        await new Promise(resolve => setTimeout(resolve, 500));
         await loadMessages(currentTicket.id);
+
       } catch (error) {
-        console.error('Erro:', error);
-        alert('Erro ao enviar mensagem');
+        console.error('Error sending message:', error);
+        alert(`Erro ao enviar mensagem: ${error.message}`);
       } finally {
+        sendBtn.classList.remove('loading');
+        sendBtn.disabled = false;
         input.disabled = false;
         input.focus();
       }
     }
-
     // === FUNÇÕES DE QR CODE ===
     function generateQRCode(qrString) {
       const container = document.getElementById('qrcodeImage');
@@ -1392,7 +1533,231 @@
         loadChannels();
       } catch (error) { showNotification('Erro ao criar canal', 'error'); }
     }
+    // === FUNÇÕES DE ENVIO DE ARQUIVOS ===
+    let selectedFiles = [];
 
+    async function handleFileSelect(event) {
+      const files = Array.from(event.target.files);
+      const attachBtn = document.getElementById('attachBtn');
+
+      attachBtn.classList.add('loading');
+      attachBtn.disabled = true;
+
+      for (const file of files) {
+        if (file.size > 25 * 1024 * 1024) {
+          alert(`Arquivo ${file.name} é muito grande. Máximo 25MB`);
+          continue;
+        }
+
+        selectedFiles.push({
+          file: file,
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
+          caption: ''
+        });
+      }
+
+      const messageInput = document.getElementById('messageInput');
+      messageInput.value = '';
+
+      await new Promise(resolve => setTimeout(resolve, 300));
+      showFilePreview();
+      event.target.value = '';
+
+      attachBtn.classList.remove('loading');
+      attachBtn.disabled = false;
+    }
+
+    function showFilePreview() {
+      const existingPreview = document.querySelector('.file-preview');
+      if (existingPreview) existingPreview.remove();
+
+      if (selectedFiles.length === 0) {
+        enableMessageInput(true);
+        return;
+      }
+
+      enableMessageInput(false);
+
+      const previewDiv = document.createElement('div');
+      previewDiv.className = 'file-preview';
+
+      selectedFiles.forEach((file, index) => {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'file-preview-item';
+
+        if (file.type.startsWith('image/')) {
+          fileItem.innerHTML = `
+        <img src="${file.preview}" alt="${file.name}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
+        <div style="flex: 1;">
+          <div style="font-size: 12px; font-weight: 500;">${file.name.substring(0, 30)}</div>
+          <div style="font-size: 10px; color: #667781;">${(file.size / 1024).toFixed(1)} KB</div>
+          <input type="text" class="file-caption" placeholder="Adicionar legenda..." data-index="${index}" style="width: 100%; margin-top: 5px; padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px;">
+        </div>
+        <button class="file-preview-remove" onclick="removeFile(${index})">✕</button>
+      `;
+        } else {
+          const icon = file.type.includes('pdf') ? '📄' : file.type.includes('video') ? '🎥' : file.type.includes('audio') ? '🎵' : '📎';
+          fileItem.innerHTML = `
+        <div style="font-size: 30px;">${icon}</div>
+        <div style="flex: 1;">
+          <div style="font-size: 12px; font-weight: 500;">${file.name.substring(0, 30)}</div>
+          <div style="font-size: 10px; color: #667781;">${(file.size / 1024).toFixed(1)} KB</div>
+          <input type="text" class="file-caption" placeholder="Adicionar legenda..." data-index="${index}" style="width: 100%; margin-top: 5px; padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px;">
+        </div>
+        <button class="file-preview-remove" onclick="removeFile(${index})">✕</button>
+      `;
+        }
+
+        previewDiv.appendChild(fileItem);
+      });
+
+      const sendButton = document.createElement('button');
+      sendButton.className = 'file-preview-send';
+      sendButton.textContent = `Enviar ${selectedFiles.length} arquivo(s)`;
+      sendButton.onclick = () => sendFiles();
+      previewDiv.appendChild(sendButton);
+
+      document.body.appendChild(previewDiv);
+
+      document.querySelectorAll('.file-caption').forEach(input => {
+        input.addEventListener('change', (e) => {
+          const index = parseInt(e.target.dataset.index);
+          if (selectedFiles[index]) {
+            selectedFiles[index].caption = e.target.value;
+          }
+        });
+      });
+    }
+
+    function removeFile(index) {
+      const file = selectedFiles[index];
+      if (file.preview) URL.revokeObjectURL(file.preview);
+      selectedFiles.splice(index, 1);
+      showFilePreview();
+      if (selectedFiles.length === 0) {
+        enableMessageInput(true);
+      }
+    }
+
+    function enableMessageInput(enable) {
+      const messageInput = document.getElementById('messageInput');
+      const sendBtn = document.getElementById('sendBtn');
+
+      if (enable) {
+        messageInput.disabled = false;
+        sendBtn.disabled = false;
+        messageInput.placeholder = "Digite uma mensagem...";
+      } else {
+        messageInput.disabled = true;
+        sendBtn.disabled = true;
+        messageInput.placeholder = "Envie ou remova os arquivos do preview para digitar";
+      }
+    }
+
+    async function sendFiles() {
+      if (!currentTicket) {
+        alert('Selecione um ticket primeiro');
+        return;
+      }
+
+      if (selectedFiles.length === 0) return;
+
+      const sendBtn = document.querySelector('.file-preview-send');
+      const originalText = sendBtn.textContent;
+
+      sendBtn.classList.add('loading');
+      sendBtn.textContent = '';
+      sendBtn.disabled = true;
+
+      const mainSendBtn = document.getElementById('sendBtn');
+      const attachBtn = document.getElementById('attachBtn');
+      mainSendBtn.disabled = true;
+      attachBtn.disabled = true;
+
+      try {
+        for (const fileData of selectedFiles) {
+          const formData = new FormData();
+          formData.append('file', fileData.file);
+          formData.append('fromMe', 'true');
+
+          let caption = fileData.caption || fileData.name;
+          if (caption) {
+            formData.append('body', caption);
+          }
+
+          const response = await fetch(`${URL_BASE}/api/v1/messages/${currentTicket.id}`, {
+            method: 'POST',
+            body: formData
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+
+          const tempMessage = {
+            id: 'temp_' + Date.now() + '_' + Math.random(),
+            body: caption || fileData.name,
+            fromMe: true,
+            createdAt: new Date().toISOString(),
+            ack: 0,
+            mediaType: fileData.file.type.startsWith('image/') ? 'image' :
+              fileData.file.type.startsWith('video/') ? 'video' :
+                fileData.file.type.startsWith('audio/') ? 'audio' : 'document',
+            mediaUrl: fileData.preview,
+            isDeleted: false
+          };
+
+          appendMessageOptimistic(tempMessage);
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+
+        selectedFiles.forEach(file => {
+          if (file.preview) URL.revokeObjectURL(file.preview);
+        });
+        selectedFiles = [];
+
+        const messageInput = document.getElementById('messageInput');
+        messageInput.value = '';
+        messageInput.style.height = 'auto';
+
+        showFilePreview();
+        await loadMessages(currentTicket.id);
+
+      } catch (error) {
+        console.error('Error sending files:', error);
+        alert(`Erro ao enviar arquivo(s): ${error.message}`);
+      } finally {
+        sendBtn.classList.remove('loading');
+        sendBtn.textContent = originalText;
+        sendBtn.disabled = false;
+        mainSendBtn.disabled = false;
+        attachBtn.disabled = false;
+        enableMessageInput(true);
+        messageInput.focus();
+      }
+    }
+
+    function appendMessageOptimistic(message) {
+      const messagesArea = document.getElementById('messages-area');
+      const messageHTML = `
+    <div class="message-wrapper sent" data-temp="${message.id}">
+      <div class="message-bubble" style="opacity: 0.7;">
+        <div class="message-body">
+          <div>${escapeHtml(message.body)}</div>
+          ${message.mediaUrl ? `<div style="margin-top: 5px;"><img src="${message.mediaUrl}" style="max-width: 150px; border-radius: 4px;"></div>` : ''}
+        </div>
+        <div class="message-footer">
+          <span>⏳ Enviando...</span>
+        </div>
+      </div>
+    </div>
+  `;
+      messagesArea.insertAdjacentHTML('beforeend', messageHTML);
+      messagesArea.scrollTop = messagesArea.scrollHeight;
+    }
     // Inicialização
     initSocket();
     loadTickets();
