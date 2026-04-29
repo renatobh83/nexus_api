@@ -27,9 +27,11 @@ export const initWppWeb = async (
 ): Promise<Session> => {
   try {
     // let wbot: Session;
+
     const wbotRef: { current?: Session } = {};
     const options = {
       logQR: true,
+      phoneNumber: channel.pairingCodeEnabled ? channel.wppUser! : "",
       headless: true,
       puppeteerOptions: {
         userDataDir: "./userDataDir/" + channel.name,

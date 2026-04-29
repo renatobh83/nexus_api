@@ -1,5 +1,6 @@
 import { Channel, Prisma } from "@prisma/client";
 import { ChannelsRepository } from "./channel.repository.js";
+import { waitForSocket } from "../../lib/socket.js";
 
 export class ChannelService {
   private channelsRepository: ChannelsRepository;
@@ -19,6 +20,12 @@ export class ChannelService {
   }
   async update(id: number, data: Prisma.ChannelUpdateInput): Promise<Channel> {
     try {
+      const io = await waitForSocket();
+      io.emit(`channel-update`, {
+        id,
+        ...data,
+      });
+      console.log("Update Emit");
       return await this.channelsRepository.udpateChannel(id, data);
     } catch (error) {
       throw error;

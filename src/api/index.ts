@@ -121,17 +121,8 @@ export async function start() {
     app.server.keepAliveTimeout = 5 * 60 * 1000;
 
     const channelManager = new ChannelManager();
-    // const ticket = new TicketService()
-    // const t = await ticket.findTicketId({
-    //   contato: "553798385008@c.us",
-    //   status: {
-    //     notIn: ["closed"]
-    //   }
-    // })
-    // // console.log(t)
 
-    // await channelManager.startSession(1);
-    // await channelManager.startAllReadySessions();
+    await channelManager.startAllReadySessions();
   } catch (err: any) {
     if (app) {
       app.log.error(err, "❌ Falha ao iniciar o servidor.");
