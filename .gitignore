@@ -4,4 +4,4 @@ pnpm-lock.*
 /src/generated/prisma
 userDataDir
 prisma/migrations
-public/
+# public/
