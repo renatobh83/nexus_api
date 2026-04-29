@@ -1443,6 +1443,22 @@
         }
 
       });
+      // Evento: ticket atualizado (SUBSTITUA O EXISTENTE)
+      socket.on('ticket-updated', async (data) => {
+        console.log('🔄 Ticket atualizado:', data);
+
+        // NOTIFICAÇÃO: Ticket mudou para status pendente
+        if (data.status === 'pending' && data.previousStatus !== 'pending') {
+          const ticketName = data.owner || data.name || `Ticket ${data.id}`;
+          showWindowsNotification(
+            `🆕 Novo ticket pendente`,
+            `${ticketName} aguarda atendimento`,
+            `ticket-${data.id}-pending`
+          );
+        }
+
+        await loadTickets();
+      });
       socket.on('channel-update', (data) => {
         console.log('Channel update:', data);
         if (currentChannelId && currentChannelId === (data.channelId || data.id)) {
@@ -1455,22 +1471,7 @@
         }
       });
     }
-    // Evento: ticket atualizado (SUBSTITUA O EXISTENTE)
-    socket.on('ticket-updated', async (data) => {
-      console.log('🔄 Ticket atualizado:', data);
 
-      // NOTIFICAÇÃO: Ticket mudou para status pendente
-      if (data.status === 'pending' && data.previousStatus !== 'pending') {
-        const ticketName = data.owner || data.name || `Ticket ${data.id}`;
-        showWindowsNotification(
-          `🆕 Novo ticket pendente`,
-          `${ticketName} aguarda atendimento`,
-          `ticket-${data.id}-pending`
-        );
-      }
-
-      await loadTickets();
-    });
     // === UTILITÁRIOS ===
     function escapeHtml(text) { return text ? String(text).replace(/[&<>]/g, function (m) { return m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'; }) : ''; }
     function formatTime(date) { return date ? new Date(date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''; }
