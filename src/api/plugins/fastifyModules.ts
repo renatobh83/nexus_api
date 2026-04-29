@@ -47,16 +47,11 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
 
   await fastify.register(cors, {
     origin: (origin, cb) => {
-      console.log("📍 Origem recebida:", origin);
-      console.log("📋 Allowed origins:", allowedOrigins);
-
+  
       // Importante: em desenvolvimento, origens null/undefined devem ser permitidas
       if (!origin || allowedOrigins.includes(origin)) {
-        console.log("✅ CORS permitido para:", origin || "null/undefined");
         return cb(null, true);
       }
-
-      console.log("❌ CORS bloqueado para:", origin);
       return cb(new Error(`Not allowed by CORS: ${origin}`), false);
     },
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
@@ -99,20 +94,6 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
   await fastify.register(multipart, { limits: { fileSize: 10 * 1024 * 1024 } });
 
   // --- 6. Proteção contra Poluição de Parâmetros HTTP (HPP) ---
-  fastify.addHook(
-    "preValidation",
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      if (request.query) {
-        for (const key in request.query as Record<string, unknown>) {
-          if (Array.isArray((request.query as Record<string, unknown>)[key])) {
-            return reply.code(400).send({
-              error: "Detecção de Poluição de Parâmetro HTTP (HPP).",
-            });
-          }
-        }
-      }
-    },
-  );
 
   // --- 7. Sanitização de Entradas contra XSS ---
   const sanitize = (value: unknown): unknown => {
@@ -130,11 +111,21 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
     return value;
   };
 
-  fastify.addHook("preValidation", async (request: FastifyRequest) => {
-    if (request.body) request.body = sanitize(request.body);
-    if (request.query) request.query = sanitize(request.query);
-    if (request.params) request.params = sanitize(request.params);
-  });
+  fastify.addHook("preValidation", async (request: FastifyRequest, reply: FastifyReply) => {
+  // HPP
+  if (request.query) {
+    for (const key in request.query as Record<string, unknown>) {
+      if (Array.isArray((request.query as Record<string, unknown>)[key])) {
+        return reply.code(400).send({ error: "HPP detectado." });
+      }
+    }
+  }
+
+  // XSS
+  if (request.body)   request.body   = sanitize(request.body);
+  if (request.query)  request.query  = sanitize(request.query);
+  if (request.params) request.params = sanitize(request.params);
+});
 
   // --- 8. Hook para log de respostas (debug) ---
   fastify.addHook(
