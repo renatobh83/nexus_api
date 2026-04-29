@@ -45,7 +45,7 @@ async function buildServer(): Promise<FastifyInstance> {
     return { message: "Bem-vindo ao Nexus API!" };
   });
 
-  server.register(async (instance) => {
+ await server.register(async (instance) => {
     try {
       instance.log.info("🔌 Tentando conectar ao banco de dados...");
       await prisma.$connect();
@@ -59,7 +59,7 @@ async function buildServer(): Promise<FastifyInstance> {
 
   server.setErrorHandler(
     (error: FastifyError, request: FastifyRequest, reply: FastifyReply) => {
-      console.error("ERRO REAL DETECTADO:", error);
+      
       request.log.error(error);
 
       if (error.code === "FST_CORS_ERROR") {
@@ -95,14 +95,13 @@ async function buildServer(): Promise<FastifyInstance> {
       }
     });
   });
-  server.addHook("onReady", async () => {
-    // Inicializa Socket apenas quando o servidor estiver pronto
-    if (!io) {
-      io = initSocket(server.server);
-      server.decorate("io", io);
-      console.log("✅ Socket.IO inicializado com sucesso!");
-    }
-  });
+  server.decorate("io", null); // declara antes
+
+server.addHook("onReady", async () => {
+  if (!server.io) {
+    server.io = initSocket(server.server);
+  }
+});
   return server;
 }
 
@@ -116,13 +115,13 @@ export async function start() {
 
   fastifyApp = app;
   try {
-    await app.listen({ port: 3000, host: "0.0.0.0" });
-    app.log.info("Servidor rodando em http://localhost:3000");
     app.server.keepAliveTimeout = 5 * 60 * 1000;
+    await app.listen({ port: 3000, host: "0.0.0.0" });
 
-    const channelManager = new ChannelManager();
-
-    await channelManager.startAllReadySessions();
+    setImmediate(() => {
+  const channelManager = new ChannelManager();
+  channelManager.startAllReadySessions().catch(app.log.error);
+});
   } catch (err: any) {
     if (app) {
       app.log.error(err, "❌ Falha ao iniciar o servidor.");
