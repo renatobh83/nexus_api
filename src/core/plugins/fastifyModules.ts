@@ -11,6 +11,7 @@ import xss from "xss";
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 
 const isDevelopment = process.env.NODE_ENV !== "production";
+const __dirname = path.resolve()
 
 const fastifyModule = fp(async (fastify: FastifyInstance) => {
   fastify.log.info(
@@ -65,10 +66,9 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
       "Content-Type",
       "Authorization",
       "x-csrf-token",
-      "api-key",
       "X-API-Key",
     ],
-    exposedHeaders: ["api-key", "X-API-Key"],
+    exposedHeaders: ["X-API-Key"],
     credentials: true,
     preflightContinue: false,
     optionsSuccessStatus: 204,
@@ -76,8 +76,8 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
 
   // --- 3. Servidor de Arquivos Estáticos ---
   await fastify.register(fastifyStatic, {
-    root: path.join(__dirname, "..", "..", "..", "public"),
-    prefix: "/public/",
+   root: path.join(__dirname, 'public', "app"),
+    prefix: '/public/app/',
   });
 
   // --- 4. Limitação de Requisições ---

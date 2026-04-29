@@ -11,6 +11,11 @@ import { TicketService } from "../modules/tickets/tickets.services";
 import routes from "./routes";
 import fastifyModule from "./plugins/fastifyModules";
 import { initSocket } from "../lib/socket";
+
+
+
+
+
 let io: SocketIOServer | null = null;
 // 🔧 Extensão do tipo para o Fastify reconhecer a propriedade 'io'
 declare module "fastify" {
@@ -29,6 +34,9 @@ declare module "fastify" {
 }
 let fastifyApp: FastifyInstance;
 
+
+
+
 /**
  * Funcao responsavel para construir o servidor
  *
@@ -39,6 +47,8 @@ async function buildServer(): Promise<FastifyInstance> {
     logger: true, // habilita logs bonitos
     // bodyLimit: 10485760, // 10MB
   });
+
+ 
 
   server.get("/", async () => {
     return { message: "Bem-vindo ao Nexus API!" };
