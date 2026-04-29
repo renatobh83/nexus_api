@@ -60,7 +60,7 @@ export async function messagesController(fastify: FastifyInstance) {
           ticket,
         };
 
-        service.createMessageSystem(messageData);
+        await service.createMessageSystem(messageData);
         reply.status(200).send("Messagem enviada");
       } catch (error) {
         reply

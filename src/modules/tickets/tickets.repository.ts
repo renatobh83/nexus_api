@@ -28,6 +28,7 @@ export class TicketsRepository {
         channel: {
           select: {
             name: true,
+            type: true,
           },
         },
       },

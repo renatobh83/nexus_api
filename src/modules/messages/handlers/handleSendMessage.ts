@@ -8,6 +8,7 @@ type TicketWithChannel = Prisma.TicketGetPayload<{
     channel: {
       select: {
         name: true;
+        type: true;
       };
     };
   };
@@ -20,7 +21,7 @@ export const SendMessageSystemProxy = async (
 ) => {
   const hasMedia = Boolean(media) ? await transformFile(media) : false;
 
-  const channel = ticket.channel?.name;
+  const channel = ticket.channel?.type;
   switch (channel) {
     case "whatsapp":
       SendMessageWppWeb(body, ticket, hasMedia);
