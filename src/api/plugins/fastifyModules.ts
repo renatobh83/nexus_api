@@ -128,13 +128,6 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
 });
 
   // --- 8. Hook para log de respostas (debug) ---
-  fastify.addHook(
-    "onResponse",
-    (request: FastifyRequest, reply: FastifyReply, done) => {
-      console.log(`📤 ${request.method} ${request.url} -> ${reply.statusCode}`);
-      done();
-    },
-  );
 
   fastify.log.info("✅ Módulo de segurança carregado com sucesso!");
 });
