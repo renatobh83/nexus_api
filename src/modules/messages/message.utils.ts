@@ -1,5 +1,4 @@
-import { eventBus } from "../../utils/eventBus";
-import { pupa } from "../../utils/pupa";
+import { pupa } from "../../utils/pupa.js";
 
 export const buildMessageBody = (template: string, ticket: any): string => {
   return pupa(template || "", {

@@ -1,30 +1,21 @@
 import "dotenv/config";
-import { start } from "./core";
-
+import { start } from "./api/index.js";
 
 (BigInt.prototype as any).toJSON = function () {
   return this.toString();
 };
-
-if (require.main === module) {
-  start().catch((err) => {
+start().catch((err) => {
   console.error("❌ Erro fatal ao iniciar o servidor:", err);
   process.exit(1);
 });
-
-}
 
 // import fastify from 'fastify'
 // import fastifySocketIO from "fastify-socket.io";
 // import { Server as SocketIOServer } from 'socket.io'
 
-
-
 // const server = fastify({
 //   logger: true // habilita logs bonitos
 // })
-
-
 
 // // Rota de teste
 // server.get('/', async (request, reply) => {
@@ -66,7 +57,7 @@ if (require.main === module) {
 //     //   })
 //     })
 //     await server.listen({ port: 3333, host: '0.0.0.0' })
-    
+
 //     console.log('Servidor rodando em http://localhost:3333')
 //   } catch (err) {
 //     server.log.error(err)

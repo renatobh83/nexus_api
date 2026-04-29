@@ -1,5 +1,5 @@
-import { Prisma, Channel } from "../../generated/prisma/client";
-import { ChannelsRepository } from "./channel.repository";
+import { Channel, Prisma } from "@prisma/client";
+import { ChannelsRepository } from "./channel.repository.js";
 
 export class ChannelService {
   private channelsRepository: ChannelsRepository;

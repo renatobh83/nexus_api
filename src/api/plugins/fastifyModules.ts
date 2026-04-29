@@ -9,9 +9,7 @@ import fastifyStatic from "@fastify/static";
 import path from "node:path";
 import xss from "xss";
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
-
-const isDevelopment = process.env.NODE_ENV !== "production";
-const __dirname = path.resolve()
+import { PUBLIC_DIR } from "../../config/env.js";
 
 const fastifyModule = fp(async (fastify: FastifyInstance) => {
   fastify.log.info(
@@ -76,8 +74,8 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
 
   // --- 3. Servidor de Arquivos Estáticos ---
   await fastify.register(fastifyStatic, {
-   root: path.join(__dirname, 'public', "app"),
-    prefix: '/public/app/',
+    root: path.join(PUBLIC_DIR),
+    prefix: "/public",
   });
 
   // --- 4. Limitação de Requisições ---

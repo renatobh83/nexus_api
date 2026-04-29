@@ -1,22 +1,38 @@
 import { Contact } from "wbotconnect";
-import { Prisma, Ticket } from "../../../generated/prisma/client";
-import { TicketService } from "../tickets.services";
+
+import { TicketService } from "../tickets.services.js";
+import { Prisma, Ticket } from "@prisma/client";
+
+interface CreateTicketInput {
+  contato: string;
+  contactOwner: Contact;
+  channelId: number;
+  ticketGroup: boolean;
+  msg: string;
+  unreadMessages: number;
+  isInteraction?: boolean;
+  socketId?: string;
+  chatClient?: boolean;
+}
 
 export const createTicket = async (
-  contato: string,
-  contactOwer: Contact,
-  channelId: number,
-  ticketGroup: boolean,
-  msg: string,
-  unreadMessages: number,
-  isInteraction?: boolean,
-  socketId?: string,
-  chatClient?: boolean,
-): Promise<{ ticket: any; isNew: boolean }> => {
+  input: CreateTicketInput,
+): Promise<{ ticket: Ticket; isNew: boolean }> => {
   let ticket: Ticket | null;
+  const {
+    channelId,
+    contactOwner,
+    contato,
+    msg,
+    ticketGroup,
+    unreadMessages,
+    chatClient,
+    isInteraction,
+    socketId,
+  } = input;
 
   const payload: Prisma.TicketCreateInput = {
-    ower: contactOwer.pushname || contactOwer.name || contactOwer.shortName,
+    owner: contactOwner.pushname || contactOwner.name || contactOwner.shortName,
     contato,
     unreadMessages,
     lastMessage: msg,

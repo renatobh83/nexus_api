@@ -1,7 +1,7 @@
-import { Ticket } from "../../generated/prisma/client";
-import { getWbot } from "../providers/wpp-web/Wpp-web";
-import { TicketService } from "../tickets/tickets.services";
+import { Ticket } from "@prisma/client";
 
+import { TicketService } from "../../../modules/tickets/tickets.services.js";
+import { getWbot } from "./Wpp-web.js";
 type MediaFile = {
   filename: string;
   mimetype: string;
@@ -32,6 +32,7 @@ export const SendMessageWppWeb = async (
         ticket.contato,
         fileData,
         hasMedia.filename,
+        body,
       );
     } else {
       await wbot.sendFile(ticket.contato, fileData, hasMedia.filename);

@@ -1,6 +1,7 @@
-import { Prisma, Ticket } from "../../generated/prisma/client";
-import { transformFile } from "../../utils/messsageMedia";
-import { SendMessageWppWeb } from "./SendMessageWppWeb";
+import { Prisma } from "@prisma/client";
+import { transformFile } from "../../../utils/messsageMedia.js";
+import { SendMessageWppWeb } from "../../../providers/whatsapp-web/wpp-web/SendMessageWppWeb.js";
+
 type TicketWithChannel = Prisma.TicketGetPayload<{
   include: {
     messages: true;

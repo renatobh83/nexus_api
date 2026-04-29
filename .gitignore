@@ -5,3 +5,4 @@ pnpm-lock.*
 userDataDir
 prisma/migrations
 # public/
+dist/

@@ -1,8 +1,8 @@
 import { FastifyInstance } from "fastify";
-import { channelController } from "../../modules/channels/channel.controller";
-import { verifyApiKey } from "../../middlewares/auth";
-import { messagesController } from "../../modules/messages/messages.controller";
-import { ticketController } from "../../modules/tickets/tickets.controller";
+import { channelController } from "../../modules/channels/channel.controller.js";
+import { verifyApiKey } from "../middlewares/auth.js";
+import { messagesController } from "../../modules/messages/messages.controller.js";
+import { ticketController } from "../../modules/tickets/tickets.controller.js";
 
 /**
  * Plugin principal que agrupa todas as rotas da API sob um prefixo comum.

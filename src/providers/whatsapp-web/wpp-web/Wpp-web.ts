@@ -2,9 +2,9 @@ import path from "node:path";
 import fs, { promises } from "node:fs";
 import { create, defaultOptions, Whatsapp } from "wbotconnect";
 
-import { ChannelService } from "../../channels/channel.services";
-import { wbotWebListener } from "../../wppWeb/wppWebListener";
-import { Prisma, Channel as WppClient } from "../../../generated/prisma/client";
+import { Prisma, Channel } from "@prisma/client";
+import { ChannelService } from "../../../modules/channels/channel.services.js";
+import { wbotWebListener } from "./wppWebListener.js";
 
 function extractQrCode(url: string): string | null {
   if (!url) return null;
@@ -22,7 +22,7 @@ const sessions: Session[] = [];
  * Inicializa sessão
  */
 export const initWppWeb = async (
-  channel: WppClient,
+  channel: Channel,
   channelService: ChannelService,
 ): Promise<Session> => {
   try {
@@ -115,7 +115,7 @@ export const initWppWeb = async (
 const waitUntilAuthenticated = async (
   client: Session,
   service: ChannelService,
-  channel: WppClient,
+  channel: Channel,
 ) => {
   let attempts = 0;
 
@@ -148,7 +148,7 @@ const waitUntilAuthenticated = async (
 const start = async (
   client: Session,
   service: ChannelService,
-  channel: WppClient,
+  channel: Channel,
 ) => {
   try {
     if (!client) {
@@ -251,7 +251,7 @@ export const getWbot = (channelId: number): Session => {
 const triggerStart = async (
   channelId: number,
   service: ChannelService,
-  channel: WppClient,
+  channel: Channel,
 ) => {
   let attempts = 0;
 

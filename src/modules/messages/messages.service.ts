@@ -1,8 +1,8 @@
-import { Prisma } from "../../generated/prisma/client";
-import { waitForSocket } from "../../lib/socket";
-import { SendMessageSystemProxy } from "../wppWeb/handleSendMessageSystemProxy";
-import { buildMessageBody } from "./message.utils";
-import { MessageRepository } from "./messages.repository";
+import { Prisma } from "@prisma/client";
+import { waitForSocket } from "../../lib/socket.js";
+import { buildMessageBody } from "./message.utils.js";
+import { MessageRepository } from "./messages.repository.js";
+import { SendMessageSystemProxy } from "./handlers/handleSendMessage.js";
 
 export class MessageService {
   private messageRepository: MessageRepository;

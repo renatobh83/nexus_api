@@ -1,6 +1,6 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
+
 }
 
 datasource db {
@@ -55,7 +55,7 @@ model Ticket {
   lastMessageAt        BigInt?
   startedAttendanceAt  BigInt?
   chamadoId            BigInt?
-  ower                 String?
+  owner                 String?
   lastAbsenceMessageAt DateTime?
   chatClient           Boolean?
   socketId             String?
@@ -77,30 +77,72 @@ model Message {
   id             String                 @id @default(uuid()) @db.Uuid
   messageId      String                 @unique
   ack            Int                    @default(1)
-  status         String
-  wabaMediaId    String?
   read           Boolean                @default(false)
   fromMe         Boolean                @default(false)
-  body           String
+  body           String?
   mediaUrl       String?
   mediaType      String?
   reaction       String?
+  from           String?
+  to             String
+  hasReaction    Boolean                @default(false)
   reactionFromMe String?
-  timestamp      BigInt?
+  isForwarded    Boolean                @default(false)
+  isGroupMsg     Boolean                @default(false)
+  isNotification  Boolean               @default(false)
+  timestamp      BigInt
   scheduleDate   DateTime?
   sendType       enum_Messages_sendType @default(chat)
+  type           enum_MessageType @default(chat)
   idFront        String?
   isDeleted      Boolean                @default(false)
-  isForwarded    Boolean                @default(false)
   createdAt      DateTime               @default(now())
   updatedAt      DateTime               @updatedAt
-  ticketid       Int?
+  ticketid       Int
   contato        String
   ticket         Ticket?                @relation(fields: [ticketid], references: [id])
-
+  chatId         String?
+  content        String
+  caption        String?
+  mimetype       String?
   @@unique([messageId, ticketid])
   @@map("Messages")
 }
+enum enum_MessageType {
+  notification
+  notification_template
+  group_notification
+  gp2
+  broadcast_notification
+  e2e_notification
+  call_log
+  protocol
+  chat
+  location
+  payment
+  vcard
+  ciphertext
+  multi_vcard
+  revoked
+  oversized
+  groups_v4_invite
+  hsm
+  template_button_reply
+  image
+  video
+  audio
+  ptt
+  sticker
+  document
+  product
+  order
+  list
+  list_response
+  buttons_response
+  poll_creation
+  unknown
+}
+
 
 enum enum_Messages_sendType {
   campaign

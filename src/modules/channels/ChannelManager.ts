@@ -1,5 +1,5 @@
-import { ChannelService } from "./channel.services";
-import { initWppWeb } from "../providers/wpp-web/Wpp-web";
+import { initWppWeb } from "../../providers/whatsapp-web/wpp-web/Wpp-web.js";
+import { ChannelService } from "./channel.services.js";
 
 export class ChannelManager {
   private channelService: ChannelService;

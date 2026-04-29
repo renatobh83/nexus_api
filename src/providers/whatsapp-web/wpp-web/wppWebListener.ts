@@ -1,7 +1,8 @@
 import { Message } from "wbotconnect";
 
-import { handleMessage } from "./handleMessagesWppWeb";
-import { Session } from "../providers/wpp-web/Wpp-web";
+import { Session } from "./Wpp-web.js";
+import { handleMessage } from "../../../modules/messages/handlers/handleMessage.js";
+import { toInternalMessage } from "./mappers/toInternalMessage.js";
 
 export const wbotWebListener = async (wbot: Session): Promise<void> => {
   /**
@@ -13,10 +14,11 @@ export const wbotWebListener = async (wbot: Session): Promise<void> => {
 
   wbot.onAnyMessage(async (message: Message) => {
     if (message.chatId === "status@broadcast") return;
-    if (message.type === "list" || message.type === 'unknown') return;
+    if (message.type === "list" || message.type === "unknown") return;
     const messageContent = message.body || message.caption || "";
 
-    await handleMessage(message, wbot);
+    const internal = toInternalMessage(message);
+    await handleMessage(internal, wbot);
   });
 
   // /**

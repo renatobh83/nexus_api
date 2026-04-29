@@ -1,6 +1,5 @@
-import { Message, Prisma } from "../../generated/prisma/client";
-import { prisma } from "../../lib/prisma";
-import { waitForSocket } from "../../lib/socket";
+import { Message, Prisma } from "@prisma/client";
+import { prisma } from "../../lib/prisma.js";
 
 export interface ResponseMessages {
   messages: Message[];

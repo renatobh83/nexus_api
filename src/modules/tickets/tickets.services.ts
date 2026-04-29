@@ -1,6 +1,6 @@
-import { Prisma } from "../../generated/prisma/client";
-import { waitForSocket } from "../../lib/socket";
-import { TicketsRepository } from "./tickets.repository";
+import { Prisma, Ticket } from "@prisma/client";
+import { TicketsRepository } from "./tickets.repository.js";
+import { waitForSocket } from "../../lib/socket.js";
 
 export class TicketService {
   private ticketRepository: TicketsRepository;
@@ -19,12 +19,15 @@ export class TicketService {
   }
 
   async createTicket(data: Prisma.TicketCreateInput) {
-    const ticket = await this.ticketRepository.create(data);
+    const ticket = (await this.ticketRepository.create(data)) as Ticket;
 
     return ticket;
   }
 
   async updateTicket(id: number, data: Prisma.TicketUpdateInput) {
-    return await this.ticketRepository.updateTicket(id, data);
+    const ticket = await this.ticketRepository.updateTicket(id, data);
+    const io = await waitForSocket();
+    io.emit("ticket-updated", ticket);
+    return ticket;
   }
 }
