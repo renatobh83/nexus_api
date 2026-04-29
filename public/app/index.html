@@ -1432,6 +1432,11 @@
       socket.on('new-message', async (message) => {
         console.log('Nova mensagem:', message);
         await loadTickets();
+        const ticketId = message.ticketid;
+        const ticket = allTickets.find(t => t.id === ticketId);
+        const ticketName = ticket?.owner || ticket?.name || `Ticket ${ticketId}`;
+
+
         if (currentTicket?.id === message.ticketid) await loadMessages(currentTicket.id);
         if (!message.fromMe && message.fromMe !== true && message.fromMe !== 1 && message.fromMe !== 'true') {
           const messagePreview = message.body?.substring(0, 60) || "Nova mensagem";
