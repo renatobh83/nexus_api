@@ -1429,10 +1429,10 @@
         document.getElementById('connection-status').textContent = '🔴 Desconectado';
         document.getElementById('connection-status').className = 'connection-status disconnected';
       });
-      socket.on('new-message', async (msg) => {
-        console.log('Nova mensagem:', msg);
+      socket.on('new-message', async (message) => {
+        console.log('Nova mensagem:', message);
         await loadTickets();
-        if (currentTicket?.id === msg.ticketid) await loadMessages(currentTicket.id);
+        if (currentTicket?.id === message.ticketid) await loadMessages(currentTicket.id);
         if (!message.fromMe && message.fromMe !== true && message.fromMe !== 1 && message.fromMe !== 'true') {
           const messagePreview = message.body?.substring(0, 60) || "Nova mensagem";
           showWindowsNotification(
