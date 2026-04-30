@@ -1137,8 +1137,8 @@
   <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
   <script>
     // Configurações
-    // const URL_BASE = "http://localhost:3000";
-    const URL_BASE = "https://fast.panelapps.site";
+    const URL_BASE = "http://localhost:3000";
+    // const URL_BASE = "https://fast.panelapps.site";
     let socket = null;
     let currentTicket = null;
     let allTickets = [];
@@ -1251,8 +1251,8 @@
       const sendBtn = document.getElementById('sendBtn');
 
       if (!messageText) return;
-
-      sendBtn.classList.add('loading');
+      // Removido sppiner do loading ao enviar mensagem
+      // sendBtn.classList.add('loading');
       sendBtn.disabled = true;
       input.disabled = true;
 
@@ -1262,15 +1262,6 @@
       formData.append('type', 'chat');
 
       try {
-        const response = await fetch(`${URL_BASE}/api/v1/messages/${currentTicket.id}`, {
-          method: 'POST',
-          body: formData
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
         const tempMessage = {
           id: 'temp_' + Date.now(),
           body: messageText,
@@ -1284,6 +1275,17 @@
 
         appendMessageOptimistic(tempMessage);
 
+        const response = await fetch(`${URL_BASE}/api/v1/messages/${currentTicket.id}`, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+
+
         input.value = '';
         input.style.height = 'auto';
 
@@ -1294,7 +1296,9 @@
         console.error('Error sending message:', error);
         alert(`Erro ao enviar mensagem: ${error.message}`);
       } finally {
-        sendBtn.classList.remove('loading');
+        // Removido sppiner do loading ao enviar mensagem
+        // sendBtn.classList.remove('loading');
+
         sendBtn.disabled = false;
         input.disabled = false;
         input.focus();
@@ -1566,8 +1570,8 @@
     async function handleFileSelect(event) {
       const files = Array.from(event.target.files);
       const attachBtn = document.getElementById('attachBtn');
-
-      attachBtn.classList.add('loading');
+      // Removido sppiner do loading ao enviar mensagem
+      // attachBtn.classList.add('loading');
       attachBtn.disabled = true;
 
       for (const file of files) {
@@ -1592,8 +1596,8 @@
       await new Promise(resolve => setTimeout(resolve, 300));
       showFilePreview();
       event.target.value = '';
-
-      attachBtn.classList.remove('loading');
+      // Removido sppiner do loading ao enviar mensagem
+      // attachBtn.classList.remove('loading');
       attachBtn.disabled = false;
     }
 
@@ -1694,8 +1698,8 @@
 
       const sendBtn = document.querySelector('.file-preview-send');
       const originalText = sendBtn.textContent;
-
-      sendBtn.classList.add('loading');
+      // Removido sppiner do loading ao enviar mensagem
+      // sendBtn.classList.add('loading');
       sendBtn.textContent = '';
       sendBtn.disabled = true;
 
@@ -1757,7 +1761,8 @@
         console.error('Error sending files:', error);
         alert(`Erro ao enviar arquivo(s): ${error.message}`);
       } finally {
-        sendBtn.classList.remove('loading');
+        // Removido sppiner do loading ao enviar mensagem
+        // sendBtn.classList.remove('loading');
         sendBtn.textContent = originalText;
         sendBtn.disabled = false;
         mainSendBtn.disabled = false;

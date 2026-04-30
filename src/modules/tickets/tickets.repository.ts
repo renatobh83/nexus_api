@@ -13,16 +13,35 @@ export class TicketsRepository {
       },
     });
   }
+  async findTicket(where: Prisma.TicketWhereInput) {
+    return await prisma.ticket.findFirst({
+      where,
+      select: {
+        id: true,
+        status: true,
+        channel: {
+          select: {
+            name: true,
+            type: true,
+          },
+        },
+      },
+    });
+  }
   async findByField(where: Prisma.TicketWhereInput) {
     return await prisma.ticket.findFirst({
       where,
-      orderBy: {
-        createdAt: "desc", // Ordena do mais recente para o mais antigo
-      },
-      include: {
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        status: true,
+
         messages: {
-          orderBy: {
-            createdAt: "desc", // ou id: "asc"
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            body: true,
+            createdAt: true,
           },
         },
         channel: {
@@ -34,6 +53,27 @@ export class TicketsRepository {
       },
     });
   }
+  // async findByField(where: Prisma.TicketWhereInput) {
+  //   return await prisma.ticket.findFirst({
+  //     where,
+  //     orderBy: {
+  //       createdAt: "desc",
+  //     },
+  //     include: {
+  //       messages: {
+  //         orderBy: {
+  //           createdAt: "desc", // ou id: "asc"
+  //         },
+  //       },
+  //       channel: {
+  //         select: {
+  //           name: true,
+  //           type: true,
+  //         },
+  //       },
+  //     },
+  //   });
+  // }
   async updateTicket(ticketId: number, data: Prisma.TicketUpdateInput) {
     return await prisma.ticket.update({
       where: {

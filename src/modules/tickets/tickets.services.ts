@@ -13,6 +13,9 @@ export class TicketService {
     return await this.ticketRepository.findByField(where);
   }
 
+  async findTickeWhitoutMessage(where: Prisma.TicketWhereInput) {
+    return await this.ticketRepository.findTicket(where);
+  }
   async listTickets() {
     const tickets = await this.ticketRepository.findAll();
     return tickets;

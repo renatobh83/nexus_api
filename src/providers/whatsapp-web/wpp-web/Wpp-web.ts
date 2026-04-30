@@ -1,6 +1,6 @@
 import path from "node:path";
 import fs, { promises } from "node:fs";
-import { create, defaultOptions, Whatsapp } from "wbotconnect";
+import { create, CreateConfig, defaultOptions, Whatsapp } from "wbotconnect";
 
 import { Prisma, Channel } from "@prisma/client";
 import { ChannelService } from "../../../modules/channels/channel.services.js";
@@ -27,11 +27,11 @@ export const initWppWeb = async (
 ): Promise<Session> => {
   try {
     // let wbot: Session;
-
+    console.log(channel.wppUser);
     const wbotRef: { current?: Session } = {};
     const options = {
       logQR: true,
-      // phoneNumber: channel.pairingCodeEnabled ? channel.wppUser! : "",
+      phoneNumber: channel.pairingCodeEnabled ? channel.wppUser! : undefined,
       headless: true,
       puppeteerOptions: {
         userDataDir: "./userDataDir/" + channel.name,

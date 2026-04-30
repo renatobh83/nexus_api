@@ -42,12 +42,11 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
     "http://localhost:8080",
     "undefined",
     "https://fast.panelapps.site",
-    // Adicione o IP da sua VPS se for testar remotamente
+    "null",
   ];
 
   await fastify.register(cors, {
     origin: (origin, cb) => {
-  
       // Importante: em desenvolvimento, origens null/undefined devem ser permitidas
       if (!origin || allowedOrigins.includes(origin)) {
         return cb(null, true);
@@ -111,21 +110,24 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
     return value;
   };
 
-  fastify.addHook("preValidation", async (request: FastifyRequest, reply: FastifyReply) => {
-  // HPP
-  if (request.query) {
-    for (const key in request.query as Record<string, unknown>) {
-      if (Array.isArray((request.query as Record<string, unknown>)[key])) {
-        return reply.code(400).send({ error: "HPP detectado." });
+  fastify.addHook(
+    "preValidation",
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      // HPP
+      if (request.query) {
+        for (const key in request.query as Record<string, unknown>) {
+          if (Array.isArray((request.query as Record<string, unknown>)[key])) {
+            return reply.code(400).send({ error: "HPP detectado." });
+          }
+        }
       }
-    }
-  }
 
-  // XSS
-  if (request.body)   request.body   = sanitize(request.body);
-  if (request.query)  request.query  = sanitize(request.query);
-  if (request.params) request.params = sanitize(request.params);
-});
+      // XSS
+      if (request.body) request.body = sanitize(request.body);
+      if (request.query) request.query = sanitize(request.query);
+      if (request.params) request.params = sanitize(request.params);
+    },
+  );
 
   // --- 8. Hook para log de respostas (debug) ---
 

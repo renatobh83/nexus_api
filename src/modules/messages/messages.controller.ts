@@ -29,10 +29,13 @@ export async function messagesController(fastify: FastifyInstance) {
         const { ticketId } = request.params as any;
         const numberTicket = parseInt(ticketId);
 
-        const ticket = await ticketServices.findTicket({ id: numberTicket });
+        const ticket = await ticketServices.findTickeWhitoutMessage({
+          id: numberTicket,
+        });
         if (!ticket) {
           throw new Error("TICKET_NO_FOUND");
         }
+
         let filesArray: any[] = [];
         let fields: Record<string, any> = {};
 
@@ -59,8 +62,9 @@ export async function messagesController(fastify: FastifyInstance) {
           filesArray,
           ticket,
         };
-
+        console.log(messageData);
         await service.createMessageSystem(messageData);
+
         reply.status(200).send("Messagem enviada");
       } catch (error) {
         reply
