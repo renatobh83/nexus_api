@@ -2384,7 +2384,7 @@
       if (selectedChannelType === 'telegram') {
         const token = document.getElementById('botToken').value.trim();
         if (!token) return alert('Informe o token do bot');
-        channelData.token = token;
+        channelData.tokenTelegram = token;
       } else if (selectedChannelType === 'whatsapp') {
         const number = document.getElementById('whatsappNumber').value.trim();
         if (number) channelData.pairingCodeEnabled = true; channelData.wppUser = number;
