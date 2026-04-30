@@ -40,6 +40,7 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
     "http://localhost:3000",
     "http://127.0.0.1:8080",
     "http://localhost:8080",
+    "http://172.18.0.4",
     "undefined",
     "https://fast.panelapps.site",
     "null",
