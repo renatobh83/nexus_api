@@ -2,7 +2,10 @@ import { Message } from "wbotconnect";
 
 import { Session } from "./Wpp-web.js";
 import { handleMessage } from "../../../modules/messages/handlers/handleMessage.js";
-import { toInternalMessage } from "./mappers/toInternalMessage.js";
+import {
+  toInternalMessage,
+  toInternalSession,
+} from "./mappers/sessionAdapter.js";
 
 export const wbotWebListener = async (wbot: Session): Promise<void> => {
   /**
@@ -18,7 +21,8 @@ export const wbotWebListener = async (wbot: Session): Promise<void> => {
     const messageContent = message.body || message.caption || "";
 
     const internal = toInternalMessage(message);
-    await handleMessage(internal, wbot);
+    const session = toInternalSession(wbot);
+    await handleMessage(internal, session);
   });
 
   // /**

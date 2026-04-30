@@ -47,7 +47,7 @@ export interface MessageInternal {
   isNotification: boolean;
   to: string;
   caption?: string | null;
-  chatId: string | Wid;
+  chatId: string;
   from: string | null;
   mediaUrl?: string | null;
   mediaType?: string | null;

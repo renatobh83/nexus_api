@@ -4,14 +4,19 @@ import { MessageInternal } from "../messages.types.js";
 import { createTicket } from "../../tickets/Helpers/CreateTicket.js";
 import { VerifyMessage } from "./verifyMessage.js";
 import { waitForSocket } from "../../../lib/socket.js";
+import {
+  ChatInternal,
+  ContactInternal,
+  SessionInternal,
+} from "../../../providers/session.types.js";
 
 type ContactWithId = Contact & { id: { _serialized: string } };
 
 const resolveContact = async (
-  chat: Chat,
+  chat: ChatInternal,
   message: MessageInternal,
-  session: Session,
-): Promise<Contact> => {
+  session: SessionInternal,
+): Promise<ContactInternal> => {
   if (message.isGroupMsg && !message.fromMe) {
     const grupo = await session.getContact(chat.id._serialized);
     return grupo;
@@ -35,17 +40,13 @@ const formatLastMessage = (message: MessageInternal): string => {
 };
 export const handleMessage = async (
   message: MessageInternal,
-  session: Session,
+  session: SessionInternal,
 ) => {
   try {
-    const chat = message.chatId
-      ? await session.getChatById(message.chatId)
-      : ({ id: { _serialized: "0" } } as Chat);
-    const contato = (await resolveContact(
-      chat,
-      message,
-      session,
-    )) as ContactWithId;
+    const chat = await session.getChatById(message.chatId);
+
+    const contato = await resolveContact(chat, message, session);
+
     const serialized = contato.id._serialized;
     const lastMessage = formatLastMessage(message);
     const { ticket, isNew } = await createTicket({

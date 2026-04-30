@@ -19,6 +19,9 @@ export class TicketsRepository {
       select: {
         id: true,
         status: true,
+        channelId: true,
+        contato: true,
+
         channel: {
           select: {
             name: true,
@@ -29,29 +32,7 @@ export class TicketsRepository {
     });
   }
   async findByField(where: Prisma.TicketWhereInput) {
-    return await prisma.ticket.findFirst({
-      where,
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        status: true,
-
-        messages: {
-          orderBy: { createdAt: "desc" },
-          select: {
-            id: true,
-            body: true,
-            createdAt: true,
-          },
-        },
-        channel: {
-          select: {
-            name: true,
-            type: true,
-          },
-        },
-      },
-    });
+    return await prisma.ticket.findFirst({ where });
   }
   // async findByField(where: Prisma.TicketWhereInput) {
   //   return await prisma.ticket.findFirst({

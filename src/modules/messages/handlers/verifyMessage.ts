@@ -2,9 +2,8 @@ import { writeFile } from "node:fs";
 import { join } from "node:path";
 import { promisify } from "node:util";
 
-import { Contact } from "wbotconnect";
 import { MessageInternal } from "../messages.types.js";
-import { Session } from "../../../providers/whatsapp-web/wpp-web/Wpp-web.js";
+
 import {
   buildFilename,
   getSafeExtension,
@@ -12,14 +11,19 @@ import {
 import { Prisma } from "@prisma/client";
 import { PUBLIC_DIR } from "../../../config/env.js";
 import { MessageService } from "../messages.service.js";
+import {
+  ContactInternal,
+  SessionInternal,
+} from "../../../providers/session.types.js";
 
 const writeFileAsync = promisify(writeFile);
 const messageService = new MessageService();
+
 export const VerifyMessage = async (
   message: MessageInternal,
-  contato: Contact,
+  contato: ContactInternal,
   ticketId: number,
-  session: Session,
+  session: SessionInternal,
 ) => {
   const body =
     message.type === "list"
@@ -52,9 +56,8 @@ export const VerifyMessage = async (
     caption: message.caption,
     from: message.from,
     hasReaction: message.hasReaction,
-
     fromMe: message.fromMe,
-    contato: contato.formattedName,
+    contato: contato.formattedName || contato.name,
     type: message.type,
     to: message.to,
     content:

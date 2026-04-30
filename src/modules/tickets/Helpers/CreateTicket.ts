@@ -1,11 +1,10 @@
-import { Contact } from "wbotconnect";
-
 import { TicketService } from "../tickets.services.js";
 import { Prisma, Ticket } from "@prisma/client";
+import { ContactInternal } from "../../../providers/session.types.js";
 
 interface CreateTicketInput {
   contato: string;
-  contactOwner: Contact;
+  contactOwner: ContactInternal;
   channelId: number;
   ticketGroup: boolean;
   msg: string;
@@ -64,6 +63,7 @@ export const createTicket = async (
       in: ["pending", "open"],
     },
   });
+
   if (!ticket) {
     ticket = await service.createTicket(payload);
     return { ticket: ticket, isNew: true };
