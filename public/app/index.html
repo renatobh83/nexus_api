@@ -467,13 +467,23 @@
       content: "📋 ";
     }
 
-    .status-badge.open .status-badge.atendendo {
+    .status-badge.atendendo {
       background: #e3f2fd;
       color: #2196f3;
       border: 1px solid #bbdef5;
     }
 
-    .status-badge.open::before .status-badge.atendendo::before {
+    .status-badge.open {
+      background: #e3f2fd;
+      color: #2196f3;
+      border: 1px solid #bbdef5;
+    }
+
+    .status-badge.atendendo::before {
+      content: "🎧 ";
+    }
+
+    .status-badge.open::before {
       content: "🎧 ";
     }
 
@@ -525,12 +535,12 @@
       transform: scale(1.05);
     }
 
-    .action-btn.attend .action-btn.open {
+    .action-btn.attend {
       background: #e3f2fd;
       color: #2196f3;
     }
 
-    .action-btn.attend:hover .action-btn.open:hover {
+    .action-btn.attend:hover {
       background: #2196f3;
       color: white;
     }
@@ -1584,8 +1594,8 @@
   <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
   <script>
     // Configurações
-    const URL_BASE = "http://localhost:3000";
-    // const URL_BASE = "https://fast.panelapps.site";
+    // const URL_BASE = "http://localhost:3000";
+    const URL_BASE = "https://fast.panelapps.site";
     let socket = null;
     let currentTicket = null;
     let allTickets = [];
@@ -1726,6 +1736,7 @@
 
       const ticket = allTickets.find(t => t.id === ticketId);
       const messages = ticket?.messages ? [...ticket.messages].reverse() : [];
+      messageStatus.textContent = `${messages.length} ${messages.length === 1 ? 'mensagem' : 'mensagens'}`;
       if (!messages.length) {
         container.innerHTML = '<div class="loading-state">💬 Nenhuma mensagem ainda</div>';
         return;
@@ -2040,11 +2051,11 @@
         console.log('✅ Socket conectado');
         connectionAttempts = 0;
 
-        document.getElementById('connection-status').textContent = '🟢 Conectado';
+        document.getElementById('connection-status').textContent = '🟢 Socket Conectado';
         document.getElementById('connection-status').className = 'connection-status connected';
       });
       socket.on('disconnect', () => {
-        document.getElementById('connection-status').textContent = '🔴 Desconectado';
+        document.getElementById('connection-status').textContent = '🔴 Socket Desconectado';
         document.getElementById('connection-status').className = 'connection-status disconnected';
       });
       socket.on('connect_error', (error) => {
