@@ -2413,10 +2413,21 @@
       createBtn.textContent = '⏳ Criando...';
 
       try {
-        await fetch(`${URL_BASE}/api/v1/channel`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(channelData) });
-        showNotification('Canal criado!', 'success');
-        closeAddChannelModal();
-        loadChannels();
+      const response =  await fetch(`${URL_BASE}/api/v1/channel`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(channelData) });
+
+        if (!response.ok) {
+              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            console.log('Canal criado:', result);
+
+            showNotification('✅ Canal criado com sucesso!', 'success');
+            closeAddChannelModal();
+            await loadChannels();
+      //  showNotification('Canal criado!', 'success');
+   //     closeAddChannelModal();
+        //loadChannels();
       } catch (error) { showNotification('Erro ao criar canal', 'error'); } finally {
         createBtn.disabled = false;
         createBtn.textContent = originalText;
