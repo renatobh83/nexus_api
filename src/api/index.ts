@@ -11,6 +11,7 @@ import { TicketService } from "../modules/tickets/tickets.services.js";
 import routes from "./routes/index.js";
 import fastifyModule from "./plugins/fastifyModules.js";
 import { initSocket } from "../lib/socket.js";
+import { client, main } from "../providers/telegram/teleproto/tbo.js";
 
 let io: SocketIOServer | null = null;
 // 🔧 Extensão do tipo para o Fastify reconhecer a propriedade 'io'
