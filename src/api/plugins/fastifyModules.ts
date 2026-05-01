@@ -11,6 +11,7 @@ import xss from "xss";
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { PUBLIC_DIR } from "../../config/env.js";
 
+
 const fastifyModule = fp(async (fastify: FastifyInstance) => {
   fastify.log.info(
     "🔐 Registrando módulo de segurança e middlewares essenciais...",

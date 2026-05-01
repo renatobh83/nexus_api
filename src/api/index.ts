@@ -11,7 +11,6 @@ import { TicketService } from "../modules/tickets/tickets.services.js";
 import routes from "./routes/index.js";
 import fastifyModule from "./plugins/fastifyModules.js";
 import { initSocket } from "../lib/socket.js";
-import { client, main } from "../providers/telegram/teleproto/tbo.js";
 
 let io: SocketIOServer | null = null;
 // 🔧 Extensão do tipo para o Fastify reconhecer a propriedade 'io'
@@ -118,9 +117,10 @@ export async function start() {
     app.server.keepAliveTimeout = 5 * 60 * 1000;
     await app.listen({ port: 3000, host: "0.0.0.0" });
 
-    setImmediate(() => {
+    setImmediate(async() => {
       const channelManager = new ChannelManager();
       channelManager.startAllReadySessions().catch(app.log.error);
+      
     });
   } catch (err: any) {
     if (app) {
@@ -128,6 +128,7 @@ export async function start() {
     } else {
       console.error("❌ Falha crítica antes da inicialização do logger:", err);
     }
+
     process.exit(1);
   }
 }

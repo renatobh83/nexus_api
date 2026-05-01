@@ -1,0 +1,68 @@
+
+import {
+  ChatInternal,
+  ContactInternal,
+  SessionInternal,
+} from "../../../session.types.js";
+
+// Função auxiliar para normalizar o Wid para string
+const resolveId = (id: string | Wid): string => {
+  if (typeof id === "string") return id;
+  return id._serialized;
+};
+
+export const toInternalMessage = (msg: Message): MessageInternal => ({
+  body: msg.body || msg.caption || "",
+  messageId: msg.id,
+  fromMe: msg.fromMe,
+  isGroupMsg: msg.isGroupMsg,
+  type: msg.type,
+  timestamp: msg.t,
+  contactName: msg.sender.formattedName,
+  ticketId: undefined,
+  mediaUrl: undefined,
+  mediaType: msg.mimetype ?? undefined,
+  ack: msg.ack,
+  hasReaction: msg.hasReaction,
+  isForwarded: msg.isForwarded,
+  isNotification: msg.isNotification,
+  to: msg.to,
+  from: msg.from,
+  caption: msg.caption,
+  content: msg.content,
+  mimetype: msg.mimetype,
+  chatId: resolveId(msg.chatId),
+});
+
+export const toInternalSession = (session: Session): SessionInternal => ({
+  id: session.id,
+  getChatById: async (chatId: string): Promise<ChatInternal> => {
+    return await session.getChatById(chatId);
+    // return {
+    //   id: { _serialized: chat.id._serialized },
+    //   unreadCount: chat.unreadCount,
+    // };
+  },
+
+  getContact: async (contactId: string): Promise<ContactInternal> => {
+    const contact = await session.getContact(contactId);
+    return {
+      id: { _serialized: (contact.id as any)._serialized },
+      name: contact.name ?? "",
+      pushname: contact.pushname,
+      formattedName: contact.formattedName,
+    };
+  },
+
+  getPnLidEntry: async (id: string) => {
+    const entry = await session.getPnLidEntry(id);
+    return {
+      phoneNumber: { _serialized: entry.phoneNumber._serialized },
+    };
+  },
+
+  downloadMedia: async (messageId: string): Promise<string> => {
+    const media = await session.downloadMedia(messageId);
+    return media ?? "";
+  },
+});

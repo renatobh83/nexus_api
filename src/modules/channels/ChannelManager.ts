@@ -1,3 +1,4 @@
+import { initTeleproto } from "../../providers/telegram/teleproto/tbo.js";
 import { initWppWeb } from "../../providers/whatsapp-web/wpp-web/Wpp-web.js";
 import { ChannelService } from "./channel.services.js";
 
@@ -21,13 +22,17 @@ export class ChannelManager {
    */
   async startAllReadySessions(): Promise<void> {
     const readyChannels = await this.channelService.findAll();
-
+    console.log(readyChannels)
     await Promise.all(
       readyChannels.map(async (channel) => {
         try {
           if (channel.type === "whatsapp") {
             initWppWeb(channel, this.channelService);
           }
+          // } else if(channel.type === "telegram") {
+          //   initTeleproto(channel, this.channelService)
+          // }
+          
         } catch (error) {
           console.error(
             `ERROR: Falha ao iniciar a sessão para '${channel.name}' (ID: ${channel.id}).`,
@@ -44,6 +49,9 @@ export class ChannelManager {
       });
       if (channel.type === "whatsapp") {
         await initWppWeb(channel, this.channelService);
+      }
+       if (channel.type === "telegram") {
+        await initTeleproto(channel, this.channelService);
       }
     } catch (error) {
       console.error(`Erro ao iniciar seção para ${id}`);
