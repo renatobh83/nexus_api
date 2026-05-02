@@ -1,4 +1,4 @@
-import { initTeleproto } from "../../providers/telegram/teleproto/tbo.js";
+import { initTeleproto } from "../../providers/telegram/teleproto/tbotProto.js";
 import { initWppWeb } from "../../providers/whatsapp-web/wpp-web/Wpp-web.js";
 import { ChannelService } from "./channel.services.js";
 
@@ -22,16 +22,16 @@ export class ChannelManager {
    */
   async startAllReadySessions(): Promise<void> {
     const readyChannels = await this.channelService.findAll();
-    console.log(readyChannels)
+
     await Promise.all(
       readyChannels.map(async (channel) => {
         try {
           if (channel.type === "whatsapp") {
             initWppWeb(channel, this.channelService);
+          
+          } else if(channel.type === "telegram") {
+            initTeleproto(channel, this.channelService)
           }
-          // } else if(channel.type === "telegram") {
-          //   initTeleproto(channel, this.channelService)
-          // }
           
         } catch (error) {
           console.error(

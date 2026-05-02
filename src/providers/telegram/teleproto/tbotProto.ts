@@ -60,7 +60,7 @@ export const initTeleproto = async (channel: Channel,  channelService: ChannelSe
       status: "CONNECTED",
       qrcode: "",
       retries: 0,
-      // phone: profileSession,
+      phone: me,
       session: channel.name,
       pairingCode: "",
     });
@@ -129,71 +129,72 @@ export const teleprotoDisconnect = async (sessionId?: number) => {
 
 //   console.log("👂 Escutando por novas mensagens...");
 //   // let sender: any |  undefined = undefined
-//    // Adiciona um listener para novas mensagens
+//   //  Adiciona um listener para novas mensagens
 //   // Sempre que uma nova mensagem for recebida, esta função será executada.
-//   // client.addEventHandler(async (event) => {
-//   //   if (event.message && event.message.message) { 
-//   //     // console.log(event)
-//   //     console.log("\n--- Nova Mensagem Recebida ---");
-//   //     console.log("De:", event.message.peerId.className);
-//   //     // console.log("Texto:", event.message.message);
-//   //     console.log("------------------------------");
+//   client.addEventHandler(async (event) => {
+//     if (event.message && event.message.message) { 
+//       // console.log(event)
+//       console.log("\n--- Nova Mensagem Recebida ---");
+//       console.log("De:", event.message.peerId.className);
+//       // console.log("Texto:", event.message.message);
+//       console.log("------------------------------");
 
-//   //     console.log(event.message._chat)
-//   //      if (event.message.media) {
-//   //     //    if (event.message.media) {
-//   //     //   console.log("Mídia detectada!");
+//       console.log(event.message._chat)
+//        if (event.message.media) {
+//          if (event.message.media) {
+//         console.log("Mídia detectada!");
         
-//   //     //   // Obtém o tipo de mídia (ex: MessageMediaPhoto, MessageMediaDocument)
-//   //     //   const mediaType = event.message.media.className;
-//   //     //   console.log("Tipo de Mídia:", mediaType);
+//         // Obtém o tipo de mídia (ex: MessageMediaPhoto, MessageMediaDocument)
+//         const mediaType = event.message.media.className;
+//         console.log("Tipo de Mídia:", mediaType);
 
-//   //     //   try {
-//   //     //     // Baixa a mídia
-//   //     //     // O client.downloadMedia retorna um Buffer com o conteúdo do arquivo
-//   //     //     const buffer = await client.downloadMedia(event.message.media);
+//         try {
+//           // Baixa a mídia
+//           // O client.downloadMedia retorna um Buffer com o conteúdo do arquivo
+//           const buffer = await client.downloadMedia(event.message.media);
 
-//   //     //     // Gera um nome de arquivo único
-//   //     //     const fileName = `${mediaType}_${Date.now()}.${getMediaExtension(mediaType, event.message.media)}`;
-//   //     //     const filePath = path.join(process.cwd(), "public", fileName);
+//           // Gera um nome de arquivo único
+//           const fileName = `${mediaType}_${Date.now()}.${getMediaExtension(mediaType, event.message.media)}`;
+//           const filePath = path.join(process.cwd(), "public", fileName);
 
-//   //     //     // Cria o diretório 'downloads' se não existir
-//   //     //     if (!fs.existsSync(path.join(process.cwd(), "public"))) {
-//   //     //       fs.mkdirSync(path.join(process.cwd(), "public"));
-//   //     //     }
+//           // Cria o diretório 'downloads' se não existir
+//           if (!fs.existsSync(path.join(process.cwd(), "public"))) {
+//             fs.mkdirSync(path.join(process.cwd(), "public"));
+//           }
 
-//   //     //     // Salva o buffer no arquivo
-//   //     //     fs.writeFileSync(filePath, buffer);
-//   //     //     console.log(`Mídia salva em: ${filePath}`);
+//           // Salva o buffer no arquivo
+//           fs.writeFileSync(filePath, buffer);
+//           console.log(`Mídia salva em: ${filePath}`);
 
-//   //     //   } catch (downloadError) {
-//   //     //     console.error("Erro ao baixar a mídia:", downloadError);
-//   //     //   }
-//   //     // } else {
-//   //     //   console.log("Nenhuma mídia na mensagem.");
-//   //     // }
-//   //      }
-//   //     // Obtendo informações detalhadas do remetente
-//   //     // sender = await event.message.getSender();
+//         } catch (downloadError) {
+//           console.error("Erro ao baixar a mídia:", downloadError);
+//         }
+//       } else {
+//         console.log("Nenhuma mídia na mensagem.");
+//       }
+//        }
+//       // Obtendo informações detalhadas do remetente
+//      const sender = await event.message.getSender()
       
-//   //     // console.log("ID do Remetente:", sender && sender.id.toString());
-//   //     // console.log("Nome do Remetente:", sender && sender.firstName || "N/A");
-//   //     // console.log("Sobrenome do Remetente:", sender && sender.lastName || "N/A");
-//   //     // console.log("Username do Remetente:", sender && sender.username || "N/A");
-//   //     // console.log("Tipo de Remetente:", sender && sender.className); // Ex: User, Channel, Chat
+//       console.log("ID do Remetente:", sender && sender.id.toString());
+//       console.log("Nome do Remetente:", sender && sender.firstName || "N/A");
+//       console.log("Sobrenome do Remetente:", sender && sender.lastName || "N/A");
+//       console.log("Username do Remetente:", sender && sender.username || "N/A");
+//       console.log("Tipo de Remetente:", sender && sender.className); // Ex: User, Channel, Chat
 
-//   //     // Você também pode acessar o peerId diretamente para algumas informações básicas
-//   //     // console.log("Peer ID (direto):", event.message.peerId.userId || event.message.peerId.channelId || event.message.peerId.chatId);
+//       // Você também pode acessar o peerId diretamente para algumas informações básicas
+//       console.log("Peer ID (direto):", event.message.peerId.userId || event.message.peerId.channelId || event.message.peerId.chatId);
 
-//   //     console.log("------------------------------");
-//   //   } 
+//       console.log("------------------------------");
+//     } 
     
-//   //   // Exemplo de resposta automática: se a mensagem for "ping", responde "pong"
-//   //   if (event.message.message === "ping") {
-//   //     await client.sendMessage(event.message.peerId, { message: "pong" });
-//   //     console.log("Resposta enviada: pong");
-//   //   }
-//   // }, new NewMessage({}));
+//     // Exemplo de resposta automática: se a mensagem for "ping", responde "pong"
+//     if (event.message.message === "ping") {
+//       await client.sendMessage(event.message.peerId, { message: "pong" });
+//       console.log("Resposta enviada: pong");
+//     }
+//   }, new NewMessage({}));
+  
 //   client.addEventHandler(async(event)=>{
 
 //     if (event.message && event.message.media) {

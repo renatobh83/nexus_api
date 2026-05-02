@@ -1,4 +1,4 @@
-import { Message } from "wbotconnect";
+import { Chat, Message } from "wbotconnect";
 
 import { Session } from "./Wpp-web.js";
 import { handleMessage } from "../../../modules/messages/handlers/handleMessage.js";
@@ -6,6 +6,27 @@ import {
   toInternalMessage,
   toInternalSession,
 } from "./mappers/sessionAdapter.js";
+import { ContactInternal } from "../../session.types.js";
+
+const resolveContact = async (
+  message: Message,
+  session: Session,
+): Promise<ContactInternal> => {
+ 
+ 
+  if (message.isGroupMsg && !message.fromMe) {
+    const grupo = await session.getContact(message.chat.id._serialized);
+    return grupo;
+  }
+  if (message.fromMe) {
+    const target = message.to.includes("g.us")
+      ? message.to
+      : (await session.getPnLidEntry(message.to)).phoneNumber._serialized;
+    return session.getContact(target);
+  }
+  const { phoneNumber } = await session.getPnLidEntry(message.from!);
+  return session.getContact(phoneNumber._serialized);
+};
 
 export const wbotWebListener = async (wbot: Session): Promise<void> => {
   /**
@@ -22,7 +43,11 @@ export const wbotWebListener = async (wbot: Session): Promise<void> => {
 
     const internal = toInternalMessage(message);
     const session = toInternalSession(wbot);
-    await handleMessage(internal, session);
+    const contato = await resolveContact(message, wbot)
+
+
+
+    await handleMessage(internal, session, contato);
   });
 
   // /**

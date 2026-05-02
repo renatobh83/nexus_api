@@ -5,7 +5,7 @@ export interface SessionInternal {
   getPnLidEntry: (
     id: string,
   ) => Promise<{ phoneNumber: { _serialized: string } }>;
-  downloadMedia: (messageId: string) => Promise<string>;
+  downloadMedia: (messageId: string| any) => Promise<string>;
 }
 export interface ChatInternal {
   id: { _serialized: string; server: string; user: string };

@@ -63,8 +63,8 @@ export const toInternalSession = (session: Session): SessionInternal => ({
     };
   },
 
-  downloadMedia: async (messageId: string): Promise<string> => {
-    const media = await session.downloadMedia(messageId);
+  downloadMedia: async (message: any): Promise<string> => {
+    const media = await session.downloadMedia(message.messageId);
     return media ?? "";
   },
 });

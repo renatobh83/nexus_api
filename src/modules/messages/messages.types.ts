@@ -48,8 +48,8 @@ export interface MessageInternal {
   to: string;
   caption?: string | null;
   chatId: string;
-  from: string | null;
-  mediaUrl?: string | null;
+  from: string | null | undefined;
+  mediaUrl?: string | null | any;
   mediaType?: string | null;
   timestamp: bigint | number;
   contactName: string;

@@ -1,5 +1,3 @@
-import { Chat, Contact } from "wbotconnect";
-import { Session } from "../../../providers/whatsapp-web/wpp-web/Wpp-web.js";
 import { MessageInternal } from "../messages.types.js";
 import { createTicket } from "../../tickets/Helpers/CreateTicket.js";
 import { VerifyMessage } from "./verifyMessage.js";
@@ -10,26 +8,8 @@ import {
   SessionInternal,
 } from "../../../providers/session.types.js";
 
-type ContactWithId = Contact & { id: { _serialized: string } };
 
-const resolveContact = async (
-  chat: ChatInternal,
-  message: MessageInternal,
-  session: SessionInternal,
-): Promise<ContactInternal> => {
-  if (message.isGroupMsg && !message.fromMe) {
-    const grupo = await session.getContact(chat.id._serialized);
-    return grupo;
-  }
-  if (message.fromMe) {
-    const target = message.to.includes("g.us")
-      ? message.to
-      : (await session.getPnLidEntry(message.to)).phoneNumber._serialized;
-    return session.getContact(target);
-  }
-  const { phoneNumber } = await session.getPnLidEntry(message.from!);
-  return session.getContact(phoneNumber._serialized);
-};
+
 
 const formatLastMessage = (message: MessageInternal): string => {
   if (message.type !== "chat") return "Media";
@@ -41,12 +21,10 @@ const formatLastMessage = (message: MessageInternal): string => {
 export const handleMessage = async (
   message: MessageInternal,
   session: SessionInternal,
+  contato: ContactInternal
 ) => {
   try {
-    const chat = await session.getChatById(message.chatId);
-
-    const contato = await resolveContact(chat, message, session);
-
+    
     const serialized = contato.id._serialized;
     const lastMessage = formatLastMessage(message);
     const { ticket, isNew } = await createTicket({
@@ -55,7 +33,7 @@ export const handleMessage = async (
       channelId: session.id,
       ticketGroup: message.isGroupMsg,
       msg: lastMessage,
-      unreadMessages: chat.unreadCount,
+      unreadMessages: 0,
     });
 
     const createdMessage = await VerifyMessage(

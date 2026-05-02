@@ -32,8 +32,10 @@ export const VerifyMessage = async (
 
   const media =
     message.type !== "chat"
-      ? await session.downloadMedia(message.messageId)
+      ? await session.downloadMedia(message)
       : "";
+  
+  // const mediaString = Buffer.isBuffer(media) ? media.toString('utf8') : media;
   const matches = media.match(/^data:(.+);base64,(.+)$/);
   const base64Data = matches ? matches[2] : media;
 
@@ -43,29 +45,29 @@ export const VerifyMessage = async (
   if (media) {
     await writeFileAsync(join(PUBLIC_DIR, filename), fileData);
   }
-  const messageData: Prisma.MessageCreateInput = {
-    messageId: message.messageId,
-    body: message.type === "chat" ? body : message.caption || filename,
-    ack: message.ack,
-    timestamp: message.timestamp,
-    mediaUrl: message.type === "chat" ? "" : filename,
-    read: message.fromMe,
-    mediaType: message.type === "chat" ? "" : message.mimetype,
-    sendType: "chat",
-    isGroupMsg: message.isGroupMsg,
-    caption: message.caption,
-    from: message.from,
-    hasReaction: message.hasReaction,
-    fromMe: message.fromMe,
-    contato: contato.formattedName || contato.name,
-    type: message.type,
-    to: message.to,
-    content:
-      message.type === "chat" ? message.content : message.caption || filename,
-    mimetype: message.mimetype,
-  };
-  messageData.ticket = {
-    connect: { id: ticketId },
-  };
-  return await messageService.createMessage(messageData);
+  // const messageData: Prisma.MessageCreateInput = {
+  //   messageId: message.messageId,
+  //   body: message.type === "chat" ? body : message.caption || filename,
+  //   ack: message.ack,
+  //   timestamp: message.timestamp,
+  //   mediaUrl: message.type === "chat" ? "" : filename,
+  //   read: message.fromMe,
+  //   mediaType: message.type === "chat" ? "" : message.mimetype,
+  //   sendType: "chat",
+  //   isGroupMsg: message.isGroupMsg,
+  //   caption: message.caption,
+  //   from: message.from,
+  //   hasReaction: message.hasReaction,
+  //   fromMe: message.fromMe,
+  //   contato: contato.formattedName || contato.name,
+  //   type: message.type,
+  //   to: message.to,
+  //   content:
+  //     message.type === "chat" ? message.content : message.caption || filename,
+  //   mimetype: message.mimetype,
+  // };
+  // messageData.ticket = {
+  //   connect: { id: ticketId },
+  // };
+  // return await messageService.createMessage(messageData);
 };
