@@ -3,10 +3,34 @@ import { NewMessage } from "teleproto/events/NewMessage.js";
 import { toInternalMessageTbot, toInternalSession } from "./mappers/sessionAdapter.js";
 import { EventBuilder } from "teleproto/events/common.js";
 import { SessionTbot } from "./tbotProto.js";
+import { ContactInternal } from "../../session.types.js";
+import { Api } from "teleproto";
+
+
+const resolveContact = async (
+  msg:  Api.Message,
+  session: SessionTbot,
+): Promise<void> => {
+ 
+    if(msg.isChannel || msg.isGroup) {}
+    if ('userId' in msg.peerId) return msg.peerId.userId?.toString() ?? '';
+    if ('channelId' in msg.peerId) return msg.peerId.channelId?.toString() ?? '';
+    if ('chatId' in msg.peerId) return msg.peerId.chatId?.toString() ?? '';
+//   if (message.isGroupMsg && !message.fromMe) {
+//     const grupo = await session.getContact(message.chat.id._serialized);
+//     return grupo;
+//   }
+//   if (message.fromMe) {
+//     const target = message.to.includes("g.us")
+//       ? message.to
+//       : (await session.getPnLidEntry(message.to)).phoneNumber._serialized;
+//     return session.getContact(target);
+//   }
+//   const { phoneNumber } = await session.getPnLidEntry(message.from!);
+//   return session.getContact(phoneNumber._serialized);
+};
 
 export const teleprotoListener  = async (tbot: SessionTbot) =>{
-
-
     // Mensagens e Mensagem de midia com caption
     tbot.addEventHandler(async (event) => {
 
@@ -18,7 +42,7 @@ export const teleprotoListener  = async (tbot: SessionTbot) =>{
     
         const session = toInternalSession(tbot)
 
-        
+        console.log(event.message)
         
         //  await handleMessage(internal, session, contato);
       

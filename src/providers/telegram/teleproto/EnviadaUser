@@ -8,7 +8,7 @@ VirtualClass {
     mentioned: false,
     mediaUnread: false,
     silent: false,
-    id: 53360,
+    id: 53397,
     peerId: VirtualClass {
       CONSTRUCTOR_ID: 1498486562,
       SUBCLASS_OF_ID: 47470215,
@@ -25,8 +25,8 @@ VirtualClass {
       originalArgs: [Object],
       userId: [Integer]
     },
-    message: 'K',
-    date: 1777676627,
+    message: 'enviad',
+    date: 1777719633,
     fwdFrom: null,
     viaBotId: null,
     replyTo: null,
@@ -43,7 +43,7 @@ VirtualClass {
   legacy: undefined,
   editHide: undefined,
   ttlPeriod: null,
-  id: 53360,
+  id: 53397,
   fromId: VirtualClass {
     CONSTRUCTOR_ID: 1498486562,
     SUBCLASS_OF_ID: 47470215,
@@ -63,8 +63,8 @@ VirtualClass {
   fwdFrom: null,
   viaBotId: null,
   replyTo: null,
-  date: 1777676627,
-  message: 'K',
+  date: 1777719633,
+  message: 'enviad',
   media: undefined,
   replyMarkup: undefined,
   entities: null,
@@ -151,7 +151,7 @@ VirtualClass {
       params: undefined,
       query: [VirtualClass]
     },
-    _eventBuilders: [ [Array], [Array] ],
+    _eventBuilders: [ [Array], [Array], [Array] ],
     _floodWaitedRequests: {},
     _borrowedSenderPromises: {},
     _bot: false,
@@ -168,14 +168,20 @@ VirtualClass {
     _entityCache: EntityCache { cacheMap: [Map] },
     _config: undefined,
     _loopStarted: true,
-    _channelPts: Map(1) { '1836097669' => 923672 },
+    _channelPts: Map(5) {
+      '1830529802' => 667819,
+      '2309988450' => 125797,
+      '2090335767' => 1045883,
+      '2007934205' => 586486,
+      '1836097669' => 924556
+    },
     _fetchingDifference: false,
     _fetchingChannelDifference: Set(0) {},
     _pendingPtsUpdates: [],
     _pendingSeqUpdates: [],
     _pendingQtsUpdates: [],
     _pendingChannelUpdates: Map(0) {},
-    _lastUpdateTime: 1777676627339,
+    _lastUpdateTime: 1777719633447,
     _reconnecting: false,
     _destroyed: false,
     _isSwitchingDc: false,
@@ -186,7 +192,7 @@ VirtualClass {
     },
     _parseMode: [class MarkdownParser],
     _sender: MTProtoSender {
-      _needsInitConnection: true,
+      _needsInitConnection: false,
       _exportedSenderPromises: Map(0) {},
       _finishedConnecting: true,
       _cancelSend: false,
@@ -226,9 +232,9 @@ VirtualClass {
       _lastAcks: [Array],
       _handlers: [Object]
     },
-    _lastRequest: 1777676627499,
-    id: 1,
-    _updateState: { pts: 117496, qts: 0, date: 1777676627, seq: 243 }
+    _lastRequest: 1777719633448,
+    _updateState: { pts: 117569, qts: 0, date: 1777719633, seq: 366 },
+    id: 1
   },
   _text: undefined,
   _file: undefined,
@@ -247,7 +253,15 @@ VirtualClass {
     originalArgs: { userId: [Integer] },
     userId: Integer { value: 6323354138n }
   },
-  _inputChat: undefined,
+  _inputChat: VirtualClass {
+    CONSTRUCTOR_ID: 3723011404,
+    SUBCLASS_OF_ID: 3374092470,
+    className: 'InputPeerUser',
+    classType: 'constructor',
+    originalArgs: { userId: [Integer], accessHash: [Integer] },
+    userId: Integer { value: 6323354138n },
+    accessHash: Integer { value: -5742157509720420225n }
+  },
   _chat: undefined,
   _broadcast: undefined,
   _senderId: Integer { value: 1015137420n },
@@ -351,7 +365,7 @@ VirtualClass {
       className: 'UserStatusOnline',
       classType: 'constructor',
       originalArgs: [Object],
-      expires: 1777676923
+      expires: 1777719928
     },
     botInfoVersion: null,
     restrictionReason: null,
