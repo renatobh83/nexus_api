@@ -4,48 +4,63 @@ import { toInternalMessageTbot, toInternalSession } from "./mappers/sessionAdapt
 import { EventBuilder } from "teleproto/events/common.js";
 import { SessionTbot } from "./tbotProto.js";
 import { ContactInternal } from "../../session.types.js";
-import { Api } from "teleproto";
+import { Api, client } from "teleproto";
 
 
-const resolveContact = async (
-  msg:  Api.Message,
-  session: SessionTbot,
-): Promise<void> => {
- 
-    if(msg.isChannel || msg.isGroup) {}
-    if ('userId' in msg.peerId) return msg.peerId.userId?.toString() ?? '';
-    if ('channelId' in msg.peerId) return msg.peerId.channelId?.toString() ?? '';
-    if ('chatId' in msg.peerId) return msg.peerId.chatId?.toString() ?? '';
-//   if (message.isGroupMsg && !message.fromMe) {
-//     const grupo = await session.getContact(message.chat.id._serialized);
-//     return grupo;
-//   }
-//   if (message.fromMe) {
-//     const target = message.to.includes("g.us")
-//       ? message.to
-//       : (await session.getPnLidEntry(message.to)).phoneNumber._serialized;
-//     return session.getContact(target);
-//   }
-//   const { phoneNumber } = await session.getPnLidEntry(message.from!);
-//   return session.getContact(phoneNumber._serialized);
+export const resolveContact = async (
+    msg: Api.Message,
+    session: SessionTbot,
+): Promise<ContactInternal> => {
+
+    if (msg.isChannel || msg.isGroup) {
+        const sender = msg._sender
+        return {
+            id: { _serialized: sender.id.toString() },
+            name: sender.firstName,
+            pushname: sender.lastName,
+            formattedName: sender.username,
+            shortName: sender.firstName
+        }
+    }
+    else if (msg.out) {
+        const userId = 'userId' in msg.peerId ? msg.peerId.userId?.toString() : ''
+        const userEntity = await session.getEntity(userId)
+
+        return {
+            id: { _serialized: userEntity.id.toString() },
+            name: (userEntity as any).firstName,
+            pushname: (userEntity as any).lastName,
+            formattedName: (userEntity as any).username,
+            shortName: (userEntity as any).firstName
+        }
+    } else {
+        const sender = await msg.getSender()
+        return {
+            id: { _serialized: sender && sender.id.toString() || "N/A" },
+            name: sender && (sender as any).firstName || "N/A",
+            pushname: sender && (sender as any).lastName || "N/A",
+            formattedName: sender && (sender as any).username || "N/A",
+            shortName: sender && (sender as any).firstName || "N/A",
+        }
+    }
+
 };
 
-export const teleprotoListener  = async (tbot: SessionTbot) =>{
+export const teleprotoListener = async (tbot: SessionTbot) => {
     // Mensagens e Mensagem de midia com caption
     tbot.addEventHandler(async (event) => {
 
-        const messageIsGroup = event.message.isChannel || event.message.isGroup
-        // const fromMe = event.message.out
+        const messageIsGroup = event.isChannel || event.isGroup
+        const fromMe = event.message.out
         // console.log(event.message.peerId)
-        if(messageIsGroup) return
-        const message = await toInternalMessageTbot(event.message)
-    
-        const session = toInternalSession(tbot)
 
-        console.log(event.message)
-        
+        // if(messageIsGroup) return
+        const message = await toInternalMessageTbot(event.message)
+        const session = toInternalSession(tbot)
+        const contato = await resolveContact(event.message, tbot)
+        console.log(contato)
         //  await handleMessage(internal, session, contato);
-      
+
         // console.log("---------------LIMITE-----------------")
         // const peer = new 
         // Api.PeerUser({ userId: event.message?.fromId?.userId });
@@ -56,10 +71,10 @@ export const teleprotoListener  = async (tbot: SessionTbot) =>{
         // console.log("Username do Remetente:", sender && sender.username || "N/A");
         // console.log("Tipo de Remetente:", sender && sender.className); // Ex: User, Channel, Chat
 
-    },  new NewMessage({}));
+    }, new NewMessage({}));
 
     // Media message
-    tbot.addEventHandler(async (event) => {}, new EventBuilder({}));
-    tbot.addEventHandler(async (event) => {}, new EditedMessage({}));
+    tbot.addEventHandler(async (event) => { }, new EventBuilder({}));
+    tbot.addEventHandler(async (event) => { }, new EditedMessage({}));
 
 }
