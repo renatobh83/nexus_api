@@ -2,7 +2,7 @@ import path from 'node:path';
 import fs from "node:fs"
 
 // import readline from 'node:readline/promises';
-// import input from "input"; // Usar 'input' para uma interação mais robusta
+import input from "input"; // Usar 'input' para uma interação mais robusta
 
 import { Api, client, TelegramClient } from "teleproto";
 import { StringSession } from "teleproto/sessions/StringSession.js";
@@ -18,6 +18,7 @@ export interface SessionTbot extends TelegramClient {
 }
 
 
+
 const sessions: SessionTbot[] = []
 
 export const initTeleproto = async (channel: Channel,  channelService: ChannelService): Promise<SessionTbot>=>{
@@ -29,7 +30,7 @@ export const initTeleproto = async (channel: Channel,  channelService: ChannelSe
   // sessão vazia (primeiro login)
   const stringSession = new StringSession(process.env.TELEPROTO_STRING_SESSION || "");
   
-
+  console.log(stringSession)
   
   const client = new TelegramClient(stringSession, apiId, apiHash, {
     connectionRetries: 5,
@@ -37,6 +38,39 @@ export const initTeleproto = async (channel: Channel,  channelService: ChannelSe
 
   await client.connect()
   // Verifica se a sessão é válida
+
+  const phone = "5531985683733"; // Seu número de telefone
+
+  console.log("➡️ Iniciando sessão...");
+  try {
+    await client.start({
+      phoneNumber: phone,
+      password: async () => {
+        try {
+          return await input.text("🔐 Senha 2FA: ");
+        } catch (e) {
+          console.error("Erro ao ler a senha 2FA:", e);
+          throw e;
+        }
+      },
+      phoneCode: async () => {
+        try {
+          return await input.text("📲 Código do Telegram: ");
+        } catch (e) {
+          console.error("Erro ao ler o código:", e);
+          throw e;
+        }
+      },
+      onError: (err) => console.log("⚠️ Erro durante o login:", err.message),
+    });
+
+    console.log("✅ Logado com sucesso!");
+
+  } catch (err) {
+    console.error("Erro na autenticação principal:", err.message);
+    await client.disconnect();
+    
+  }
 
   if (!client.isUserAuthorized()) {
     console.log("Sessão inválida ou expirada. Por favor, execute o script de login novamente para obter uma nova sessão.");
