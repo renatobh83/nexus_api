@@ -59,7 +59,7 @@ export const teleprotoListener = async (tbot: SessionTbot) => {
         const messageIsGroup = event.message.isChannel || event.message.isGroup
         const fromMe = event.message.out
         // console.log(event.message.peerId)
-        // if(messageIsGroup) return
+        if(messageIsGroup) return
         const message = await toInternalMessageTbot(event.message)
          
         const session = toInternalSession(tbot)
