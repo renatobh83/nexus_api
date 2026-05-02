@@ -4,22 +4,17 @@ import { toInternalMessageTbot, toInternalSession } from "./mappers/sessionAdapt
 import { EventBuilder } from "teleproto/events/common.js";
 import { SessionTbot } from "./tbotProto.js";
 import { ContactInternal } from "../../session.types.js";
-import { Api, client } from "teleproto";
+import { Api } from "teleproto";
 import { handleMessage } from "../../../modules/messages/handlers/handleMessage.js";
 
-import fs from 'fs';
+
 export const resolveContact = async (
     msg: Api.Message,
     session: SessionTbot,
 ): Promise<ContactInternal> => {
 
     if (msg.isChannel || msg.isGroup) {
-
         const sender = msg._chat!
-        // fs.appendFile('meu-arquivo.txt', JSON.stringify(sender, null, 2), () => {
-        //     console.log('Arquivo salvo sincronamente');
-        // });
-
         return {
             id: { _serialized: sender.id.toString() },
             name: (sender as any).title || (sender as any).username,
@@ -43,7 +38,9 @@ export const resolveContact = async (
         }
     } else {
         const sender = await msg.getSender()
+        
         return {
+            
             id: { _serialized: sender && sender.id.toString() || "N/A" },
             name: sender && (sender as any).firstName || "N/A",
             pushname: sender && (sender as any).lastName || "N/A",
@@ -62,24 +59,14 @@ export const teleprotoListener = async (tbot: SessionTbot) => {
         const messageIsGroup = event.message.isChannel || event.message.isGroup
         const fromMe = event.message.out
         // console.log(event.message.peerId)
-        if(messageIsGroup) return
+        // if(messageIsGroup) return
         const message = await toInternalMessageTbot(event.message)
          
         const session = toInternalSession(tbot)
         const contato = await resolveContact(event.message, tbot)
-
+        
 
         await handleMessage(message, session, contato);
-
-        // console.log("---------------LIMITE-----------------")
-        // const peer = new 
-        // Api.PeerUser({ userId: event.message?.fromId?.userId });
-        // console.log(peer)
-        // console.log("ID do Remetente:", sender && sender.id.toString());
-        // console.log("Nome do Remetente:", sender && sender.firstName || "N/A");
-        // console.log("Sobrenome do Remetente:", sender && sender.lastName || "N/A");
-        // console.log("Username do Remetente:", sender && sender.username || "N/A");
-        // console.log("Tipo de Remetente:", sender && sender.className); // Ex: User, Channel, Chat
 
     }, new NewMessage({}));
 

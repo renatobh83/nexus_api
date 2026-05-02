@@ -29,6 +29,7 @@ function getPeerId(msg: any): string {
 
 const getNameContato = async (msg: Api.Message) => {
   const sender = await msg.getSender()
+
   return sender && (sender as any).firstName || "N/A"
 }
 const getFile = (message: Api.Message): string => {
