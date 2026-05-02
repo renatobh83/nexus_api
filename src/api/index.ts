@@ -119,7 +119,7 @@ export async function start() {
 
     setImmediate(async() => {
       const channelManager = new ChannelManager();
-      channelManager.startAllReadySessions().catch(app.log.error);
+      // channelManager.startAllReadySessions().catch(app.log.error);
       
     });
   } catch (err: any) {
