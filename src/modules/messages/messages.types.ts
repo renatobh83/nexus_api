@@ -50,12 +50,12 @@ export interface MessageInternal {
   chatId: string;
   from: string | null | undefined;
   mediaUrl?: string | null | any;
-  mediaType?: string | null;
+  mediaType?: string | null | any;
   timestamp: bigint | number;
   contactName: string;
   ticketId: number | undefined;
   reaction?: string | null | undefined;
-  mimetype: string | null;
+  mimetype: string | null | any;
   reactionFromMe?: string | null | undefined;
   sendType?:
     | "campaign"

@@ -38,4 +38,5 @@ export interface ContactInternal {
   pushname?: string;
   formattedName?: string;
   shortName?: string;
+  photo?: any | undefined
 }

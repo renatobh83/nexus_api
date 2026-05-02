@@ -6,3 +6,5 @@ userDataDir
 prisma/migrations
 # public/
 dist/
+.DS_STORE
+meu-arquivo.txt

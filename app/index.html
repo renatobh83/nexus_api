@@ -1753,14 +1753,15 @@
         return `<div style="font-style: italic; color: #667781;">Mensagem apagada</div>`;
       }
       const src = `http://localhost:3000/public/${message.mediaUrl}`
-
+      
       switch (mediaType) {
         case 'image':
+        case "jpg":
         case 'image/jpeg':
         case 'imageMessage':
           return `
         <div>
-          <img src=${src} alt="Imagem" style="max-width: 250px; max-height: 250px; border-radius: 6px; cursor: pointer;" onclick="window.open('${src}', '_blank')" />
+          <img src=${src}  crossorigin="anonymous alt="Imagem" style="max-width: 250px; max-height: 250px; border-radius: 6px; cursor: pointer;" onclick="window.open('${src}', '_blank')" />
           ${body ? `<div style="margin-top: 6px;">${formatWhatsAppMessage(body)}</div>` : ''}
         </div>
       `;

@@ -4,6 +4,7 @@ import fs from "fs/promises";
 
 export function getSafeExtension(filename: string, mimetype: any) {
   // 1️⃣ tenta extrair da extensão original (ex: ".jpg", ".xlsx")
+
   const ext = filename ? path.extname(filename) : "";
   if (ext) return ext;
 

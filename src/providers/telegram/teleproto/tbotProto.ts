@@ -45,8 +45,7 @@ export const initTeleproto = async (channel: Channel,  channelService: ChannelSe
   }
   const me = await client.getMe();
   console.log("👤 Conectado como:", me?.username || "desconhecido");
-  
-  client.id = 1
+  client.id = channel.id
 
   const index = sessions.findIndex((s) => s.id === channel.id);
   if (index === -1) {
@@ -65,6 +64,7 @@ export const initTeleproto = async (channel: Channel,  channelService: ChannelSe
       pairingCode: "",
     });
   teleprotoListener(client)
+  
   return client
 
 }
