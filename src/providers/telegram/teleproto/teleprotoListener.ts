@@ -51,7 +51,14 @@ export const resolveContact = async (
     }
 
 };
-
+export const AuxiTbot = async (tbot: SessionTbot, event:Api.Message) => {
+       const message = await toInternalMessageTbot(event)
+         
+        const session = toInternalSession(tbot)
+        const contato = await resolveContact(event, tbot)
+         await handleMessage(message, session, contato);
+     
+}
 export const teleprotoListener = async (tbot: SessionTbot) => {
     // Mensagens e Mensagem de midia com caption
     tbot.addEventHandler(async (event) => {
@@ -60,14 +67,11 @@ export const teleprotoListener = async (tbot: SessionTbot) => {
         const fromMe = event.message.out
         // console.log(event.message.peerId)
         if(messageIsGroup) return
-        const message = await toInternalMessageTbot(event.message)
-         
-        const session = toInternalSession(tbot)
-        const contato = await resolveContact(event.message, tbot)
-        
-        
-        await handleMessage(message, session, contato);
+        const messs = await tbot.sendMessage("+5531985683733",{message: "teste"})
+            if(messs) {
 
+                await AuxiTbot(tbot, messs)
+            }
     }, new NewMessage({}));
 
     // Media message
