@@ -36,6 +36,9 @@
       display: flex;
       gap: 0;
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      position: relative;
+
+
     }
 
     .menu-icon {
@@ -1322,6 +1325,150 @@
       border-radius: 3px;
     }
 
+    /* Botão de mensagem avulsa */
+    .broadcast-btn {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      width: 36px;
+      height: 36px;
+      font-size: 18px;
+      border-radius: 50%;
+      background: #075e54;
+      color: white;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      transition: all 0.2s ease;
+      z-index: 1500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .broadcast-btn:hover {
+      transform: scale(1.05);
+      background: #054a42;
+    }
+
+    /* Modal de mensagem avulsa */
+    .broadcast-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 2500;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .broadcast-modal.active {
+      display: flex;
+    }
+
+    .broadcast-modal .modal-content {
+      background: white;
+      border-radius: 16px;
+      width: 90%;
+      max-width: 550px;
+      max-height: 85vh;
+      overflow-y: auto;
+      animation: modalSlideIn 0.3s ease;
+    }
+
+    .broadcast-modal .modal-header {
+      background: #075e54;
+      color: white;
+      padding: 20px;
+      border-radius: 16px 16px 0 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .broadcast-modal .modal-body {
+      padding: 20px;
+    }
+
+    .broadcast-modal .form-group {
+      margin-bottom: 20px;
+    }
+
+    .broadcast-modal label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #111;
+    }
+
+    .broadcast-modal select,
+    .broadcast-modal input,
+    .broadcast-modal textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    .broadcast-modal textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    /* Anexos no modal broadcast */
+    .broadcast-attach {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .broadcast-attach button {
+      background: #075e54;
+      color: white;
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 20px;
+    }
+
+    .broadcast-file-preview {
+      background: #f0f2f5;
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 10px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .broadcast-send-btn {
+      background: #075e54;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      width: 100%;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .broadcast-send-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
     @keyframes spin {
       to {
         transform: rotate(360deg);
@@ -1412,6 +1559,9 @@
     <div class="top-menu">
       <div class="menu-item active" onclick="switchTab('chats')">💬 Chats</div>
       <div class="menu-item" onclick="switchTab('conexoes')">🔌 Conexões</div>
+      <button id="broadcastBtn" class="broadcast-btn" title="Enviar mensagem avulsa">
+        📢
+      </button>
     </div>
 
     <div class="main-content">
@@ -1590,7 +1740,45 @@
       </div>
     </div>
   </div>
-
+  <!-- Modal de Mensagem Avulsa -->
+  <div id="broadcastModal" class="broadcast-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>📢 Enviar Mensagem Avulsa</h3>
+        <button class="modal-close" onclick="closeBroadcastModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Canal de envio *</label>
+          <select id="broadcastChannel">
+            <option value="">Selecione um canal</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Número do destinatário *</label>
+          <input type="tel" id="broadcastNumber" placeholder="5511999999999" pattern="[0-9]{10,15}" inputmode="numeric"
+            oninput="this.value = this.value.replace(/\D/g, '')">
+          <small style="color: #667781;">Número completo com código do país (ex: 5511999999999)</small>
+        </div>
+        <div class="form-group">
+          <label>Mensagem</label>
+          <textarea id="broadcastMessage" placeholder="Digite sua mensagem..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Anexos</label>
+          <div class="broadcast-attach">
+            <button type="button" onclick="document.getElementById('broadcastFileInput').click()">📎</button>
+            <span id="broadcastFileName">Nenhum arquivo selecionado</span>
+          </div>
+          <input type="file" id="broadcastFileInput" style="display: none;"
+            accept="image/*,video/*,audio/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain">
+          <div id="broadcastFilePreview" class="broadcast-file-preview" style="display: none;"></div>
+        </div>
+        <button class="broadcast-send-btn" id="broadcastSendBtn" onclick="sendBroadcastMessage()">Enviar
+          Mensagem</button>
+      </div>
+    </div>
+  </div>
   <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
   <script>
     // Configurações
@@ -1605,6 +1793,138 @@
 
     let showOnlyClosed = false;
     let selectedChannelType = null;
+
+    // === MENSAGEM AVULSA (BROADCAST) ===
+    let broadcastSelectedFile = null;
+
+    function openBroadcastModal() {
+      const modal = document.getElementById('broadcastModal');
+      modal.classList.add('active');
+      loadBroadcastChannels();
+      document.getElementById('broadcastNumber').value = '';
+      document.getElementById('broadcastMessage').value = '';
+      document.getElementById('broadcastFileName').textContent = 'Nenhum arquivo selecionado';
+      document.getElementById('broadcastFilePreview').style.display = 'none';
+      broadcastSelectedFile = null;
+    }
+
+    function closeBroadcastModal() {
+      document.getElementById('broadcastModal').classList.remove('active');
+    }
+
+    async function loadBroadcastChannels() {
+      try {
+        const response = await fetch(`${URL_BASE}/api/v1/channel`);
+        const channels = await response.json();
+        const select = document.getElementById('broadcastChannel');
+        const connectedChannels = channels.filter(ch => ch.status === 'CONNECTED' || ch.status === 'connected');
+        select.innerHTML = '<option value="">Selecione um canal</option>' +
+          connectedChannels.map(ch => `<option value="${ch.id}">${ch.name} (${ch.type})</option>`).join('');
+        if (connectedChannels.length === 0) {
+          select.innerHTML = '<option value="">Nenhum canal conectado</option>';
+        }
+      } catch (error) {
+        console.error('Erro ao carregar canais:', error);
+      }
+    }
+
+    // Anexo no broadcast
+    document.getElementById('broadcastFileInput')?.addEventListener('change', function (e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.size > 25 * 1024 * 1024) {
+        alert('Arquivo muito grande. Máximo 25MB');
+        return;
+      }
+      broadcastSelectedFile = file;
+      document.getElementById('broadcastFileName').textContent = file.name;
+      const previewDiv = document.getElementById('broadcastFilePreview');
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = function (ev) {
+          previewDiv.innerHTML = `<img src="${ev.target.result}" style="max-width: 100px; border-radius: 4px;"><br><small>${file.name}</small><button onclick="removeBroadcastFile()" style="margin-left: 10px;">✕</button>`;
+          previewDiv.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      } else {
+        previewDiv.innerHTML = `<span>📎 ${file.name}</span> <button onclick="removeBroadcastFile()">✕</button>`;
+        previewDiv.style.display = 'block';
+      }
+    });
+
+    function removeBroadcastFile() {
+      broadcastSelectedFile = null;
+      document.getElementById('broadcastFileInput').value = '';
+      document.getElementById('broadcastFileName').textContent = 'Nenhum arquivo selecionado';
+      document.getElementById('broadcastFilePreview').style.display = 'none';
+    }
+
+    async function sendBroadcastMessage() {
+      const channelId = document.getElementById('broadcastChannel').value;
+      let rawNumber = document.getElementById('broadcastNumber').value.trim();
+      const message = document.getElementById('broadcastMessage').value.trim();
+      const sendBtn = document.getElementById('broadcastSendBtn');
+
+      if (!channelId) {
+        alert('Selecione um canal');
+        return;
+      }
+      if (!rawNumber) {
+        alert('Digite o número do destinatário');
+        return;
+      }
+      if (!message && !broadcastSelectedFile) {
+        alert('Digite uma mensagem ou anexe um arquivo');
+        return;
+      }
+      let number = rawNumber.replace(/\D/g, '');
+      sendBtn.disabled = true;
+      sendBtn.textContent = 'Enviando...';
+
+      try {
+        const formData = new FormData();
+        formData.append('to', number);
+        formData.append('body', message || '');
+        if (broadcastSelectedFile) {
+          formData.append('file', broadcastSelectedFile);
+        }
+
+        const response = await fetch(`${URL_BASE}/api/v1/channel/${channelId}/send`, {
+          method: 'POST',
+          body: formData
+        });
+        // Tenta parsear como JSON, se falhar, considera sucesso
+        let result = null;
+        try {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            result = await response.json();
+          } else {
+            result = { message: await response.text() };
+          }
+        } catch (e) {
+          result = { message: 'Mensagem enviada' };
+        }
+        showNotification('✅ Mensagem enviada com sucesso!', 'success');
+        closeBroadcastModal();
+      } catch (error) {
+
+        console.error('Erro ao enviar mensagem avulsa:', error);
+        showNotification(`❌ Erro: ${error.message}`, 'error');
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Enviar Mensagem';
+      }
+    }
+
+    // Adicionar evento ao botão (coloque na inicialização)
+    document.getElementById('broadcastBtn')?.addEventListener('click', openBroadcastModal);
+
+    // Fechar modal ao clicar fora
+    document.addEventListener('click', (event) => {
+      const modal = document.getElementById('broadcastModal');
+      if (event.target === modal) closeBroadcastModal();
+    });
 
     // === FUNÇÕES DE TICKETS ===
     async function loadTickets() {
@@ -1753,7 +2073,7 @@
         return `<div style="font-style: italic; color: #667781;">Mensagem apagada</div>`;
       }
       const src = `http://localhost:3000/public/${message.mediaUrl}`
-      
+
       switch (mediaType) {
         case 'image':
         case "jpg":
@@ -2414,20 +2734,20 @@
       createBtn.textContent = '⏳ Criando...';
 
       try {
-      const response =  await fetch(`${URL_BASE}/api/v1/channel`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(channelData) });
+        const response = await fetch(`${URL_BASE}/api/v1/channel`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(channelData) });
 
         if (!response.ok) {
-              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
 
-            const result = await response.json();
-            console.log('Canal criado:', result);
+        const result = await response.json();
+        console.log('Canal criado:', result);
 
-            showNotification('✅ Canal criado com sucesso!', 'success');
-            closeAddChannelModal();
-            await loadChannels();
-      //  showNotification('Canal criado!', 'success');
-   //     closeAddChannelModal();
+        showNotification('✅ Canal criado com sucesso!', 'success');
+        closeAddChannelModal();
+        await loadChannels();
+        //  showNotification('Canal criado!', 'success');
+        //     closeAddChannelModal();
         //loadChannels();
       } catch (error) { showNotification('Erro ao criar canal', 'error'); } finally {
         createBtn.disabled = false;

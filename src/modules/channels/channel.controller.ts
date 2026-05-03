@@ -52,4 +52,19 @@ export async function channelController(fastify: FastifyInstance) {
       }
     },
   );
+
+  fastify.post("/:channelId/send",   async (request: FastifyRequest, reply: FastifyReply) => {
+    const { channelId } = request.params as any;
+    try {
+       const id = parseInt(channelId);
+        console.log(id)
+        reply.status(200).send("ok")
+    } catch (error) {
+      
+    reply
+          .status(500)
+          .send({ message: `Erro interno ${JSON.stringify(error, null, 2)}` });
+      }
+       
+  })
 }

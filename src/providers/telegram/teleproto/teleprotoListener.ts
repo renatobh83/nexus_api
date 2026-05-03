@@ -65,7 +65,7 @@ export const teleprotoListener = async (tbot: SessionTbot) => {
         const session = toInternalSession(tbot)
         const contato = await resolveContact(event.message, tbot)
         
-
+        
         await handleMessage(message, session, contato);
 
     }, new NewMessage({}));
