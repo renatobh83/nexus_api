@@ -1,52 +1,47 @@
-
-
 import { Api, client, TelegramClient } from "teleproto";
 import { StringSession } from "teleproto/sessions/StringSession.js";
-import { Album,  EditedMessage, NewMessage } from "teleproto/events/index.js"
-;
-import { EventBuilder } from 'teleproto/events/common.js';
-import { Channel } from '@prisma/client';
-import { ChannelService } from '../../../modules/channels/channel.services.js';
-import { teleprotoListener } from './teleprotoListener.js';
+import { Album, EditedMessage, NewMessage } from "teleproto/events/index.js";
+import { EventBuilder } from "teleproto/events/common.js";
+import { Channel } from "@prisma/client";
+import { ChannelService } from "../../../modules/channels/channel.service.js";
+import { teleprotoListener } from "./teleprotoListener.js";
 
 export interface SessionTbot extends TelegramClient {
-  id: number
+  id: number;
 }
 
+const sessions: SessionTbot[] = [];
 
-
-const sessions: SessionTbot[] = []
-
-export const initTeleproto = async (channel: Channel,  channelService: ChannelService): Promise<SessionTbot>=>{
+export const initTeleproto = async (
+  channel: Channel,
+  channelService: ChannelService,
+): Promise<SessionTbot> => {
   const apiId = parseInt(process.env.TELEPROTO_API_ID || "O");
-  
-  
-  
+
   const apiHash = process.env.TELEPROTO_API_HASH || "";
   // sessão vazia (primeiro login)
-  const stringSession = new StringSession(process.env.TELEPROTO_STRING_SESSION || "");
-  
+  const stringSession = new StringSession(
+    process.env.TELEPROTO_STRING_SESSION || "",
+  );
 
-  
   const client = new TelegramClient(stringSession, apiId, apiHash, {
     connectionRetries: 5,
-  }) as SessionTbot
+  }) as SessionTbot;
 
-  await client.connect()
+  await client.connect();
   // Verifica se a sessão é válida
 
-
-
   if (!client.isUserAuthorized()) {
-    console.log("Sessão inválida ou expirada. Por favor, execute o script de login novamente para obter uma nova sessão.");
+    console.log(
+      "Sessão inválida ou expirada. Por favor, execute o script de login novamente para obter uma nova sessão.",
+    );
     await client.disconnect();
-
   }
   const me = await client.getMe();
   console.log("👤 Conectado como:", me?.username || "desconhecido");
 
-   console.log("🔑 Sessão:");
-  client.id = channel.id
+  console.log("🔑 Sessão:");
+  client.id = channel.id;
 
   const index = sessions.findIndex((s) => s.id === channel.id);
   if (index === -1) {
@@ -55,28 +50,23 @@ export const initTeleproto = async (channel: Channel,  channelService: ChannelSe
     sessions[index] = client;
   }
 
-
   await channelService.update(channel.id, {
-      status: "CONNECTED",
-      qrcode: "",
-      retries: 0,
-      phone: me,
-      session: channel.name,
-      pairingCode: "",
-    });
-  teleprotoListener(client)
-  
-  return client
+    status: "CONNECTED",
+    qrcode: "",
+    retries: 0,
+    phone: me,
+    session: channel.name,
+    pairingCode: "",
+  });
+  teleprotoListener(client);
 
-}
-
-
+  return client;
+};
 
 /**
  * Recupera sessão
  */
-export const getTbot = (channelId?: number): SessionTbot | SessionTbot[] => {
-  if(!channelId) return sessions
+export const getTbot = (channelId: number): SessionTbot => {
   const session = sessions.find((s) => s.id === Number(channelId));
 
   if (!session) {
@@ -86,24 +76,13 @@ export const getTbot = (channelId?: number): SessionTbot | SessionTbot[] => {
   return session;
 };
 
-
 export const teleprotoDisconnect = async (sessionId?: number) => {
-  if(sessionId) {
-    await sessions.find(s => s.id === sessionId)?.disconnect()
-    
-  }else {
-    sessions.map(async client => await client.disconnect())
+  if (sessionId) {
+    await sessions.find((s) => s.id === sessionId)?.disconnect();
+  } else {
+    sessions.map(async (client) => await client.disconnect());
   }
-}
-
-
-
-
-
-
-
-
-
+};
 
 // const apiId   = 37071633;
 // const apiHash = "6419c1f3fa3eedf28893611f8d0720d3";
@@ -124,7 +103,6 @@ export const teleprotoDisconnect = async (sessionId?: number) => {
 //     return;
 //   }
 
-
 //   const me = await client.getMe();
 //   console.log("👤 Conectado como:", me?.username || "desconhecido");
 
@@ -133,7 +111,7 @@ export const teleprotoDisconnect = async (sessionId?: number) => {
 //   //  Adiciona um listener para novas mensagens
 //   // Sempre que uma nova mensagem for recebida, esta função será executada.
 //   client.addEventHandler(async (event) => {
-//     if (event.message && event.message.message) { 
+//     if (event.message && event.message.message) {
 //       // console.log(event)
 //       console.log("\n--- Nova Mensagem Recebida ---");
 //       console.log("De:", event.message.peerId.className);
@@ -144,7 +122,7 @@ export const teleprotoDisconnect = async (sessionId?: number) => {
 //        if (event.message.media) {
 //          if (event.message.media) {
 //         console.log("Mídia detectada!");
-        
+
 //         // Obtém o tipo de mídia (ex: MessageMediaPhoto, MessageMediaDocument)
 //         const mediaType = event.message.media.className;
 //         console.log("Tipo de Mídia:", mediaType);
@@ -176,7 +154,7 @@ export const teleprotoDisconnect = async (sessionId?: number) => {
 //        }
 //       // Obtendo informações detalhadas do remetente
 //      const sender = await event.message.getSender()
-      
+
 //       console.log("ID do Remetente:", sender && sender.id.toString());
 //       console.log("Nome do Remetente:", sender && sender.firstName || "N/A");
 //       console.log("Sobrenome do Remetente:", sender && sender.lastName || "N/A");
@@ -187,15 +165,15 @@ export const teleprotoDisconnect = async (sessionId?: number) => {
 //       console.log("Peer ID (direto):", event.message.peerId.userId || event.message.peerId.channelId || event.message.peerId.chatId);
 
 //       console.log("------------------------------");
-//     } 
-    
+//     }
+
 //     // Exemplo de resposta automática: se a mensagem for "ping", responde "pong"
 //     if (event.message.message === "ping") {
 //       await client.sendMessage(event.message.peerId, { message: "pong" });
 //       console.log("Resposta enviada: pong");
 //     }
 //   }, new NewMessage({}));
-  
+
 //   client.addEventHandler(async(event)=>{
 
 //     if (event.message && event.message.media) {
@@ -203,16 +181,14 @@ export const teleprotoDisconnect = async (sessionId?: number) => {
 //       console.log("\n--- Nova Mensagem Media ---");
 //       console.log("De:", event.message.peerId.className);
 //       // console.log("Texto:", event.message.message);
-      
 
 //       console.log("ID do Remetente:", sender && sender.id.toString());
 //       console.log("Nome do Remetente:", sender && sender.firstName || "N/A");
 //       console.log("Sobrenome do Remetente:", sender && sender.lastName || "N/A");
 //       console.log("Username do Remetente:", sender && sender.username || "N/A");
 //       console.log("Tipo de Remetente:", sender && sender.className); // Ex: User, Channel, Chat
-//       } 
+//       }
 //   }, new EventBuilder({}))
-
 
 //   client.addEventHandler(async (event) => {
 //     console.log(event.message)
@@ -222,7 +198,7 @@ export const teleprotoDisconnect = async (sessionId?: number) => {
 //   // o processo Node.js precisa permanecer em execução. A linha abaixo simula isso.
 //   // Pressione Ctrl+C no terminal para encerrar o script.
 //   console.log("Cliente ativo. Pressione Ctrl+C para sair.");
-//   await new Promise(() => {}); 
+//   await new Promise(() => {});
 // }
 
 // // Função auxiliar para determinar a extensão do arquivo com base no tipo de mídia

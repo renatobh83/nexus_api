@@ -1,31 +1,25 @@
-import { Prisma } from "@prisma/client";
+import { Channel } from "@prisma/client";
 import { transformFile } from "../../../utils/messsageMedia.js";
-import { SendMessageWppWeb } from "../../../providers/whatsapp-web/wpp-web/SendMessageWppWeb.js";
+import { SendMessageTeleprotoChannel } from "../../../providers/telegram/teleproto/sendMessageTeleprotoChannel.js";
+import { SendMessageWppWebChannel } from "../../../providers/whatsapp-web/wpp-web/SendMessageWppWebChannel.js";
 
-type TicketWithChannel = Prisma.TicketGetPayload<{
-  include: {
-    messages: true;
-    channel: {
-      select: {
-        id: true;
-        name: true;
-        type: true;
-      };
-    };
-  };
-}>;
-
-export const SendMessageSystemProxy = async (
-  body: string,
-  ticket: TicketWithChannel,
+export const handleSendMessage = async (
+  channel: Channel,
+  to: string,
+  body: any,
   media: any,
 ) => {
   const hasMedia = Boolean(media) ? await transformFile(media) : false;
-  const channel = ticket.channel?.type;
 
-  switch (channel) {
+  const channelType = channel.type;
+  // console.log(hasMedia);
+
+  switch (channelType) {
     case "whatsapp":
-      SendMessageWppWeb(body, ticket, hasMedia);
+      await SendMessageWppWebChannel(body, channel.id, to, hasMedia);
+      break;
+    case "telegram":
+      await SendMessageTeleprotoChannel(body, channel.id, to, hasMedia);
       break;
     default:
       break;

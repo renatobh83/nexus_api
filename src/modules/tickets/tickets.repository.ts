@@ -63,6 +63,7 @@ export class TicketsRepository {
       data: data,
     });
   }
+
   async create(data: Prisma.TicketCreateInput): Promise<any> {
     return await prisma.ticket.create({
       data: data,

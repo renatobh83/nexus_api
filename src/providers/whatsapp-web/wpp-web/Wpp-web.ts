@@ -3,7 +3,7 @@ import fs, { promises } from "node:fs";
 import { create, CreateConfig, defaultOptions, Whatsapp } from "wbotconnect";
 
 import { Prisma, Channel } from "@prisma/client";
-import { ChannelService } from "../../../modules/channels/channel.services.js";
+import { ChannelService } from "../../../modules/channels/channel.service.js";
 import { wbotWebListener } from "./wppWebListener.js";
 
 function extractQrCode(url: string): string | null {

@@ -63,4 +63,12 @@ export class ChannelsRepository {
   async listaAll() {
     return await prisma.channel.findMany();
   }
+
+  async findById(id: number) {
+    return await prisma.channel.findFirst({
+      where: {
+        id: id,
+      },
+    });
+  }
 }

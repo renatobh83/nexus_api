@@ -2,6 +2,9 @@ import { Ticket } from "@prisma/client";
 
 import { TicketService } from "../../../modules/tickets/tickets.services.js";
 import { getWbot } from "./Wpp-web.js";
+
+const ticketService = new TicketService();
+
 type MediaFile = {
   filename: string;
   mimetype: string;
@@ -13,7 +16,7 @@ export const SendMessageWppWeb = async (
   hasMedia: boolean | MediaFile,
 ) => {
   const wbot = getWbot(ticket.channelId);
-  const ticketService = new TicketService();
+
   if (typeof hasMedia !== "boolean") {
     let mimetype = hasMedia.mimetype;
     const fileData = `data:${mimetype};base64,${hasMedia.buffer.toString(

@@ -65,7 +65,7 @@ export async function messagesController(fastify: FastifyInstance) {
 
         await service.createMessageSystem(messageData);
 
-        reply.status(500).send("Messagem enviada");
+        reply.status(200).send("Messagem enviada");
       } catch (error) {
         reply
           .status(500)
@@ -73,6 +73,4 @@ export async function messagesController(fastify: FastifyInstance) {
       }
     },
   );
-
-  
 }

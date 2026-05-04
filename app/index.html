@@ -1893,7 +1893,28 @@
           method: 'POST',
           body: formData
         });
-        // Tenta parsear como JSON, se falhar, considera sucesso
+        // 🔴 VERIFICAÇÃO CRÍTICA: Se a resposta não for ok (status 200-299)
+        if (!response.ok) {
+          // Tenta extrair a mensagem de erro do servidor
+          let errorMessage = `Erro ${response.status}: ${response.statusText}`;
+
+          try {
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+              const errorData = await response.json();
+              errorMessage = errorData.message || errorData.error || errorMessage;
+            } else {
+              const textError = await response.text();
+              if (textError) errorMessage = textError;
+            }
+          } catch (e) {
+            console.error('Erro ao parsear mensagem de erro:', e);
+          }
+
+          throw new Error(errorMessage);
+        }
+
+        // Só chega aqui se response.ok for true
         let result = null;
         try {
           const contentType = response.headers.get('content-type');
@@ -1905,10 +1926,11 @@
         } catch (e) {
           result = { message: 'Mensagem enviada' };
         }
+
         showNotification('✅ Mensagem enviada com sucesso!', 'success');
         closeBroadcastModal();
-      } catch (error) {
 
+      } catch (error) {
         console.error('Erro ao enviar mensagem avulsa:', error);
         showNotification(`❌ Erro: ${error.message}`, 'error');
       } finally {
@@ -2078,6 +2100,7 @@
         case 'image':
         case "jpg":
         case 'image/jpeg':
+        case 'png':
         case 'imageMessage':
           return `
         <div>
@@ -2089,7 +2112,7 @@
         case 'videoMessage':
           return `
         <video controls style="max-width: 250px; border-radius: 6px;">
-          <source src="${message.mediaUrl}">
+          <source src="${src}">
         </video>
         ${body ? `<div style="margin-top: 6px;">${formatWhatsAppMessage(body)}</div>` : ''}
       `;
@@ -2097,11 +2120,12 @@
         case 'audioMessage':
           return `
         <audio controls style="width: 250px;">
-          <source src="${message.mediaUrl}">
+          <source src="${src}">
         </audio>
         ${body ? `<div style="margin-top: 6px;">${formatWhatsAppMessage(body)}</div>` : ''}
       `;
         case 'document':
+        case 'txt':
         case 'documentMessage':
           const fileName = body || 'Documento';
           const fileExt = fileName.split('.').pop().toUpperCase();
@@ -2112,7 +2136,7 @@
             <div style="font-weight: 500; font-size: 13px;">${fileName.substring(0, 40)}</div>
             <div style="font-size: 11px; color: #667781;">${fileExt}</div>
           </div>
-          <button onclick="window.open('${message.mediaUrl}', '_blank')" style="background: #075e54; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+          <button onclick="window.open('${src}', '_blank')" style="background: #075e54; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
             Baixar
           </button>
         </div>
@@ -2186,7 +2210,7 @@
           method: 'POST',
           body: formData
         });
-
+        console.log(response)
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
