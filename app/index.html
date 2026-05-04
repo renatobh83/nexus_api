@@ -1785,6 +1785,7 @@
     const URL_BASE = "http://localhost:3000";
     // const URL_BASE = "https://fast.panelapps.site";
     let socket = null;
+    let currentTab = 'chats';
     let currentTicket = null;
     let allTickets = [];
     let connectionAttempts = 0;
@@ -1796,7 +1797,19 @@
 
     // === MENSAGEM AVULSA (BROADCAST) ===
     let broadcastSelectedFile = null;
-
+    function ensureSocketConnection() {
+      return new Promise((resolve) => {
+        if (socket && socket.connected) {
+          resolve(true);
+        } else if (socket) {
+          socket.once('connect', () => resolve(true));
+          socket.connect();
+        } else {
+          initSocket();
+          socket.once('connect', () => resolve(true));
+        }
+      });
+    }
     function openBroadcastModal() {
       const modal = document.getElementById('broadcastModal');
       modal.classList.add('active');
@@ -1953,6 +1966,7 @@
       try {
         const ticketsList = document.getElementById('tickets-list');
         const response = await fetch(`${URL_BASE}/api/v1/tickets`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         let tickets = data.tickets || data || [];
         tickets = tickets.sort((a, b) => {
@@ -1976,6 +1990,9 @@
         applyTicketFilter();
       } catch (error) {
         console.error('Erro ao carregar tickets:', error);
+        document.getElementById('tickets-list').innerHTML =
+          '<div class="error-state">❌ Erro ao carregar tickets<br>' +
+          '<button onclick="loadTickets()">Tentar novamente</button></div>';
       }
     }
     // Função para texto do status em português
@@ -2063,6 +2080,12 @@
     async function selectTicket(ticketId) {
       if (currentTicket?.id === ticketId) return;
       currentTicket = { id: ticketId };
+      // Aguardar socket conectar se necessário
+      if (!socket?.connected) {
+        await new Promise(resolve => {
+          socket?.on('connect', resolve);
+        });
+      }
       document.getElementById('messageInput').disabled = false;
       document.getElementById('sendBtn').disabled = false;
       document.getElementById('attachBtn').disabled = false;
@@ -2094,7 +2117,7 @@
       if (message.isDeleted) {
         return `<div style="font-style: italic; color: #667781;">Mensagem apagada</div>`;
       }
-      const src = `http://localhost:3000/public/${message.mediaUrl}`
+      const src = `${URL_BASE}/public/${message.mediaUrl}`
 
       switch (mediaType) {
         case 'image':
@@ -2610,13 +2633,15 @@
     }
 
     function filterTickets() { applyTicketFilter(); }
+
     function switchTab(tab) {
       currentTab = tab;
 
-      document.querySelectorAll('.menu-item').forEach(item => {
-        item.classList.remove('active');
-        if (item.getAttribute('data-tab') === tab) {
+      document.querySelectorAll('.menu-item').forEach((item, index) => {
+        if ((tab === 'chats' && index === 0) || (tab === 'conexoes' && index === 1)) {
           item.classList.add('active');
+        } else {
+          item.classList.remove('active');
         }
       });
 
@@ -2749,7 +2774,7 @@
 
         channelData.phoneNumberId = phoneNumberId;
         channelData.accessToken = accessToken;
-        channelData.businessAccountId = document.getElementById('businessAccountId').value().trim();
+        channelData.businessAccountId = document.getElementById('businessAccountId').value.trim();
       }
       // Botão de criar em loading
       const createBtn = document.querySelector('#channelModal .btn-primary');

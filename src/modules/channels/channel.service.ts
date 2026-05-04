@@ -46,6 +46,7 @@ export class ChannelService {
       if (!channel) {
         throw new Error("CHANNEL_NO_FOUND");
       }
+
       const { to, body } = message;
       const enviarPara = `+55${to}`;
       await Promise.all(
