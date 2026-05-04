@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { MessageService } from "./messages.service.js";
-import { TicketService } from "../tickets/tickets.services.js";
+import { TicketService } from "../tickets/tickets.service.js";
 const service = new MessageService();
 const ticketServices = new TicketService();
 export async function messagesController(fastify: FastifyInstance) {

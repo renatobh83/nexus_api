@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { TicketService } from "./tickets.services.js";
+import { TicketService } from "./tickets.service.js";
 const service = new TicketService();
 export async function ticketController(fastify: FastifyInstance) {
   fastify.get("/", async (request: FastifyRequest, reply: FastifyReply) => {

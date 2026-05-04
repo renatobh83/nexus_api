@@ -3,7 +3,7 @@ import { getTbot } from "./tbotProto.js";
 import { Api } from "teleproto";
 import { CustomFile } from "teleproto/client/uploads.js";
 import * as mime from "mime-types"; // Importa a biblioteca mime-types
-import { TicketService } from "../../../modules/tickets/tickets.services.js";
+import { TicketService } from "../../../modules/tickets/tickets.service.js";
 import { AuxiTbot } from "./teleprotoListener.js";
 const ticketService = new TicketService();
 

@@ -1,4 +1,4 @@
-import { TicketService } from "../tickets.services.js";
+import { TicketService } from "../tickets.service.js";
 import { Prisma, Ticket } from "@prisma/client";
 import { ContactInternal } from "../../../providers/session.types.js";
 
@@ -29,9 +29,9 @@ export const createTicket = async (
     isInteraction,
     socketId,
   } = input;
-  
+
   const payload: Prisma.TicketCreateInput = {
-    owner:contactOwner.name || contactOwner.pushname || contactOwner.shortName,
+    owner: contactOwner.name || contactOwner.pushname || contactOwner.shortName,
     contato,
     unreadMessages,
     lastMessage: msg,
@@ -55,7 +55,7 @@ export const createTicket = async (
     socketId,
     chatClient,
   };
-  
+
   const service = new TicketService();
   ticket = await service.findTicket({
     contato: contato,

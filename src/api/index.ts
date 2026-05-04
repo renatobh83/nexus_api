@@ -7,7 +7,7 @@ import fastify, {
 import { Server as SocketIOServer } from "socket.io";
 import { prisma } from "../lib/prisma.js";
 import { ChannelManager } from "../modules/channels/ChannelManager.js";
-import { TicketService } from "../modules/tickets/tickets.services.js";
+import { TicketService } from "../modules/tickets/tickets.service.js";
 import routes from "./routes/index.js";
 import fastifyModule from "./plugins/fastifyModules.js";
 import { initSocket } from "../lib/socket.js";
@@ -117,10 +117,9 @@ export async function start() {
     app.server.keepAliveTimeout = 5 * 60 * 1000;
     await app.listen({ port: 3000, host: "0.0.0.0" });
 
-    setImmediate(async() => {
+    setImmediate(async () => {
       const channelManager = new ChannelManager();
       channelManager.startAllReadySessions().catch(app.log.error);
-      
     });
   } catch (err: any) {
     if (app) {

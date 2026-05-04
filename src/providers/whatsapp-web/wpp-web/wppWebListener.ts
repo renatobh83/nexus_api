@@ -26,12 +26,6 @@ const resolveContact = async (
   return session.getContact(phoneNumber._serialized);
 };
 
-export const AuxiWbot = async (wbot: Session, message: Message) => {
-  const internal = toInternalMessage(message);
-  const session = toInternalSession(wbot);
-  const contato = await resolveContact(message, wbot);
-  await handleMessage(internal, session, contato);
-};
 export const wbotWebListener = async (wbot: Session): Promise<void> => {
   /**
    *  Listens to all new messages, sent and received.
