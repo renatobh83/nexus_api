@@ -39,6 +39,7 @@ export const initTeleproto = async (
   }
   const me = await client.getMe();
 
+  client.id = channel.id;
   const index = sessions.findIndex((s) => s.id === channel.id);
   if (index === -1) {
     sessions.push(client);
