@@ -19,7 +19,12 @@ const messageInclude = {
 } satisfies Prisma.MessageInclude;
 export class MessageRepository {
   async create(dto: Prisma.MessageCreateInput) {
-    return prisma.message.create({ data: dto });
+    return await prisma.message.upsert({
+      where: { messageId: dto.messageId },
+      update: dto,
+      create: dto,
+    });
+    // return prisma.message.create({ data: dto });
   }
 
   async findMessage(

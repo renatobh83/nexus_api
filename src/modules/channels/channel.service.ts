@@ -16,8 +16,11 @@ export class ChannelService {
   async findAll(): Promise<Channel[]> {
     return this.channelsRepository.findMany();
   }
-  async listaAllChannles(): Promise<Channel[]> {
+  async listaAllChannels(): Promise<Channel[]> {
     return await this.channelsRepository.listaAll();
+  }
+  async findChannel(id: number): Promise<Channel | null> {
+    return await this.channelsRepository.findById(id);
   }
   async update(id: number, data: Prisma.ChannelUpdateInput): Promise<Channel> {
     try {

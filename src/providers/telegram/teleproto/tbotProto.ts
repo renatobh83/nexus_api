@@ -38,10 +38,6 @@ export const initTeleproto = async (
     await client.disconnect();
   }
   const me = await client.getMe();
-  console.log("👤 Conectado como:", me?.username || "desconhecido");
-
-  console.log("🔑 Sessão:");
-  client.id = channel.id;
 
   const index = sessions.findIndex((s) => s.id === channel.id);
   if (index === -1) {

@@ -8,7 +8,7 @@ const channelManager = new ChannelManager();
 export async function channelController(fastify: FastifyInstance) {
   fastify.get("/", async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      const channels = await service.listaAllChannles();
+      const channels = await service.listaAllChannels();
       reply.status(200).send(channels);
     } catch (error) {
       reply
@@ -16,6 +16,22 @@ export async function channelController(fastify: FastifyInstance) {
         .send({ message: `Erro interno ${JSON.stringify(error, null, 2)}` });
     }
   });
+
+  fastify.get(
+    "/:channelId",
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const { channelId } = request.params as any;
+        const id = parseInt(channelId);
+        const channel = await service.findChannel(id);
+        reply.status(200).send(channel);
+      } catch (error) {
+        reply
+          .status(500)
+          .send({ message: `Erro interno ${JSON.stringify(error, null, 2)}` });
+      }
+    },
+  );
   /**
    * Cria um novo canal na apliacação
    */
@@ -25,10 +41,10 @@ export async function channelController(fastify: FastifyInstance) {
         ...(request.body as any),
         status: "DISCONNECTED",
       };
-      console.log(payload);
+
       const channel = await service.create(payload);
 
-      reply.status(200); //.send("channel");
+      reply.status(200).send(channel);
     } catch (error) {
       reply
         .status(500)

@@ -26,7 +26,7 @@ export const SendMessageTeleproto = async (
       hasMedia.buffer, // O Buffer do arquivo
     );
 
-    const result = await tbot.sendFile("apiSuportBot", {
+    const result = await tbot.sendFile(ticket.contato, {
       file: customFile,
       caption: body,
       forceDocument: true, // Opcional: para enviar como documento mesmo que seja uma imagem/vídeo
@@ -37,7 +37,7 @@ export const SendMessageTeleproto = async (
       lastMessageAt: Date.now(),
     });
   } else {
-    const result = await tbot.sendMessage("apiSuportBot", { message: body });
+    const result = await tbot.sendMessage(ticket.contato, { message: body });
     await AuxiTbot(tbot, result);
     await ticketService.updateTicket(ticket.id, {
       lastMessage: body.length > 255 ? body.slice(0, 252) + "..." : body,

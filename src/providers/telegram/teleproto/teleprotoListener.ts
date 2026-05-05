@@ -10,6 +10,35 @@ import { ContactInternal } from "../../session.types.js";
 import { Api } from "teleproto";
 import { handleMessage } from "../../../modules/messages/handlers/handleMessage.js";
 
+export const teleprotoListener = async (tbot: SessionTbot) => {
+  // Mensagens e Mensagem de midia com caption
+  tbot.addEventHandler(async (event) => {
+    const messageIsGroup =
+      event.message.isChannel ||
+      event.message.isGroup ||
+      // @ts-ignore - _chat.bot existe em runtime
+      event.message._chat?.bot;
+    if (messageIsGroup) return;
+    await AuxiTbot(tbot, event.message);
+  }, new NewMessage({}));
+
+  // Media message
+  tbot.addEventHandler(async (event) => {
+    // console.log(event)
+    // const messageIsGroup = event.message.isChannel || event.message.isGroup
+    // console.log(messageIsGroup)
+    // if (messageIsGroup) return
+    // if (event.message && event.message.message) {
+    //     if (event.message.media) {
+    //         const message = await toInternalMessageTbot(event.message)
+    //         const session = toInternalSession(tbot)
+    //         const contato = await resolveContact(event.message, tbot)
+    //         await handleMessage(message, session, contato);
+    //     }
+    // }
+  }, new EventBuilder({}));
+  tbot.addEventHandler(async (event) => {}, new EditedMessage({}));
+};
 export const resolveContact = async (
   msg: Api.Message,
   session: SessionTbot,
@@ -54,33 +83,4 @@ export const AuxiTbot = async (tbot: SessionTbot, msg: Api.Message) => {
   const session = toInternalSession(tbot);
   const contato = await resolveContact(msg, tbot);
   await handleMessage(message, session, contato);
-};
-export const teleprotoListener = async (tbot: SessionTbot) => {
-  // Mensagens e Mensagem de midia com caption
-  tbot.addEventHandler(async (event) => {
-    const messageIsGroup =
-      event.message.isChannel ||
-      event.message.isGroup ||
-      // @ts-ignore - _chat.bot existe em runtime
-      event.message._chat?.bot;
-    if (messageIsGroup) return;
-    await AuxiTbot(tbot, event.message);
-  }, new NewMessage({}));
-
-  // Media message
-  tbot.addEventHandler(async (event) => {
-    // console.log(event)
-    // const messageIsGroup = event.message.isChannel || event.message.isGroup
-    // console.log(messageIsGroup)
-    // if (messageIsGroup) return
-    // if (event.message && event.message.message) {
-    //     if (event.message.media) {
-    //         const message = await toInternalMessageTbot(event.message)
-    //         const session = toInternalSession(tbot)
-    //         const contato = await resolveContact(event.message, tbot)
-    //         await handleMessage(message, session, contato);
-    //     }
-    // }
-  }, new EventBuilder({}));
-  tbot.addEventHandler(async (event) => {}, new EditedMessage({}));
 };
