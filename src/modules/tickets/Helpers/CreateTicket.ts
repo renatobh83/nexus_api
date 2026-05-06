@@ -30,7 +30,7 @@ export const createTicket = async (
     socketId,
   } = input;
 
-  const payload: Prisma.TicketCreateInput = {
+  const payload = {
     owner: contactOwner.name || contactOwner.pushname || contactOwner.shortName,
     contato,
     unreadMessages,
@@ -40,7 +40,7 @@ export const createTicket = async (
     isInteraction,
     socketId,
     chatClient,
-  };
+  } as Prisma.TicketCreateInput;
 
   payload.channel = {
     connect: { id: channelId },

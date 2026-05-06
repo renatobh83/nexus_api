@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-
 }
 
 datasource db {
@@ -36,7 +35,17 @@ model Channel {
 
   @@map("Channel")
 }
+model IntegrationConfig {
+  id              String    @id @default(uuid())
+  integrationName String    @unique // Ex: 'scheduling_api', 'crm_integration'
+  clientId        String?   // Opcional: para configurações por cliente/tenant
+  isActive        Boolean   @default(true)
+  settings        Json      // Armazena configurações específicas da integração (chaves, URLs, templates)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
+  @@map("integration_configs") // Nome da tabela no banco de dados
+}
 model Ticket {
   id                   Int       @id @default(autoincrement())
   status               String    @default("pending")
@@ -55,7 +64,6 @@ model Ticket {
   lastMessageAt        BigInt?
   startedAttendanceAt  BigInt?
   chamadoId            BigInt?
-  owner                 String?
   lastAbsenceMessageAt DateTime?
   chatClient           Boolean?
   socketId             String?
@@ -67,9 +75,13 @@ model Ticket {
   updatedAt            DateTime  @updatedAt
   channelId            Int
   isInteraction        Boolean   @default(false)
+  owner                String?
   messages             Message[]
-  channel              Channel?  @relation(fields: [channelId], references: [id])
+  channel              Channel   @relation(fields: [channelId], references: [id])
 
+  integrationSource  String?   @map("integration_source") // Ex: 'scheduling_api', 'default'
+  externalRefId      String?   @map("external_ref_id")
+  metadata           Json?     @default("{}")
   @@map("Tickets")
 }
 
@@ -83,31 +95,33 @@ model Message {
   mediaUrl       String?
   mediaType      String?
   reaction       String?
-  from           String?
-  to             String
-  hasReaction    Boolean                @default(false)
   reactionFromMe String?
-  isForwarded    Boolean                @default(false)
-  isGroupMsg     Boolean                @default(false)
-  isNotification  Boolean               @default(false)
-  timestamp      BigInt
   scheduleDate   DateTime?
   sendType       enum_Messages_sendType @default(chat)
-  type           enum_MessageType @default(chat)
   idFront        String?
   isDeleted      Boolean                @default(false)
+  isForwarded    Boolean                @default(false)
   createdAt      DateTime               @default(now())
   updatedAt      DateTime               @updatedAt
   ticketid       Int
   contato        String
-  ticket         Ticket?                @relation(fields: [ticketid], references: [id])
+  timestamp      BigInt
+  from           String?
+  hasReaction    Boolean                @default(false)
+  isGroupMsg     Boolean                @default(false)
+  isNotification Boolean                @default(false)
+  to             String
+  type           enum_MessageType       @default(chat)
+  caption        String?
   chatId         String?
   content        String
-  caption        String?
   mimetype       String?
+  ticket         Ticket                 @relation(fields: [ticketid], references: [id])
+
   @@unique([messageId, ticketid])
   @@map("Messages")
 }
+
 enum enum_MessageType {
   notification
   notification_template
@@ -142,7 +156,6 @@ enum enum_MessageType {
   poll_creation
   unknown
 }
-
 
 enum enum_Messages_sendType {
   campaign

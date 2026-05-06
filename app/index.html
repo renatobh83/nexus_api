@@ -255,6 +255,9 @@
     let showOnlyClosed = false;
     let selectedChannelType = null;
 
+    // Toggle da sidebar em mobile
+    const hamburger = document.getElementById('menuHamburger');
+    const sidebar = document.querySelector('.sidebar')
     // === MENSAGEM AVULSA (BROADCAST) ===
     let broadcastSelectedFile = null;
     function ensureSocketConnection() {
@@ -1275,39 +1278,39 @@
     // === FUNÇÕES DE ENVIO DE ARQUIVOS ===
 
 
-    async function handleFileSelect(event) {
-      const files = Array.from(event.target.files);
-      const attachBtn = document.getElementById('attachBtn');
-      // Removido sppiner do loading ao enviar mensagem
-      // attachBtn.classList.add('loading');
-      attachBtn.disabled = true;
+    // async function handleFileSelect(event) {
+    //   const files = Array.from(event.target.files);
+    //   const attachBtn = document.getElementById('attachBtn');
+    //   // Removido sppiner do loading ao enviar mensagem
+    //   // attachBtn.classList.add('loading');
+    //   attachBtn.disabled = true;
 
-      for (const file of files) {
-        if (file.size > 25 * 1024 * 1024) {
-          alert(`Arquivo ${file.name} é muito grande. Máximo 25MB`);
-          continue;
-        }
+    //   for (const file of files) {
+    //     if (file.size > 25 * 1024 * 1024) {
+    //       alert(`Arquivo ${file.name} é muito grande. Máximo 25MB`);
+    //       continue;
+    //     }
 
-        selectedFiles.push({
-          file: file,
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
-          caption: ''
-        });
-      }
+    //     selectedFiles.push({
+    //       file: file,
+    //       name: file.name,
+    //       size: file.size,
+    //       type: file.type,
+    //       preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
+    //       caption: ''
+    //     });
+    //   }
 
-      const messageInput = document.getElementById('messageInput');
-      messageInput.value = '';
+    //   const messageInput = document.getElementById('messageInput');
+    //   messageInput.value = '';
 
-      await new Promise(resolve => setTimeout(resolve, 300));
-      showFilePreview();
-      event.target.value = '';
-      // Removido sppiner do loading ao enviar mensagem
-      // attachBtn.classList.remove('loading');
-      attachBtn.disabled = false;
-    }
+    //   await new Promise(resolve => setTimeout(resolve, 300));
+    //   showFilePreview();
+    //   event.target.value = '';
+    //   // Removido sppiner do loading ao enviar mensagem
+    //   // attachBtn.classList.remove('loading');
+    //   attachBtn.disabled = false;
+    // }
 
     function showFilePreview() {
       const existingPreview = document.querySelector('.file-preview');
@@ -1499,14 +1502,9 @@
       messagesArea.insertAdjacentHTML('beforeend', messageHTML);
       messagesArea.scrollTop = messagesArea.scrollHeight;
     }
-    // Inicialização
-    initSocket();
-    loadTickets();
-    requestNotificationPermission();
+
     document.getElementById('messageInput').addEventListener('input', function () { this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 100) + 'px'; });
-    // Toggle da sidebar em mobile
-    const hamburger = document.getElementById('menuHamburger');
-    const sidebar = document.querySelector('.sidebar');
+
     if (hamburger && sidebar) {
       hamburger.addEventListener('click', () => {
         sidebar.classList.toggle('open');
@@ -1515,6 +1513,7 @@
       document.querySelectorAll('.ticket-item').forEach(item => {
         item.addEventListener('click', () => {
           if (window.innerWidth <= 768) {
+            console.log(window.innerWidth)
             sidebar.classList.remove('open');
           }
         });
@@ -1528,7 +1527,10 @@
 
     }
 
-
+    // Inicialização
+    initSocket();
+    loadTickets();
+    requestNotificationPermission();
 
   </script>
 </body>

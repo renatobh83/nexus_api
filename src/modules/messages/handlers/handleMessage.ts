@@ -8,9 +8,6 @@ import {
   SessionInternal,
 } from "../../../providers/session.types.js";
 
-
-
-
 const formatLastMessage = (message: MessageInternal): string => {
   if (message.type !== "chat") return "Media";
   if (!message.content) return "";
@@ -21,12 +18,12 @@ const formatLastMessage = (message: MessageInternal): string => {
 export const handleMessage = async (
   message: MessageInternal,
   session: SessionInternal,
-  contato: ContactInternal
+  contato: ContactInternal,
 ) => {
   try {
-    
     const serialized = contato.id._serialized;
     const lastMessage = formatLastMessage(message);
+
     const { ticket, isNew } = await createTicket({
       contato: serialized,
       contactOwner: contato,
@@ -35,7 +32,7 @@ export const handleMessage = async (
       msg: lastMessage,
       unreadMessages: 0,
     });
-
+    if (ticket.isInteraction) return;
     const createdMessage = await VerifyMessage(
       message,
       contato,
