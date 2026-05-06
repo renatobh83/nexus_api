@@ -3,7 +3,14 @@ import { getWbot } from "../../../../providers/whatsapp-web/wpp-web/Wpp-web.js";
 import { IntegracaoService } from "../../integrationConfig.service.js";
 
 const service = new IntegracaoService();
-
+enum STATUS_CONFIRMACAO {
+  RESPONDIDO = "RESPONDIDO",
+  CONFIRMADO = "CONFIRMADO",
+  CANCELADO = "CANCELADO",
+  ERROR = "ERRO NO PROCESSO DE CONFIRMAÇÂO",
+  SEM_RESPOSTA = "SEM RESPOSTA",
+  ENVIADA = "ENVIADA",
+}
 export const checkBot = async (input: any) => {
   const { contatos } = input;
   const payload = ProcessBodyData(contatos[0].notificacao);
@@ -66,16 +73,22 @@ const schedulingApi = async (input: any, content: any) => {
   const ticket = await service.createTicketForIntegration(payload);
   const quantidadeExames = content.dados_agendamentos.length;
   const plural = quantidadeExames > 1 ? "exames agendados" : "exame agendado";
+
   const horarioTexto =
     quantidadeExames > 1
-      ? `a partir das *${ticket.atendimentoHora}*`
-      : `às ${ticket.atendimentoHora}`;
+      ? `a partir das *${horarioMaisCedo.Hora}*`
+      : `às ${horarioMaisCedo.Hora}`;
   const randomGreeting =
     greetings[Math.floor(Math.random() * greetings.length)];
 
   const sendMessage = await wbot.sendListMessage(contato, {
     buttonText: "Confirmar",
-    description: bodyMessage(randomGreeting, plural, ticket, horarioTexto),
+    description: bodyMessage(
+      randomGreeting,
+      plural,
+      content.atendimento_data,
+      horarioTexto,
+    ),
     sections: [
       {
         title: "Confirmação do agendamento",
@@ -94,17 +107,26 @@ const schedulingApi = async (input: any, content: any) => {
       },
     ],
   });
+  if (sendMessage) {
+    const updateTicket = {
+      contato,
+      status: STATUS_CONFIRMACAO.ENVIADA,
+      lastMessageAt: sendMessage.timestamp,
+      lastMessage: "Confirmação enviada",
+    };
+    return await service.updateTicketIntegration(ticket.id, updateTicket);
+  }
 };
 const bodyMessage = (
   randomGreeting: string,
   plural: string,
-  ticket: { atendimentoData: any },
+  dataAtendimento: string,
   horarioTexto: string,
 ) => {
   return `${randomGreeting}
-Nós, da *Clínica Lume*, temos um importante lembrete pra você:
+Nós, da *Clínica X*, temos um importante lembrete pra você:
 🗓 Você tem ${plural} na nossa clínica.
-Seu atendimento está agendado para o dia *${ticket.atendimentoData}* ${horarioTexto}.
+Seu atendimento está agendado para o dia *${dataAtendimento}* ${horarioTexto}.
 ⚠ *Importante*:
   - Paciente deverá apresentar pedido médico, carteira do convênio e documento de identificação com foto.
   - Trazer todos os exames anteriores realizados da área a ser examinada.`;

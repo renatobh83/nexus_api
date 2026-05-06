@@ -80,32 +80,24 @@ export class IntegracaoService {
         (id: any) => !currentIdexterno.includes(id),
       );
       const novoIdexterno = [...currentIdexterno, ...novosIds];
-
-      await prisma.ticket.update({
-        where: { id: ticketExist.id },
-        data: {
-          metadata: {
-            ...currentMetadata,
-            idexterno: novoIdexterno,
-            procedimentos: [
-              ...new Set([
-                ...(currentMetadata.procedimentos || []),
-                ...(procArr || []).filter((p: null) => p !== null),
-              ]),
-            ],
-            atendimentoHora:
-              !currentMetadata.atendimentoHora ||
-              currentMetadata.atendimentoHora > data.metadata.atendimentoHora
-                ? data.metadata.atendimentoHora
-                : currentMetadata.atendimentoHora,
-          },
-        },
-      });
-      return ticketExist;
+      const dataUpdate = {
+        ticketId: ticketExist.id,
+        currentMetadata,
+        atendimentoHora: data.metadata.atendimentoHora,
+        idExterno: novoIdexterno,
+        procArr,
+      };
+      return await this.integrationConfigRepository.updateTicketIntegration(
+        dataUpdate,
+      );
     }
 
     return await this.integrationConfigRepository.createTicketForIntegration(
       data,
     );
+  }
+
+  async updateTicketIntegration(ticketId: number, data: any) {
+    return await this.integrationConfigRepository.updateTicket(ticketId, data);
   }
 }

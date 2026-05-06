@@ -37,7 +37,40 @@ export class IntegrationConfigRepository {
   async createTicketForIntegration(data: Prisma.TicketCreateInput) {
     return await prisma.ticket.create({ data: data });
   }
+  async updateTicketIntegration(data: any) {
+    const {
+      ticketId,
+      currentMetadata,
+      novoIdexterno,
+      procArr,
+      atendimentoHora,
+    } = data;
 
+    return await prisma.ticket.update({
+      where: { id: ticketId },
+      data: {
+        metadata: {
+          ...currentMetadata,
+          idexterno: novoIdexterno,
+          procedimentos: [
+            ...new Set([
+              ...(currentMetadata.procedimentos || []),
+              ...(procArr || []).filter((p: null) => p !== null),
+            ]),
+          ],
+          atendimentoHora:
+            !currentMetadata.atendimentoHora ||
+            currentMetadata.atendimentoHora > atendimentoHora
+              ? atendimentoHora
+              : currentMetadata.atendimentoHora,
+        },
+      },
+    });
+  }
+
+  async updateTicket(ticketId: number, data: Prisma.TicketUpdateInput) {
+    return await prisma.ticket.update({ where: { id: ticketId }, data });
+  }
   async findExistsTicketOpen(data: any) {
     let sql = `
     SELECT * FROM "Tickets"
