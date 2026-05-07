@@ -7,11 +7,13 @@ import {
   SessionInternal,
 } from "../../../session.types.js";
 
-
 import { writeFile } from "node:fs";
 import { join } from "node:path";
 import { promisify } from "node:util";
-import { buildFilename, getSafeExtension } from "../../../../utils/messsageMedia.js";
+import {
+  buildFilename,
+  getSafeExtension,
+} from "../../../../utils/messsageMedia.js";
 import { PUBLIC_DIR } from "../../../../config/env.js";
 
 // Função auxiliar para normalizar o Wid para string

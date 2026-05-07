@@ -13,7 +13,7 @@ const resolveContact = async (
   session: Session,
 ): Promise<ContactInternal> => {
   if (message.isGroupMsg && !message.fromMe) {
-    const grupo = await session.getContact(message.chat.id._serialized);
+    const grupo = await session.getContact(message.from);
     return grupo;
   }
   if (message.fromMe) {
@@ -42,6 +42,7 @@ export const wbotWebListener = async (wbot: Session): Promise<void> => {
     const internal = toInternalMessage(message);
     const session = toInternalSession(wbot);
     const contato = await resolveContact(message, wbot);
+
     await handleMessage(internal, session, contato);
   });
 

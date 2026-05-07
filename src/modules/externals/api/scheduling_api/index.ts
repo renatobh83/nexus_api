@@ -82,7 +82,7 @@ const sendConfirmationMessage = async (
 };
 
 // 4. schedulingApi orquestra tudo
-const schedulingApi = async (input: any, content: any) => {
+export const schedulingApi = async (input: any, content: any) => {
   const { channelId, integrationName, ...restInput } = input;
   const wbot = getWbot(channelId);
 
@@ -132,14 +132,6 @@ const schedulingApi = async (input: any, content: any) => {
   }
 };
 
-export const checkBot = async (input: any) => {
-  const { contatos } = input;
-  const payload = ProcessBodyData(contatos[0].notificacao);
-
-  if (payload.bot === "agenda") {
-    schedulingApi(input, payload);
-  }
-};
 // const schedulingApi = async (input: any, content: any) => {
 //   const { channelId, integrationName, ...restIpunt } = input;
 
@@ -251,21 +243,4 @@ Seu atendimento está agendado para o dia *${dataAtendimento}* ${horarioTexto}.
 ⚠ *Importante*:
   - Paciente deverá apresentar pedido médico, carteira do convênio e documento de identificação com foto.
   - Trazer todos os exames anteriores realizados da área a ser examinada.`;
-};
-
-const ProcessBodyData = (body: string): any => {
-  const parsed = JSON.parse(body);
-
-  parsed.dados_agendamentos = parsed.dados_agendamentos
-    .replace(/^\[\(/, "")
-    .replace(/\)\]$/, "")
-    .split(/\), \(/)
-    .map((str: string) => str.split(","))
-    .map(([idExterno, Procedimento, Hora]: string[]) => ({
-      idExterno: parseInt(idExterno, 10),
-      Procedimento: parseInt(Procedimento, 10),
-      Hora,
-    }));
-
-  return parsed;
 };

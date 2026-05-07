@@ -1,4 +1,4 @@
-import { checkBot } from "../api/scheduling_api/index.js";
+import { checkBot } from "../api/index.js";
 import { IntegracaoService } from "../integrationConfig.service.js";
 
 interface IcheckIntegration {
@@ -19,7 +19,7 @@ export const checkIntegration = async (input: IcheckIntegration) => {
       throw new Error("Integração não existe favor verificar a rota");
     }
     if (input.integrationName === "scheduling_api") {
-      await checkBot(input);
+      // await checkBot(input);
     } else {
       return;
     }

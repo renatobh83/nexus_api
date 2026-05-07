@@ -59,6 +59,7 @@ export class IntegrationConfigRepository {
   async updateTicketIntegration(data: UpdateTicketIntegrationInput) {
     const { ticketId, currentMetadata, idexterno, procArr, atendimentoHora } =
       data;
+    data.procArr;
 
     // 4. Lógica de merge de procedimentos extraída para clareza
     const procedimentosMerged = [

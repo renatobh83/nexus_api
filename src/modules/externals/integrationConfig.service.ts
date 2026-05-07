@@ -39,10 +39,9 @@ interface UpdateTicketData {
   ticketId: number;
   currentMetadata: TicketMetadataJson;
   atendimentoHora: string;
-  idexterno: unknown[];
-  procArr: string[];
+  idexterno: number[]; // ← corrigido
+  procArr: number[];
 }
-
 // ─── Tipos de configuração de integração ─────────────────────────────────────
 
 interface IntegrationSettings {
@@ -136,8 +135,19 @@ export class IntegracaoService {
   }
 
   async createTicketForIntegration(data: TicketCreateData) {
+    const idExterno = this.toArray(data.metadata?.idExterno)
+      .map(Number)
+      .filter((n) => !isNaN(n));
+
+    const findInput = {
+      contato: data.contato as string,
+      metadata: {
+        idexterno: idExterno.length ? idExterno : undefined,
+        answered: false,
+      },
+    };
     const ticketExist =
-      await this.integrationConfigRepository.findExistsTicketOpen(data);
+      await this.integrationConfigRepository.findExistsTicketOpen(findInput);
 
     if (ticketExist) {
       logger.info("Ticket já existente, atualizando", {
@@ -178,29 +188,30 @@ export class IntegracaoService {
     data: TicketCreateData,
   ): UpdateTicketData {
     const incomingMetadata = data.metadata ?? {};
-    const procArr = this.toArray(incomingMetadata.procedimentos);
-    const idExtArr = this.toArray(incomingMetadata.idExterno);
+    const procArr = this.toArray(
+      incomingMetadata.procedimentos,
+    ) as unknown as number[];
+    const idExtArr = this.toArray(incomingMetadata.idExterno)
+      .map(Number)
+      .filter((n) => !isNaN(n));
 
-    // Cast seguro: metadata é Json? no Prisma, tratamos como Record internamente
     const currentMetadata = (ticketExist.metadata ?? {}) as TicketMetadataJson;
 
-    const currentIdExterno = this.toArray(
-      currentMetadata["idexterno"] as string | string[] | undefined,
-    ).filter((id) => id !== null && id !== undefined);
-
-    const novosIds = idExtArr.filter(
-      (id) => id !== null && id !== undefined && !currentIdExterno.includes(id),
-    );
+    const currentIdExterno = ((currentMetadata["idexterno"] as unknown[]) ?? [])
+      .map(Number)
+      .filter((n): n is number => !isNaN(n));
+    const novosIds = idExtArr
+      .map(Number)
+      .filter((n): n is number => !isNaN(n) && !currentIdExterno.includes(n));
 
     return {
       ticketId: ticketExist.id,
       currentMetadata,
       atendimentoHora: incomingMetadata.atendimentoHora ?? "",
-      idexterno: [...currentIdExterno, ...novosIds],
+      idexterno: [...currentIdExterno, ...novosIds], // agora number[]
       procArr,
     };
   }
-
   private encryptSensitiveFields(
     settings: IntegrationSettings,
   ): IntegrationSettings {
