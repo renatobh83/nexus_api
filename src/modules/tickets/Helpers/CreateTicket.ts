@@ -14,61 +14,67 @@ interface CreateTicketInput {
   chatClient?: boolean;
 }
 
+//  Logger
+const logger = {
+  info: (msg: string, meta?: Record<string, unknown>) =>
+    console.info(`[INFO] ${msg}`, meta ?? ""),
+  warn: (msg: string, meta?: Record<string, unknown>) =>
+    console.warn(`[WARN] ${msg}`, meta ?? ""),
+  error: (msg: string, meta?: Record<string, unknown>) =>
+    console.error(`[ERROR] ${msg}`, meta ?? ""),
+};
+
+// 1. Singleton do service (evita instanciar a cada chamada)
+const ticketService = new TicketService();
+
+// 2. Utilitário para resolver o nome do contato
+const resolveOwnerName = (owner: ContactInternal): string =>
+  owner.name || owner.pushname || owner.shortName || "Desconhecido";
+
+// 3. Monta os campos compartilhados entre create e update
+const buildSharedFields = (input: CreateTicketInput, now: number) => ({
+  unreadMessages: input.unreadMessages,
+  lastMessage: input.msg,
+  lastMessageAt: now,
+  isInteraction: input.isInteraction,
+  socketId: input.socketId,
+  chatClient: input.chatClient,
+});
+
 export const createTicket = async (
   input: CreateTicketInput,
 ): Promise<{ ticket: Ticket; isNew: boolean }> => {
-  let ticket: Ticket | null;
-  const {
-    channelId,
-    contactOwner,
-    contato,
-    msg,
-    ticketGroup,
-    unreadMessages,
-    chatClient,
-    isInteraction,
-    socketId,
-  } = input;
+  const { channelId, contactOwner, contato, ticketGroup } = input;
 
-  const payload = {
-    owner: contactOwner.name || contactOwner.pushname || contactOwner.shortName,
+  // 4. Timestamp único para ambos os payloads
+  const now = Date.now();
+  const sharedFields = buildSharedFields(input, now);
+
+  const createPayload: Prisma.TicketCreateInput = {
+    ...sharedFields,
+    owner: resolveOwnerName(contactOwner),
     contato,
-    unreadMessages,
-    lastMessage: msg,
-    lastMessageAt: Date.now(),
     isGroup: ticketGroup,
-    isInteraction,
-    socketId,
-    chatClient,
-  } as Prisma.TicketCreateInput;
-
-  payload.channel = {
-    connect: { id: channelId },
+    channel: { connect: { id: channelId } },
   };
 
-  // Payload para atualização (apenas os campos que podem mudar)
-  const updatePayload: Prisma.TicketUpdateInput = {
-    unreadMessages,
-    lastMessage: msg,
-    lastMessageAt: Date.now(),
-    isInteraction,
-    socketId,
-    chatClient,
-  };
-
-  const service = new TicketService();
-  ticket = await service.findTicket({
-    contato: contato,
-    status: {
-      in: ["pending", "open"],
-    },
+  // 5. Usando upsert do Prisma em vez de find → create/update manual
+  const existingTicket = await ticketService.findTicket({
+    contato,
+    status: { in: ["pending", "open"] },
   });
 
-  if (!ticket) {
-    ticket = await service.createTicket(payload);
-    return { ticket: ticket, isNew: true };
-  } else {
-    ticket = await service.updateTicket(ticket.id, updatePayload);
-    return { ticket: ticket, isNew: false };
+  if (!existingTicket) {
+    logger.info("Criando novo ticket");
+    const ticket = await ticketService.createTicket(createPayload);
+    return { ticket, isNew: true };
   }
+  logger.info("Ticket já existente, atualizando", {
+    ticketId: existingTicket.id,
+  });
+  const ticket = await ticketService.updateTicket(
+    existingTicket.id,
+    sharedFields,
+  );
+  return { ticket, isNew: false };
 };

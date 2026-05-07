@@ -19,11 +19,10 @@ if (!ENCRYPTION_KEY || Buffer.from(ENCRYPTION_KEY, "hex").length !== 32) {
 /**
  * Criptografa uma string usando AES-256-CBC.
  * @param {string} text - A string a ser criptografada.
- * @returns {string|null} A string criptografada no formato "iv:encryptedData" ou null se o texto for nulo.
+ * @returns {string} A string criptografada no formato "iv:encryptedData" .
  * @throws {Error} Se ENCRYPTION_KEY não estiver definida ou tiver o tamanho incorreto.
  */
-export const encrypt = (text: string): string | null => {
-  if (!text) return null;
+export const encrypt = (text: string): string => {
   if (!ENCRYPTION_KEY || Buffer.from(ENCRYPTION_KEY, "hex").length !== 32) {
     throw new Error(
       "ENCRYPTION_KEY não configurada corretamente para criptografia.",
@@ -44,11 +43,10 @@ export const encrypt = (text: string): string | null => {
 /**
  * Descriptografa uma string usando AES-256-CBC.
  * @param {string} text - A string criptografada no formato "iv:encryptedData".
- * @returns {string|null} A string descriptografada ou null se o texto for nulo.
+ * @returns {string} A string descriptografada
  * @throws {Error} Se ENCRYPTION_KEY não estiver definida ou tiver o tamanho incorreto.
  */
-export const decrypt = (text: string): string | null => {
-  if (!text) return null;
+export const decrypt = (text: string): string => {
   if (!ENCRYPTION_KEY || Buffer.from(ENCRYPTION_KEY, "hex").length !== 32) {
     throw new Error(
       "ENCRYPTION_KEY não configurada corretamente para descriptografia.",
