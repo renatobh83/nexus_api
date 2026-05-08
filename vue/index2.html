@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Ticket Manager - Vue</title>
+  <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <title>Ticket Manager Vue - Chat e Configurações</title>
+  <!--  Css-->
+  <link rel="stylesheet" href="./styles2.css" />
+</head>
+
+<body>
+  <div class="app-container" id="app">
+    <div style="position: relative;">
+      <button class="menu-hamburger" @click="toggleSidebar" style="display:  none;">☰</button>
+      <div class="top-menu">
+        <div class="menu-item" :class="{ active: activeTab === 'chats' }" @click="activeTab = 'chats'">💬 Chats</div>
+        <div class="menu-item" :class="{ active: activeTab === 'configuracoes' }" @click="activeTab = 'configuracoes'">
+          ⚙️ Configurações</div>
+        <button class="broadcast-btn" @click="openBroadcastModal">📢</button>
+      </div>
+    </div>
+    <!-- Conteudo -->
+    <div class="main-content">
+      <!-- Aba CHATS -->
+      <div class="tab-chats" :class="{ hidden: activeTab !== 'chats' }">
+        <!-- Sidebar -->
+        <div class="sidebar" :class="{ open: sidebarOpen }">
+          <div class="sidebar-header">
+            <h2>💬 Tickets</h2>
+            <p>Selecione uma conversa</p>
+          </div>
+          <div class="search-box"><input type="text" v-mode="searchTerm" name="search-box"
+              placeholder="🔍 Buscar ticket..." @input="updateSearchTerm"></div>
+
+          <div class="filter-switch">
+            <label class="switch-label">
+              <span>Mostrar apenas fechados</span>
+              <div class="switch">
+                <input type="checkbox" v-model="showOnlyClosed" @change="filterTickets">
+                <span class="slider"></span>
+              </div>
+            </label>
+            <!-- <span>Mostrar apenas fechados</span> -->
+            <!-- <div class="switch">
+              <input type="checkbox" v-model="showOnlyClosed" @change="filterTickets">
+              <span class="slider"></span>
+            </div> -->
+          </div>
+
+          <!-- lista dos tickets -->
+          <div class="tickets-list">
+
+            <div v-if="loadingTickets" class="loading-state">
+              <div class="spinner"></div>Carregando...
+            </div>
+            <div v-else-if="filteredTickets.length === 0" class="empty-state">📭 Nenhum ticket
+            </div>
+            <div v-for="ticket in filteredTickets" :key="ticket.id" class="ticket-item"
+              :class="{ active: currentTicket?.id === ticket.id }" @click="selectTicket(ticket.id)">
+              <div class="ticket-avatar">{{ getTicketAvatar(ticket) }}
+                <span class="channel-badge">{{
+                  getChannelIconByTicket(ticket) }}</span>
+              </div>
+              <div class="ticket-info">
+                <div class="ticket-name">
+                  <span>{{ ticket.owner || ticket.name || `Ticket ${ticket.id}` }}</span>
+                  <span class="ticket-time">{{ formatTime(ticket.lastMessageAt) }}</span>
+                </div>
+                <div class="ticket-preview">{{ (ticket.lastMessage || 'Nenhuma mensagem').substring(0,50) }}</div>
+                <span class="status-badge" :class="ticket.status">{{ getStatusText(ticket.status) }}</span>
+              </div>
+              <div class="ticket-actions">
+                <button class="action-btn attend" @click.stop="attendTicket(ticket.id)">🎧</button>
+                <button class="action-btn close" @click.stop="closeTicket(ticket.id)">✅</button>
+                <button class="action-btn reopen" @click.stop="reopenTicket(ticket.id)">🔄</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-container" id="chat-container">
+          <div class="chat-header">
+            <div>
+              <h2>{{ currentTicket ? `Ticket #${currentTicket.id}` : 'Ticket #' }}</h2>
+            </div>
+            <div class="connection-status" :class="{ connected: socketConnected, disconnected: !socketConnected }">
+              {{ socketConnected ? '🟢 Conectado' : '🔴 Desconectado' }}
+            </div>
+          </div>
+          <div class="messages-area" ref="messagesArea" id="messages-area">
+            <!-- Ver CSS -->
+            <div v-if="loadingMessages" class="loading-state">
+              <div class="spinner"></div>Carregando...
+            </div>
+            <div v-else-if="currentMessages.length === 0" class="empty-state">💬 Nenhuma mensagem ainda</div>
+            <div v-for="msg in currentMessages" :key="msg.id" class="message-wrapper"
+              :class="msg.fromMe ? 'sent' : 'received'">
+              <div class="message-bubble">
+                <div class="message-body" v-html="formatMessage(msg.body)"></div>
+                <div class="message-footer">{{ formatTime(msg.createdAt) }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="chat-footer">
+            <button class="attach-btn" :disabled="!currentTicket" @click="triggerFileInput">📎</button>
+            <input type="file" ref="fileInput" style="display:none" multiple @change="handleFileSelect">
+            <textarea class="message-input" v-model="newMessageText" :disabled="!currentTicket"
+              placeholder="Digite uma mensagem..." @keypress.enter.prevent="sendMessage"></textarea>
+            <button class="send-btn" :disabled="!currentTicket || !newMessageText.trim()" @click="sendMessage">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
+    createApp({
+      setup() {
+        const URL_BASE = "http://localhost:3000";
+        let socket = null;
+        // Estado
+        const activeTab = ref('chats');
+        const socketConnected = ref(false);
+        const sidebarOpen = ref(false);
+        const messageAreaRef = ref(null)
+        // Tickets
+        const allTickets = ref([]);
+        const searchTerm = ref('');
+        const showOnlyClosed = ref(false);
+        const currentTicket = ref(null);
+        const currentMessages = ref([]);
+        const loadingTickets = ref(false);
+        const loadingMessages = ref(false);
+        const newMessageText = ref('');
+        // Canais
+        const channels = ref([]);
+        const loadingChannels = ref(false);
+        const currentChannelId = ref(null);
+        const qrcodeModalVisible = ref(false);
+
+
+        // Computed
+        const filteredTickets = computed(() => {
+          let filtered = allTickets.value.filter(t => {
+            const matchName = (t.owner || t.name || '').toLowerCase().includes(searchTerm.value.toLowerCase());
+            const matchStatus = showOnlyClosed.value ? t.status === 'closed' : t.status !== 'closed';
+            return matchName && matchStatus;
+          });
+          return filtered.sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0));
+        });
+        //funcoes
+        function updateSearchTerm(event) {
+          searchTerm.value = event.target.value;
+
+        }
+        function getStatusText(status) {
+          const statusMap = {
+            'pending': 'Pendente',
+            'open': 'Em atendimento',
+            'atendendo': 'Em atendimento',
+            'closed': 'Finalizado'
+          };
+          return statusMap[status] || status;
+        }
+        function filterTickets() {
+          showOnlyClosed.value = !showOnlyClosed.value
+
+        }
+        function formatTime(dateString) {
+          if (!dateString) return '';
+
+          let date;
+          if (typeof dateString === 'number' || /^\d+$/.test(dateString)) {
+            date = new Date(parseInt(dateString));
+          } else {
+            date = new Date(dateString);
+          }
+
+          if (isNaN(date.getTime())) {
+            return 'Data inválida';
+          }
+
+          const now = new Date();
+          const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          const msgDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+          if (msgDate.getTime() === today.getTime()) {
+            return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+          } else {
+            return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) +
+              ' às ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+          }
+        }
+        const getTicketAvatar = (ticket) => (ticket.owner || ticket.name || '?').charAt(0).toUpperCase();
+        const getChannelIconByTicket = (ticket) => { const ch = channels.value.find(c => c.id === ticket.channelId); return ch ? (ch.type === 'whatsapp' ? '📱' : '✈️') : '💬'; };
+        const toggleSidebar = () => { sidebarOpen.value = !sidebarOpen.value; };
+        const formatMessage = (text) => text ? text.replace(/\n/g, '<br>') : '';
+        const loadChannels = async () => {
+          loadingChannels.value = true;
+          try { const res = await fetch(`${URL_BASE}/api/v1/channel`); channels.value = await res.json(); } catch (e) { console.error(e); }
+          finally { loadingChannels.value = false; }
+        };
+        const loadTickets = async () => {
+          loadingTickets.value = true;
+          try {
+            const res = await fetch(`${URL_BASE}/api/v1/tickets`);
+            const data = await res.json();
+            allTickets.value = (data.tickets || data || []).sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0));
+          } catch (e) { console.error(e); }
+          finally { loadingTickets.value = false; }
+        };
+        function loadMessages(ticketId) {
+          const ticket = allTickets.value.find(t => t.id === ticketId);
+          currentMessages.value = ticket?.messages ? [...ticket.messages].reverse() : [];
+          // const container = document.getElementById('messages-area');
+          // const messageStatus = document.getElementById('message-status');
+
+          // const ticket = allTickets.find(t => t.id === ticketId);
+          // const messages = ticket?.messages ? [...ticket.messages].reverse() : [];
+          // messageStatus.textContent = `${messages.length} ${messages.length === 1 ? 'mensagem' : 'mensagens'}`;
+          // if (!messages.length) {
+          //   container.innerHTML = '<div class="loading-state">💬 Nenhuma mensagem ainda</div>';
+          //   return;
+          // }
+          // container.innerHTML = messages.map(msg => createMessageHTML(msg, false)).join('');
+          // container.scrollTop = container.scrollHeight;
+        }
+        const sendMessage = async () => {
+          if (!currentTicket.value || !newMessageText.value.trim()) return;
+          const text = newMessageText.value;
+          newMessageText.value = '';
+          try {
+            const formData = new FormData();
+            formData.append('body', text);
+            formData.append('fromMe', 'true');
+            await fetch(`${URL_BASE}/api/v1/messages/${currentTicket.value.id}`, { method: 'POST', body: formData });
+            loadMessages(currentTicket.value.id);
+          } catch (e) { console.error(e); alert('Erro ao enviar'); }
+        };
+        const selectTicket = async (ticketId) => {
+          if (currentTicket.value?.id === ticketId) return;
+          currentTicket.value = allTickets.value.find(t => t.id === ticketId);
+          if (!currentTicket.value) return;
+          loadingMessages.value = true;
+          if (socket?.connected) socket.emit('join-ticket', ticketId);
+          loadMessages(ticketId)
+          loadingMessages.value = false;
+          await nextTick();
+          const area = document.querySelector('.messages-area');
+          if (area) area.scrollTop = area.scrollHeight;
+        };
+        onMounted(() => { loadChannels(); loadTickets(); });
+        // Rolar sempre que adicionar nova mensagem
+        // watch(currentMessages, async () => {
+        //   await nextTick() // Aguarda o Vue atualizar o DOM
+        //   if (messageAreaRef.value) {
+        //     messageAreaRef.value.scrollTop = messageAreaRef.value.scrollHeight
+        //   }
+        // }, { deep: true })
+        return {
+          activeTab,
+          messageAreaRef,
+          loadingTickets,
+          currentTicket,
+          socketConnected,
+          getTicketAvatar,
+          sidebarOpen,
+          getChannelIconByTicket,
+          toggleSidebar,
+          sendMessage,
+          selectTicket,
+          filteredTickets,
+          loadChannels,
+          newMessageText,
+          formatTime,
+          currentMessages,
+          formatMessage,
+          getStatusText,
+          filterTickets,
+          updateSearchTerm,
+
+        }
+      }
+    }).mount("#app")
+  </script>
+</body>
+
+</html>
