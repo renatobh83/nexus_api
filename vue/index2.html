@@ -16,7 +16,7 @@
 <body>
   <div class="app-container" id="app">
     <div style="position: relative;">
-      <button class="menu-hamburger" @click="toggleSidebar" style="display:  none;">☰</button>
+      <button class="menu-hamburger" style="display: none;" @click="toggleSidebar">☰</button>
       <div class="top-menu">
         <div class="menu-item" :class="{ active: activeTab === 'chats' }" @click="activeTab = 'chats'">💬 Chats</div>
         <div class="menu-item" :class="{ active: activeTab === 'configuracoes' }" @click="activeTab = 'configuracoes'">
@@ -102,14 +102,21 @@
               :class="msg.fromMe ? 'sent' : 'received'">
               <div class="message-bubble">
                 <div class="message-body" v-html="formatMessage(msg.body)"></div>
-                <div class="message-footer">{{ formatTime(msg.createdAt) }}</div>
+                <div class="message-footer">
+                  <span>{{ formatTime(msg.createdAt) }}</span>
+                  <span v-if="msg.fromMe" class="msg-status">
+                    <span v-if="msg.ack >= 2">✓✓</span>
+                    <span v-else-if="msg.ack === 1">✓</span>
+                    <span v-else-if="msg.ack === 0" class="pending">⏱️</span>
+                  </span>
+                </div>
               </div>
             </div>
           </div>
           <div class="chat-footer">
             <button class="attach-btn" :disabled="!currentTicket" @click="triggerFileInput">📎</button>
             <input type="file" ref="fileInput" style="display:none" multiple @change="handleFileSelect">
-            <textarea class="message-input" v-model="newMessageText" :disabled="!currentTicket"
+            <textarea id="message-input" class="message-input" v-model="newMessageText" :disabled="!currentTicket"
               placeholder="Digite uma mensagem..." @keypress.enter.prevent="sendMessage"></textarea>
             <button class="send-btn" :disabled="!currentTicket || !newMessageText.trim()" @click="sendMessage">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -120,8 +127,41 @@
         </div>
       </div>
     </div>
+    <!-- Modais -->
+    <div id="broadcastModal" class="broadcast-modal" :class="{ active: broadcastModalVisible }">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>📢 Enviar Mensagem Avulsa</h3><button class="modal-close"
+            @click="broadcastModalVisible = false">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group"><label>Canal</label><select v-model="broadcastChannelId">
+              <option value="">Selecione</option>
+              <option v-for="ch in connectedChannels" :key="ch.id" :value="ch.id">{{ ch.name }}</option>
+            </select></div>
+          <div class="form-group"><label>Número</label><input v-model="broadcastNumber" placeholder="31999999999"
+              @input="broadcastNumber = broadcastNumber.replace(/\D/g, '')"></div>
+          <div class="form-group"><label>Mensagem</label><textarea v-model="broadcastMessage" rows="3"></textarea>
+          </div>
+          <div class="broadcast-attach">
+            <div>
+              <input type="file" ref="broadcastFileInput" style="display:none" @change="handleBroadcastFileSelect"
+                accept="image/*,video/*,audio/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain">
+              <button @click="triggerBroadcastFile" class="insert">📎</button>
+            </div>
+            <div v-if="broadcastFileName" class="broadcast-file-preview">{{ broadcastFileName }} <button
+                @click="removeBroadcastFile">✕</button>
+            </div>
+          </div>
+          <!-- <div v-if="broadcastFileName" class="broadcast-file-preview">{{ broadcastFileName }} <button
+              @click="removeBroadcastFile">✕</button>
+          </div> -->
+          <button class="broadcast-send-btn" @click="sendBroadcastMessage" :disabled="sendingBroadcast">Enviar</button>
+        </div>
+      </div>
+    </div>
   </div>
-
+  <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
   <script>
     const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
     createApp({
@@ -133,6 +173,7 @@
         const socketConnected = ref(false);
         const sidebarOpen = ref(false);
         const messageAreaRef = ref(null)
+        const broadcastFileInput = ref(null)
         // Tickets
         const allTickets = ref([]);
         const searchTerm = ref('');
@@ -148,7 +189,22 @@
         const currentChannelId = ref(null);
         const qrcodeModalVisible = ref(false);
 
+        // Modais
+        const channelModalVisible = ref(false);
+        const broadcastModalVisible = ref(false);
+        const selectedChannelType = ref('');
+        const newChannelName = ref('');
+        const newChannelToken = ref('');
+        const newChannelNumber = ref('');
+        const broadcastChannelId = ref('');
+        const broadcastNumber = ref('');
+        const broadcastMessage = ref('');
+        const broadcastSelectedFile = ref(null);
+        const broadcastFileName = ref('');
+        const sendingBroadcast = ref(false);
 
+        // Arquivos
+        const selectedFiles = ref([]);
         // Computed
         const filteredTickets = computed(() => {
           let filtered = allTickets.value.filter(t => {
@@ -176,6 +232,40 @@
           showOnlyClosed.value = !showOnlyClosed.value
 
         }
+        const triggerBroadcastFile = () => {
+          if (broadcastFileInput.value) {
+            broadcastFileInput.value.click()
+          }
+        }
+
+        const handleBroadcastFileSelect = (event) => {
+          const files = event.target.files
+
+          if (files && files.length > 0) {
+            const file = files[0]
+            if (file.size > 25 * 1024 * 1024) {
+              alert('Arquivo muito grande. Máximo 25MB');
+              return;
+            }
+            broadcastFileName.value = file.name
+            console.log('Arquivo selecionado:', file.name)
+            console.log('Tamanho:', file.size)
+            console.log('Tipo:', file.type)
+
+
+
+            // Limpar o input para permitir selecionar o mesmo arquivo novamente
+            event.target.value = ''
+          }
+        }
+        const openBroadcastModal = () => {
+          broadcastChannelId.value = '';
+          broadcastNumber.value = '';
+          broadcastMessage.value = '';
+          broadcastSelectedFile.value = null;
+          broadcastFileName.value = '';
+          broadcastModalVisible.value = true;
+        };
         function formatTime(dateString) {
           if (!dateString) return '';
 
@@ -222,18 +312,7 @@
         function loadMessages(ticketId) {
           const ticket = allTickets.value.find(t => t.id === ticketId);
           currentMessages.value = ticket?.messages ? [...ticket.messages].reverse() : [];
-          // const container = document.getElementById('messages-area');
-          // const messageStatus = document.getElementById('message-status');
 
-          // const ticket = allTickets.find(t => t.id === ticketId);
-          // const messages = ticket?.messages ? [...ticket.messages].reverse() : [];
-          // messageStatus.textContent = `${messages.length} ${messages.length === 1 ? 'mensagem' : 'mensagens'}`;
-          // if (!messages.length) {
-          //   container.innerHTML = '<div class="loading-state">💬 Nenhuma mensagem ainda</div>';
-          //   return;
-          // }
-          // container.innerHTML = messages.map(msg => createMessageHTML(msg, false)).join('');
-          // container.scrollTop = container.scrollHeight;
         }
         const sendMessage = async () => {
           if (!currentTicket.value || !newMessageText.value.trim()) return;
@@ -268,6 +347,8 @@
         //   }
         // }, { deep: true })
         return {
+          handleBroadcastFileSelect,
+          broadcastFileInput,
           activeTab,
           messageAreaRef,
           loadingTickets,
@@ -288,6 +369,10 @@
           getStatusText,
           filterTickets,
           updateSearchTerm,
+          openBroadcastModal,
+          broadcastModalVisible,
+          triggerBroadcastFile,
+          broadcastFileName
 
         }
       }
