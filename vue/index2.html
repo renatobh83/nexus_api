@@ -156,6 +156,14 @@
                   <!-- TEXTO PURO (fallback) -->
                   <div v-else v-html="formatMessage(msg.body)"></div>
                 </div>
+                <div class="message-footer">
+                  <span>{{ formatTime(msg.createdAt) }}</span>
+                  <span v-if="msg.fromMe" class="msg-status">
+                    <span v-if="msg.ack >= 2">✓✓</span>
+                    <span v-else-if="msg.ack === 1">✓</span>
+                    <span v-else-if="msg.ack === 0" class="pending">⏱️</span>
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -322,21 +330,21 @@
           <div class="form-group">
             <label>Tipo - {{selectedChannelType}}</label>
             <div class="channel-options">
-              
+
               <div class="channel-option" data-channel-type="whatsapp" @click="selectChannelType('whatsapp')"
-              :class="['channel-option', { selected: selectedChannelType === 'whatsapp' }]">
+                :class="['channel-option', { selected: selectedChannelType === 'whatsapp' }]">
                 <div class="channel-option-icon">📱</div>
                 <div class="channel-option-title">WhatsApp Web</div>
                 <div class="channel-option-desc">Conexão via QR Code</div>
               </div>
               <div class="channel-option" data-channel-type="wpp-business" @click="selectChannelType('wpp-business')"
-              :class="['channel-option', { selected: selectedChannelType === 'wpp-business' }]">
+                :class="['channel-option', { selected: selectedChannelType === 'wpp-business' }]">
                 <div class="channel-option-icon">💼</div>
                 <div class="channel-option-title">WhatsApp Business</div>
                 <div class="channel-option-desc">API Oficial</div>
               </div>
               <div class="channel-option" data-channel-type="telegram" @click="selectChannelType('telegram')"
-               :class="['channel-option', { selected: selectedChannelType === 'telegram' }]">
+                :class="['channel-option', { selected: selectedChannelType === 'telegram' }]">
                 <div class="channel-option-icon">✈️</div>
                 <div class="channel-option-title">Telegram</div>
                 <div class="channel-option-desc">Bot API</div>
@@ -352,7 +360,8 @@
             <label>Nome</label>
             <input v-model="newChannelName" placeholder="Nome do canal">
           </div>
-          <div id="telegramFields" class="dynamic-fields"  :class="['dynamic-fields', { active: selectedChannelType === 'telegram' }]">
+          <div id="telegramFields" class="dynamic-fields"
+            :class="['dynamic-fields', { active: selectedChannelType === 'telegram' }]">
             <div class="form-group">
               <label>Token do Bot *</label>
               <input type="text" id="botToken" placeholder="Ex: 1234567890:ABCdefGHIjklmNOPqrstUvWXyz"
@@ -360,14 +369,16 @@
               <small style="color: #667781; font-size: 11px;">Crie um bot no @BotFather do Telegram</small>
             </div>
           </div>
-          <div id="wppWebFields" class="dynamic-fields"  :class="['dynamic-fields', { active: selectedChannelType === 'whatsapp' }]">
+          <div id="wppWebFields" class="dynamic-fields"
+            :class="['dynamic-fields', { active: selectedChannelType === 'whatsapp' }]">
             <div class="form-group">
               <label>Número do WhatsApp *</label>
               <input type="text" id="whatsappNumber" placeholder="Ex: 11999999999" autocomplete="off">
               <small style="color: #667781; font-size: 11px;">Digite o número com DDD e país</small>
             </div>
           </div>
-          <div id="wppBusinessFields" class="dynamic-fields"  :class="['dynamic-fields', { active: selectedChannelType === 'wpp-business' }]">
+          <div id="wppBusinessFields" class="dynamic-fields"
+            :class="['dynamic-fields', { active: selectedChannelType === 'wpp-business' }]">
             <div class="form-group">
               <label>Phone Number ID *</label>
               <input type="text" id="phoneNumberId" placeholder="ID do número de telefone" autocomplete="off">
@@ -452,7 +463,7 @@
     const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
     createApp({
       setup() {
-        const URL_BASE = "http://localhost:3000";
+        const URL_BASE = "https://fast.panelapps.site";
         let socket = null;
         // Estado
         const activeTab = ref('chats');
@@ -498,7 +509,7 @@
         const broadcastSelectedFile = ref(null);
         const broadcastFileName = ref('');
         const sendingBroadcast = ref(false);
-        
+
 
         // Arquivos
         const fileInput = ref(null);
