@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Ticket Manager - Vue com Upload de Arquivos</title>
+  <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+   <link rel="stylesheet" href="./styles2.css" />
+  <style>
+    /* Seu CSS completo aqui (o mesmo que você forneceu) */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: #e5ddd5;
+      height: 100vh;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    .app-container {
+      width: 100%;
+      height: 100vh;
+      height: -webkit-fill-available;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    /* ... todo o restante do CSS que você forneceu ... */
+    /* Garantir que o .file-preview exista com o mesmo estilo antigo */
+    .file-preview {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      background: white;
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      max-width: 350px;
+      min-width: 280px;
+      max-height: 400px;
+      overflow-y: auto;
+      z-index: 1000;
+      animation: slideIn 0.3s ease;
+    }
+    /* Demais estilos... */
+  </style>
+</head>
+<body>
+<div class="app-container" id="app">
+  <!-- Seu HTML existente, mas com as modificações no chat-footer e a pré-visualização Vue -->
+  <div style="position: relative;">
+    <!-- <button class="menu-hamburger" style="display: none;" @click="toggleSidebar">☰</button> -->
+    <div class="top-menu">
+      <div class="menu-item" :class="{ active: activeTab === 'chats' }" @click="activeTab = 'chats'">💬 Chats</div>
+      <div class="menu-item" :class="{ active: activeTab === 'configuracoes' }" @click="activeTab = 'configuracoes'">⚙️ Configurações</div>
+      <!-- <button class="broadcast-btn" @click="openBroadcastModal">📢</button> -->
+    </div>
+  </div>
+  <div class="main-content">
+    <div class="tab-chats" :class="{ hidden: activeTab !== 'chats' }">
+      <div class="sidebar" :class="{ open: sidebarOpen }">
+        <!-- Sidebar igual ao original -->
+        <div class="sidebar-header"><h2>💬 Tickets</h2><p>Selecione uma conversa</p></div>
+        <div class="search-box"><input type="text" v-model="searchTerm" placeholder="🔍 Buscar ticket..."></div>
+        <div class="filter-switch">
+          <label class="switch-label"><span>Mostrar apenas fechados</span>
+            <div class="switch"><input type="checkbox" v-model="showOnlyClosed"><span class="slider"></span></div>
+          </label>
+        </div>
+        <div class="tickets-list">
+          <div v-if="loadingTickets" class="loading-state"><div class="spinner"></div>Carregando...</div>
+          <div v-else-if="filteredTickets.length === 0" class="empty-state">📭 Nenhum ticket</div>
+          <div v-for="ticket in filteredTickets" :key="ticket.id" class="ticket-item" :class="{ active: currentTicket?.id === ticket.id }" @click="selectTicket(ticket.id)">
+            <div class="ticket-avatar">{{ getTicketAvatar(ticket) }}<span class="channel-badge">{{ getChannelIconByTicket(ticket) }}</span></div>
+            <div class="ticket-info">
+              <div class="ticket-name"><span>{{ ticket.owner || ticket.name || `Ticket ${ticket.id}` }}</span><span class="ticket-time">{{ formatTime(ticket.lastMessageAt) }}</span></div>
+              <div class="ticket-preview">{{ (ticket.lastMessage || 'Nenhuma mensagem').substring(0,50) }}</div>
+              <span class="status-badge" :class="ticket.status">{{ getStatusText(ticket.status) }}</span>
+            </div>
+            <div class="ticket-actions">
+              <button class="action-btn attend" @click.stop="attendTicket(ticket.id)">🎧</button>
+              <button class="action-btn close" @click.stop="closeTicket(ticket.id)">✅</button>
+              <button class="action-btn reopen" @click.stop="reopenTicket(ticket.id)">🔄</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="chat-container">
+        <div class="chat-header"><div><h2>{{ currentTicket ? `Ticket #${currentTicket.id}` : 'Ticket #' }}</h2></div><div class="connection-status" :class="{ connected: socketConnected, disconnected: !socketConnected }">{{ socketConnected ? '🟢 Conectado' : '🔴 Desconectado' }}</div></div>
+        <div class="messages-area" ref="messagesArea">
+          <div v-if="loadingMessages" class="loading-state"><div class="spinner"></div>Carregando...</div>
+          <div v-else-if="currentMessages.length === 0" class="empty-state">💬 Nenhuma mensagem ainda</div>
+          <div v-for="msg in currentMessages" :key="msg.id" class="message-wrapper" :class="msg.fromMe ? 'sent' : 'received'">
+            <div class="message-bubble"><div class="message-body" v-html="formatMessage(msg.body)"></div><div class="message-footer"><span>{{ formatTime(msg.createdAt) }}</span><span v-if="msg.fromMe" class="msg-status"><span v-if="msg.ack >= 2">✓✓</span><span v-else-if="msg.ack === 1">✓</span><span v-else-if="msg.ack === 0" class="pending">⏱️</span></span></div></div>
+          </div>
+        </div>
+
+        <!-- PRÉ-VISUALIZAÇÃO DE ARQUIVOS (estilo antigo, flutuante, com Vue) -->
+        <div v-if="selectedFiles.length" class="file-preview">
+          <div v-for="(fileItem, idx) in selectedFiles" :key="idx" class="file-preview-item">
+            <img v-if="fileItem.preview" :src="fileItem.preview" alt="preview" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
+            <div v-else class="file-icon" style="font-size: 30px;">{{ getFileIcon(fileItem.type) }}</div>
+            <div style="flex: 1;">
+              <div style="font-size: 12px; font-weight: 500;">{{ fileItem.name.substring(0, 30) }}</div>
+              <div style="font-size: 10px; color: #667781;">{{ (fileItem.size / 1024).toFixed(1) }} KB</div>
+              <input type="text" class="file-caption" v-model="fileItem.caption" placeholder="Adicionar legenda..." style="width: 100%; margin-top: 5px; padding: 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px;">
+            </div>
+            <button class="file-preview-remove" @click="removeFile(idx)">✕</button>
+          </div>
+          <button class="file-preview-send" @click="sendFiles">Enviar {{ selectedFiles.length }} arquivo(s)</button>
+        </div>
+
+        <div class="chat-footer">
+          <button class="attach-btn" :disabled="!currentTicket" @click="triggerFileInput">📎</button>
+          <input type="file" ref="fileInput" style="display:none" multiple @change="handleFileSelect">
+          <textarea class="message-input" v-model="newMessageText" :disabled="!currentTicket" placeholder="Digite uma mensagem..." @keypress.enter.prevent="sendMessage"></textarea>
+          <button class="send-btn" :disabled="!currentTicket || (!newMessageText.trim() && selectedFiles.length === 0)" @click="sendMessage">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Modais existentes (broadcast) -->
+  <div id="broadcastModal" class="broadcast-modal" :class="{ active: broadcastModalVisible }">...</div>
+</div>
+
+<script>
+  const { createApp, ref, computed, onMounted, nextTick } = Vue;
+  createApp({
+    setup() {
+      const URL_BASE =  "https://fast.panelapps.site";
+      let socket = null;
+
+      // Estados existentes...
+      const activeTab = ref('chats');
+      const socketConnected = ref(false);
+      const sidebarOpen = ref(false);
+      const allTickets = ref([]);
+      const searchTerm = ref('');
+      const showOnlyClosed = ref(false);
+      const currentTicket = ref(null);
+      const currentMessages = ref([]);
+      const loadingTickets = ref(false);
+      const loadingMessages = ref(false);
+      const newMessageText = ref('');
+      const channels = ref([]);
+      const broadcastModalVisible = ref(false);
+      const broadcastChannelId = ref('');
+      const broadcastNumber = ref('');
+      const broadcastMessage = ref('');
+      const broadcastSelectedFile = ref(null);
+      const broadcastFileName = ref('');
+      const sendingBroadcast = ref(false);
+      
+      // NOVOS ESTADOS PARA ARQUIVOS
+      const fileInput = ref(null);
+      const selectedFiles = ref([]);
+
+      // Funções existentes (loadTickets, loadMessages, formatTime, etc.) - mantenha as originais
+      // Adicione as novas funções:
+      const triggerFileInput = () => { if (fileInput.value) fileInput.value.click(); };
+      const handleFileSelect = (event) => {
+        const files = Array.from(event.target.files);
+        if (files.length === 0) return;
+        for (const file of files) {
+          if (file.size > 25 * 1024 * 1024) {
+            alert(`Arquivo ${file.name} excede 25MB`);
+            continue;
+          }
+          let preview = null;
+          if (file.type.startsWith('image/')) {
+            preview = URL.createObjectURL(file);
+          }
+          selectedFiles.value.push({
+            file,
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            preview,
+            caption: ''
+          });
+        }
+        event.target.value = '';
+      };
+      const removeFile = (index) => {
+        const fileObj = selectedFiles.value[index];
+        if (fileObj.preview) URL.revokeObjectURL(fileObj.preview);
+        selectedFiles.value.splice(index, 1);
+      };
+      const getFileIcon = (type) => {
+        if (type.includes('pdf')) return '📄';
+        if (type.includes('video')) return '🎥';
+        if (type.includes('audio')) return '🎵';
+        return '📎';
+      };
+      const sendFiles = async () => {
+        if (!currentTicket.value || selectedFiles.value.length === 0) return;
+        const formData = new FormData();
+        selectedFiles.value.forEach((item, idx) => {
+          formData.append(`files`, item.file);
+          if (item.caption) formData.append(`caption_${idx}`, item.caption);
+        });
+        if (newMessageText.value.trim()) {
+          formData.append('body', newMessageText.value.trim());
+        }
+        try {
+          const res = await fetch(`${URL_BASE}/api/v1/messages/${currentTicket.value.id}`, {
+            method: 'POST',
+            body: formData
+          });
+          if (res.ok) {
+            selectedFiles.value.forEach(f => f.preview && URL.revokeObjectURL(f.preview));
+            selectedFiles.value = [];
+            newMessageText.value = '';
+            loadMessages(currentTicket.value.id);
+          } else {
+            alert('Erro ao enviar arquivos');
+          }
+        } catch (err) {
+          console.error(err);
+          alert('Erro de rede');
+        }
+      };
+      
+      // Modificar sendMessage original para priorizar arquivos
+      const sendMessage = async () => {
+        if (!currentTicket.value) return;
+        if (selectedFiles.value.length) {
+          await sendFiles();
+          return;
+        }
+        if (!newMessageText.value.trim()) return;
+        // Lógica original de envio de texto puro
+        const text = newMessageText.value;
+        newMessageText.value = '';
+        try {
+          const formData = new FormData();
+          formData.append('body', text);
+          formData.append('fromMe', 'true');
+          await fetch(`${URL_BASE}/api/v1/messages/${currentTicket.value.id}`, { method: 'POST', body: formData });
+          loadMessages(currentTicket.value.id);
+        } catch (e) { console.error(e); alert('Erro ao enviar'); }
+      };
+
+      // Funções auxiliares existentes (getTicketAvatar, getChannelIconByTicket, getStatusText, formatMessage, etc.)
+      const getTicketAvatar = (ticket) => (ticket.owner || ticket.name || '?').charAt(0).toUpperCase();
+      const getChannelIconByTicket = (ticket) => { const ch = channels.value.find(c => c.id === ticket.channelId); return ch ? (ch.type === 'whatsapp' ? '📱' : '✈️') : '💬'; };
+      const getStatusText = (status) => { const map = { pending: 'Pendente', open: 'Em atendimento', atendendo: 'Em atendimento', closed: 'Finalizado' }; return map[status] || status; };
+      const formatMessage = (text) => text ? text.replace(/\n/g, '<br>') : '';
+      
+      // Funções de ticket e mensagens (exemplo)
+      const loadTickets = async () => {
+          loadingTickets.value = true;
+          try {
+            const res = await fetch(`${URL_BASE}/api/v1/tickets`);
+            const data = await res.json();
+            allTickets.value = (data.tickets || data || []).sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0));
+          } catch (e) { console.error(e); }
+          finally { loadingTickets.value = false; }
+        };
+       function loadMessages(ticketId) {
+          const ticket = allTickets.value.find(t => t.id === ticketId);
+          currentMessages.value = ticket?.messages ? [...ticket.messages].reverse() : [];
+
+        }
+      const selectTicket = async (ticketId) => {
+          if (currentTicket.value?.id === ticketId) return;
+          currentTicket.value = allTickets.value.find(t => t.id === ticketId);
+          if (!currentTicket.value) return;
+          loadingMessages.value = true;
+          if (socket?.connected) socket.emit('join-ticket', ticketId);
+          loadMessages(ticketId)
+          loadingMessages.value = false;
+          await nextTick();
+          const area = document.querySelector('.messages-area');
+          if (area) area.scrollTop = area.scrollHeight;
+        };
+      
+      // Computed filteredTickets
+      const filteredTickets = computed(() => {
+        let filtered = allTickets.value.filter(t => {
+          const matchName = (t.owner || t.name || '').toLowerCase().includes(searchTerm.value.toLowerCase());
+          const matchStatus = showOnlyClosed.value ? t.status === 'closed' : t.status !== 'closed';
+          return matchName && matchStatus;
+        });
+        return filtered.sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0));
+      });
+      
+      onMounted(() => { loadTickets(); /* loadChannels(); */ });
+      
+      return {
+        activeTab, socketConnected, sidebarOpen, allTickets, searchTerm, showOnlyClosed,
+        currentTicket, currentMessages, loadingTickets, loadingMessages, newMessageText,
+        channels, broadcastModalVisible, broadcastChannelId, broadcastNumber, broadcastMessage,
+        broadcastSelectedFile, broadcastFileName, sendingBroadcast,
+        fileInput, selectedFiles,
+        triggerFileInput, handleFileSelect, removeFile, getFileIcon, sendFiles, sendMessage,
+        getTicketAvatar, getChannelIconByTicket, getStatusText, formatMessage, filteredTickets,
+        selectTicket, loadTickets, loadMessages, formatTime: (date) => { /* implementar */ }
+      };
+    }
+  }).mount("#app");
+</script>
+</body>
+</html>

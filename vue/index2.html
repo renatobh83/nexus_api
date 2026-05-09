@@ -45,11 +45,7 @@
                 <span class="slider"></span>
               </div>
             </label>
-            <!-- <span>Mostrar apenas fechados</span> -->
-            <!-- <div class="switch">
-              <input type="checkbox" v-model="showOnlyClosed" @change="filterTickets">
-              <span class="slider"></span>
-            </div> -->
+           
           </div>
 
           <!-- lista dos tickets -->
@@ -113,6 +109,27 @@
               </div>
             </div>
           </div>
+          <!-- Pré-visualização de arquivos (Vue way) -->
+<div v-if="selectedFiles.length" class="file-preview-vue">
+  <div v-for="(fileItem, idx) in selectedFiles" :key="idx" class="file-preview-item">
+    <img v-if="fileItem.preview" :src="fileItem.preview" class="preview-thumb">
+    <div v-else class="file-icon">{{ getFileIcon(fileItem.type) }}</div>
+    <div class="file-info">
+      <div class="file-name">{{ fileItem.name.substring(0, 30) }}</div>
+      <div class="file-size">{{ (fileItem.size / 1024).toFixed(1) }} KB</div>
+      <input type="text" class="file-caption" v-model="fileItem.caption" placeholder="Adicionar legenda...">
+    </div>
+    <button class="file-preview-remove" @click="removeFile(idx)">✕</button>
+  </div>
+   <button class="send-btn"  id="sendBtn"  disabled>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+              </svg>
+            </button>
+  <!-- <button class="file-preview-send" @click="sendFiles">
+    Enviar {{ selectedFiles.length }} arquivo(s)
+  </button> -->
+</div>
           <div class="chat-footer">
             <button class="attach-btn" :disabled="!currentTicket" @click="triggerFileInput">📎</button>
             <input type="file" ref="fileInput" style="display:none" multiple @change="handleFileSelect">
@@ -144,18 +161,16 @@
           <div class="form-group"><label>Mensagem</label><textarea v-model="broadcastMessage" rows="3"></textarea>
           </div>
           <div class="broadcast-attach">
-            <div>
+
               <input type="file" ref="broadcastFileInput" style="display:none" @change="handleBroadcastFileSelect"
                 accept="image/*,video/*,audio/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain">
               <button @click="triggerBroadcastFile" class="insert">📎</button>
-            </div>
-            <div v-if="broadcastFileName" class="broadcast-file-preview">{{ broadcastFileName }} <button
-                @click="removeBroadcastFile">✕</button>
-            </div>
+            
+          
           </div>
-          <!-- <div v-if="broadcastFileName" class="broadcast-file-preview">{{ broadcastFileName }} <button
+          <div v-if="broadcastFileName" class="broadcast-file-preview">{{ broadcastFileName }} <button
               @click="removeBroadcastFile">✕</button>
-          </div> -->
+          </div>
           <button class="broadcast-send-btn" @click="sendBroadcastMessage" :disabled="sendingBroadcast">Enviar</button>
         </div>
       </div>
@@ -166,7 +181,7 @@
     const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
     createApp({
       setup() {
-        const URL_BASE = "http://localhost:3000";
+        const URL_BASE = "https://fast.panelapps.site";
         let socket = null;
         // Estado
         const activeTab = ref('chats');
@@ -183,6 +198,7 @@
         const loadingTickets = ref(false);
         const loadingMessages = ref(false);
         const newMessageText = ref('');
+
         // Canais
         const channels = ref([]);
         const loadingChannels = ref(false);
@@ -204,7 +220,10 @@
         const sendingBroadcast = ref(false);
 
         // Arquivos
+        const fileInput = ref(null);
         const selectedFiles = ref([]);
+
+
         // Computed
         const filteredTickets = computed(() => {
           let filtered = allTickets.value.filter(t => {
@@ -215,6 +234,12 @@
           return filtered.sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0));
         });
         //funcoes
+        const getFileIcon = (type) => {
+  if (type.includes('pdf')) return '📄';
+  if (type.includes('video')) return '🎥';
+  if (type.includes('audio')) return '🎵';
+  return '📎';
+};
         function updateSearchTerm(event) {
           searchTerm.value = event.target.value;
 
@@ -232,6 +257,75 @@
           showOnlyClosed.value = !showOnlyClosed.value
 
         }
+        const triggerFileInput = () => {
+          
+          if (fileInput.value) fileInput.value.click();
+        };
+        const handleFileSelect = (event) => {
+          const files = Array.from(event.target.files);
+          if (files.length === 0) return;
+          console.log(files)
+          for (const file of files) {
+            if (file.size > 25 * 1024 * 1024) {
+              alert(`Arquivo ${file.name} excede 25MB`);
+              continue;
+            }
+            // Gerar preview local para imagens
+            let preview = null;
+            if (file.type.startsWith('image/')) {
+              preview = URL.createObjectURL(file);
+            }
+            selectedFiles.value.push({
+              file,
+              name: file.name,
+              size: file.size,
+              type: file.type,
+              preview,
+              caption: ''
+            });
+          }
+          // Limpar input para permitir re-seleção
+          event.target.value = '';
+        };
+        const removeFile = (index) => {
+          const fileObj = selectedFiles.value[index];
+          if (fileObj.preview) URL.revokeObjectURL(fileObj.preview);
+          selectedFiles.value.splice(index, 1);
+        };
+        const sendFiles = async () => {
+          if (!currentTicket.value || selectedFiles.value.length === 0) return;
+
+          const formData = new FormData();
+          // Adiciona cada arquivo com sua legenda
+          selectedFiles.value.forEach((item, idx) => {
+            formData.append(`files`, item.file);
+            if (item.caption) formData.append(`caption_${idx}`, item.caption);
+          });
+          // Mensagem de texto opcional (se houver algo digitado)
+          if (newMessageText.value.trim()) {
+            formData.append('body', newMessageText.value.trim());
+          }
+
+          try {
+            // const res = await fetch(`${URL_BASE}/api/v1/messages/${currentTicket.value.id}`, {
+            //   method: 'POST',
+            //   body: formData
+            // });
+            // if (res.ok) {
+            //   // Limpar após envio
+            //   selectedFiles.value.forEach(f => f.preview && URL.revokeObjectURL(f.preview));
+            //   selectedFiles.value = [];
+            //   newMessageText.value = '';
+            //   // Recarregar mensagens
+            //   loadMessages(currentTicket.value.id);
+            // } else {
+            //   alert('Erro ao enviar arquivos');
+            // }
+          } catch (err) {
+            console.error(err);
+            alert('Erro de rede');
+          }
+        };
         const triggerBroadcastFile = () => {
           if (broadcastFileInput.value) {
             broadcastFileInput.value.click()
@@ -251,9 +345,6 @@
             console.log('Arquivo selecionado:', file.name)
             console.log('Tamanho:', file.size)
             console.log('Tipo:', file.type)
-
-
-
             // Limpar o input para permitir selecionar o mesmo arquivo novamente
             event.target.value = ''
           }
@@ -366,13 +457,17 @@
           formatTime,
           currentMessages,
           formatMessage,
+          triggerFileInput,
+          fileInput,
           getStatusText,
           filterTickets,
           updateSearchTerm,
           openBroadcastModal,
           broadcastModalVisible,
           triggerBroadcastFile,
-          broadcastFileName
+          broadcastFileName,
+          selectedFiles,
+          handleFileSelect
 
         }
       }

@@ -187,6 +187,86 @@ input:checked + .slider:before {
   align-items: center;
   justify-content: center;
 }
+
+.file-preview-vue {
+  background: #f0f2f5;
+  border-top: 1px solid #ddd;
+  padding: 10px;
+  max-height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.file-preview-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: white;
+  padding: 8px;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+.preview-thumb {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+.file-icon {
+  font-size: 30px;
+  width: 50px;
+  text-align: center;
+}
+.file-info {
+  flex: 1;
+}
+.file-name {
+  font-size: 12px;
+  font-weight: 500;
+}
+.file-size {
+  font-size: 10px;
+  color: #667781;
+}
+.file-caption {
+  width: 100%;
+  margin-top: 5px;
+  padding: 4px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 11px;
+}
+.file-preview-remove {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #999;
+}
+.send-btn {
+  background: #075e54;
+  color: white;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.send-btn:hover:not(:disabled) {
+  background: #054a42;
+}
+
+.send-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
 /* Tickets List */
 .tickets-list {
   flex: 1;
