@@ -16,7 +16,7 @@
 <body>
   <div class="app-container" id="app">
     <div style="position: relative;">
-      <button class="menu-hamburger" style="display: none;" @click="toggleSidebar">☰</button>
+      <button class="menu-hamburger" @click="toggleSidebar">☰</button>
 
       <div class="top-menu">
         <div class="menu-item" :class="{ active: activeTab === 'chats' }" @click="activeTab = 'chats'">💬 Chats</div>
@@ -412,46 +412,29 @@
     </div>
 
     <!-- Modal Usuário (CRIADO — estava faltando) -->
-    <!-- <div id="userModal" class="modal" :class="{ active: userModalVisible }">
+    <div id="userModal" class="modal" :class="{ active: userModalVisible }">
       <div class="modal-content">
         <div class="modal-header">
-          <h3>{{ editingUser ? 'Editar Usuário' : 'Novo Usuário' }}</h3>
-          <button @click="userModalVisible = false">&times;</button>
+          <h3>{{ editingUser.id ? 'Editar' : 'Adicionar' }} Usuário</h3><button class="modal-close"
+            @click="userModalVisible = false">&times;</button>
         </div>
         <div class="modal-body">
-          <div class="form-group">
-            <label>Nome</label>
-            <input v-model="userForm.name" placeholder="Nome completo">
-          </div>
-          <div class="form-group">
-            <label>Email</label>
-            <input v-model="userForm.email" type="email" placeholder="email@exemplo.com">
-          </div>
-          <div class="form-group">
-            <label>Senha</label>
-            <input v-model="userForm.password" type="password" :placeholder="editingUser ? 'Deixe em branco para não alterar' : 'Senha'">
-          </div>
-          <div class="form-group">
-            <label>Perfil</label>
-            <select v-model="userForm.role">
-              <option value="agent">Atendente</option>
+          <div class="form-group"><label>Nome</label><input v-model="editingUser.name" placeholder="Nome"></div>
+          <div class="form-group"><label>Email</label><input v-model="editingUser.email" type="email"></div>
+          <div class="form-group"><label>Perfil</label><select v-model="editingUser.role">
+              <option value="atendente">Atendente</option>
               <option value="admin">Admin</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Status</label>
-            <select v-model="userForm.status">
+            </select></div>
+          <div class="form-group"><label>Status</label><select v-model="editingUser.status">
               <option value="ativo">Ativo</option>
               <option value="inativo">Inativo</option>
-            </select>
-          </div>
-          <div class="modal-buttons">
-            <button class="btn-secondary" @click="userModalVisible = false">Cancelar</button>
-            <button class="btn-primary" @click="saveUser">{{ editingUser ? 'Salvar' : 'Criar' }}</button>
-          </div>
+            </select></div>
+          <div class="modal-buttons"><button class="btn-secondary"
+              @click="userModalVisible = false">Cancelar</button><button class="btn-primary"
+              @click="saveUser">Salvar</button></div>
         </div>
       </div>
-    </div> -->
+    </div>
 
   </div>
   <!-- fim #app -->
@@ -815,7 +798,21 @@
           loadingMessages.value = false;
           await nextTick();
           const area = document.querySelector('.messages-area');
-          if (area) area.scrollTop = area.scrollHeight;
+          if (area) {
+            // Scroll imediato para o que já carregou
+            area.scrollTop = area.scrollHeight;
+
+            // Observador para ajustar o scroll conforme as imagens carregam
+            const resizeObserver = new ResizeObserver(() => {
+              area.scrollTop = area.scrollHeight;
+            });
+
+            // Observa a área de mensagens
+            resizeObserver.observe(area);
+
+            // Opcional: Desconectar após alguns segundos para não ficar rodando sempre
+            setTimeout(() => resizeObserver.disconnect(), 3000);
+          }
         };
         const loadUsers = async () => {
           loadingUsers.value = true;
@@ -865,12 +862,12 @@
         })
 
         // Rolar sempre que adicionar nova mensagem
-        // watch(currentMessages, async () => {
-        //   await nextTick() // Aguarda o Vue atualizar o DOM
-        //   if (messageAreaRef.value) {
-        //     messageAreaRef.value.scrollTop = messageAreaRef.value.scrollHeight
-        //   }
-        // }, { deep: true })
+        watch(currentMessages, async () => {
+          await nextTick() // Aguarda o Vue atualizar o DOM
+          if (messageAreaRef.value) {
+            messageAreaRef.value.scrollTop = messageAreaRef.value.scrollHeight
+          }
+        }, { deep: true })
 
         return {
           users,
@@ -903,12 +900,14 @@
           loadingUsers,
           selectedChannelType,
           newChannelName,
+          userModalVisible,
+          editingUser,
+          editUser,
           createChannel,
           selectChannelType,
           openAddChannelModal,
           openUserModal,
           deleteUser,
-          editUser,
           loadUsers,
           saveUser,
           removeBroadcastFile,
