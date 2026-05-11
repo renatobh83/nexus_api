@@ -46,6 +46,23 @@ model IntegrationConfig {
 
   @@map("integration_configs") // Nome da tabela no banco de dados
 }
+model User {
+  id             String   @id @default(uuid()) @db.Uuid
+  name           String
+  email          String   @unique
+  role           String
+  isActive       Boolean  @default(true)
+  passwordHash   String?
+  lastLogin      DateTime?
+  lastOnline     DateTime?
+  lastLogout     DateTime?
+  isOnline       Boolean  @default(false)
+
+  tickets        Ticket[] @relation("TicketToUser")
+
+  @@map("Users")
+}
+
 model Ticket {
   id                   Int       @id @default(autoincrement())
   status               String    @default("pending")
@@ -70,21 +87,29 @@ model Ticket {
   stepChatFlow         String?
   chatFlowStatus       String    @default("not_started")
   apiConfig            Json?
+
   contato              String
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
+
   channelId            Int
   isInteraction        Boolean   @default(false)
   owner                String?
+
   messages             Message[]
+
   channel              Channel   @relation(fields: [channelId], references: [id])
 
-  integrationSource  String?   @map("integration_source") // Ex: 'scheduling_api', 'default'
-  externalRefId      String?   @map("external_ref_id")
-  metadata           Json?     @default("{}")
+  // RELAÇÃO
+  user                 User?     @relation("TicketToUser", fields: [userId], references: [id])
+  userId               String?   @db.Uuid
+
+  integrationSource    String?   @map("integration_source")
+  externalRefId        String?   @map("external_ref_id")
+  metadata             Json?     @default("{}")
+
   @@map("Tickets")
 }
-
 model Message {
   id             String                 @id @default(uuid()) @db.Uuid
   messageId      String                 @unique

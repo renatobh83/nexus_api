@@ -11,6 +11,7 @@ import { TicketService } from "../modules/tickets/tickets.service.js";
 import routes from "./routes/index.js";
 import fastifyModule from "./plugins/fastifyModules.js";
 import { initSocket } from "../lib/socket.js";
+import { errorHandler } from "../utils/errorHandler.js";
 
 let io: SocketIOServer | null = null;
 // 🔧 Extensão do tipo para o Fastify reconhecer a propriedade 'io'
@@ -40,7 +41,7 @@ async function buildServer(): Promise<FastifyInstance> {
     logger: true, // habilita logs bonitos
     // bodyLimit: 10485760, // 10MB
   });
-
+  server.setErrorHandler(errorHandler);
   server.get("/", async () => {
     return { message: "Bem-vindo ao Nexus API!" };
   });
@@ -119,7 +120,7 @@ export async function start() {
 
     setImmediate(async () => {
       const channelManager = new ChannelManager();
-      channelManager.startAllReadySessions().catch(app.log.error);
+      // channelManager.startAllReadySessions().catch(app.log.error);
     });
   } catch (err: any) {
     if (app) {

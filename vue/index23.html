@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Ticket Manager Vue - Chat e Configurações</title>
+  <!-- Bibliotecas -->
+  <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+  <!--  Css-->
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+
+<body>
+  <div id="app">
+    <div class="app-container">
+      <div style="position: relative;">
+        <!-- <button class="menu-hamburger" id="menuHamburger">☰</button> -->
+        <div class="top-menu">
+          <div class="menu-item" :class="{ active: activeTab === 'chats' }" @click="activeTab = 'chats'">💬 Chats</div>
+          <div class="menu-item" :class="{ active: activeTab === 'configuracoes' }"
+            @click="activeTab = 'configuracoes'">⚙️ Configurações</div>
+          <button id="broadcastBtn" class="broadcast-btn" title="Enviar mensagem avulsa">
+            📢
+          </button>
+        </div>
+      </div>
+      <div class="main-content">
+        <!-- Aba de Chats -->
+        <div class="tab-chats" :class="{ hidden: activeTab !== 'chats' }">
+          <!-- Sidebar -->
+          <div class="sidebar">
+            <div class="sidebar-header">
+              <h2>💬 Tickets</h2>
+              <p>Selecione uma conversa</p>
+            </div>
+            <div class="search-box"><input type="text" v-model="searchTerm" placeholder="🔍 Buscar ticket..."
+                @input="filterTickets"></div>
+            <!-- Filtro de tickets fechados -->
+            <div class="filter-switch">
+              <span>Mostrar apenas fechados</span>
+              <div class="switch"><input type="checkbox" v-model="showOnlyClosed"><span class="slider"></span></div>
+            </div>
+            <!-- Lista de tickets -->
+            <div class="tickets-list" id="tickets-list">
+              <div v-if="loadingTickets" class="loading-state">
+                <div class="spinner"></div>Carregando...
+              </div>
+              <div v-else-if="filteredTickets.length === 0" class="empty-state">📭 Nenhum ticket</div>
+              <div v-for="ticket in filteredTickets" :key="ticket.id" class="ticket-item"
+                :class="{ active: currentTicket?.id === ticket.id }" @click="selectTicket(ticket.id)">
+                <div class="ticket-avatar">{{ (ticket.owner || ticket.name || '?').charAt(0).toUpperCase() }}</div>
+                <div class="ticket-info">
+                  <div class="ticket-name">
+                    <span> {{ ticket.owner || ticket.name || `Ticket ${ticket.id}` }}</span>
+                    <span v-if="ticket.lastMessageAt" class="ticket-time">
+                      {{ ticket.lastMessageAt }}
+                    </span>
+                  </div>
+                  <div class="ticket-preview">{{ (ticket.lastMessage || 'Nenhuma mensagem').substring(0,50) }}</div>
+                  <span class="status-badge" :class="ticket.status">{{ getStatusText(ticket.status) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Chat Container -->
+          <div class="chat-container">
+            <div class="chat-header">
+              <div>
+                <h2>{{ currentTicket ? `Ticket #${currentTicket.id}` : 'Ticket #' }}</h2>
+              </div>
+              <div class="connection-status" :class="{ connected: socketConnected, disconnected: !socketConnected }">{{
+                socketConnected ? '🟢 Conectado' : '🔴 Desconectado' }}</div>
+            </div>
+            <div class="messages-area" id="messagesArea">
+              <div v-if="loadingMessages" class="loading-state">
+                <div class="spinner"></div>Carregando mensagens...
+              </div>
+              <template v-else>
+                <div v-for="msg in currentMessages" :key="msg.id" class="message-wrapper"
+                  :class="msg.fromMe ? 'sent' : 'received'">
+                  <div class="message-bubble">
+                    <div class="message-body">{{ msg.body }}</div>
+                    <div class="message-footer">{{ formatTime(msg.createdAt) }}</div>
+                  </div>
+                </div>
+              </template>
+            </div>
+            <div class="chat-footer">
+              <button class="attach-btn" :disabled="!currentTicket" @click="triggerFileInput">📎</button>
+              <input type="file" ref="fileInput" style="display:none" multiple @change="handleFileSelect">
+              <textarea class="message-input" v-model="newMessageText" :disabled="!currentTicket"
+                placeholder="Digite uma mensagem..." @keypress.enter.prevent="sendMessage"></textarea>
+              <button class="send-btn" :disabled="!currentTicket || !newMessageText.trim()" @click="sendMessage">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                </svg></button>
+            </div>
+          </div>
+        </div>
+        <!-- ABA CONFIGURAÇÕES com sub-abas -->
+        <div class="tab-configuracoes" :class="{ hidden: activeTab !== 'configuracoes' }">
+          <div class="config-container">
+            <div class="config-sidebar">
+              <div class="config-sidebar-item" :class="{ active: configSubtab === 'users' }"
+                @click="configSubtab = 'users'">👥 Usuários</div>
+              <div class="config-sidebar-item" :class="{ active: configSubtab === 'channels' }"
+                @click="configSubtab = 'channels'">🔌 Canais</div>
+            </div>
+            <div class="config-content">
+              <!-- Subaba Usuários -->
+              <div v-if="configSubtab === 'users'">
+                <div class="users-header">
+                  <h2>👥 Gerenciar Usuários</h2><button class="btn-primary" @click="openUserModal()">➕ Novo
+                    Usuário</button>
+                </div>
+                <div v-if="loadingUsers" class="loading-state">
+                  <div class="spinner"></div>
+                </div>
+                <div v-else-if="users.length === 0" class="empty-state">📭 Nenhum usuário</div>
+                <table v-else class="users-table">
+                  <thead>
+                    <tr>
+                      <th>Nome</th>
+                      <th>Email</th>
+                      <th>Perfil</th>
+                      <th>Status</th>
+                      <th>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="user in users" :key="user.id">
+                      <td>{{ user.name }}</td>
+                      <td>{{ user.email }}</td>
+                      <td>{{ user.role === 'admin' ? 'Admin' : 'Atendente' }}</td>
+                      <td>{{ user.status === 'ativo' ? '🟢 Ativo' : '🔴 Inativo' }}</td>
+                      <td class="action-icons">
+                        <button @click="editUser(user)">✏️</button>
+                        <button @click="deleteUser(user.id)">🗑️</button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <!-- Subaba Canais -->
+              <div v-if="configSubtab === 'channels'">
+                <div class="users-header">
+                  <h2>🔌 Canais de Conexão</h2><button class="btn-primary" @click="openAddChannelModal()">➕ Adicionar
+                    Canal</button>
+                </div>
+                <div v-if="loadingChannels" class="loading-state">
+                  <div class="spinner"></div>
+                </div>
+                <div v-else-if="channels.length === 0" class="empty-state">📭 Nenhum canal</div>
+                <div class="channels-grid">
+                  <div v-for="ch in channels" :key="ch.id" class="channel-card">
+                    <div class="channel-header"><span>{{ ch.type === 'whatsapp' ? '📱' : '✈️' }}</span><span
+                        class="status-badge" :class="ch.status === 'CONNECTED' ? 'open' : 'pending'">{{ ch.status ===
+                        'CONNECTED' ? 'Conectado' : 'Desconectado' }}</span></div>
+                    <div class="channel-name">{{ ch.name }}</div>
+                    <div class="channel-actions">
+                      <button v-if="ch.status === 'CONNECTED'" class="channel-btn disconnect"
+                        @click="disconnectChannel(ch.id)">Desconectar</button>
+                      <button v-else class="channel-btn connect" @click="connectChannel(ch.id)">Conectar</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Modal de Usuário -->
+        <div id="userModal" class="modal" :class="{ active: userModalVisible }">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3>{{ editingUser.id ? 'Editar Usuário' : 'Adicionar Usuário' }}</h3><button class="modal-close"
+                @click="userModalVisible = false">&times;</button>
+            </div>
+            <div class="modal-body">
+              <div class="form-group"><label>Nome *</label><input v-model="editingUser.name"
+                  placeholder="Nome completo"></div>
+              <div class="form-group"><label>Email *</label><input v-model="editingUser.email" type="email"
+                  placeholder="email@exemplo.com"></div>
+              <div class="form-group"><label>Perfil</label><select v-model="editingUser.role">
+                  <option value="atendente">Atendente</option>
+                  <option value="admin">Administrador</option>
+                </select></div>
+              <div class="form-group"><label>Status</label><select v-model="editingUser.status">
+                  <option value="ativo">Ativo</option>
+                  <option value="inativo">Inativo</option>
+                </select></div>
+              <div class="modal-buttons"><button class="btn-secondary"
+                  @click="userModalVisible = false">Cancelar</button><button class="btn-primary"
+                  @click="saveUser">Salvar</button></div>
+            </div>
+          </div>
+        </div>
+        <!-- Modal QR Code (simplificado, integrado) -->
+        <div id="qrcodeModal" class="qrcode-modal" :class="{ active: qrcodeModalVisible }">
+          <div class="qrcode-content">
+            <div class="modal-header">
+              <h3>📱 Conectar WhatsApp</h3><button @click="closeQRCodeModal">&times;</button>
+            </div>
+            <div class="qrcode-container" id="qrcodeContainer">
+              <div id="qrcodeImage">
+                <div class="spinner"></div>
+              </div>
+            </div>
+            <div class="modal-buttons" style="padding: 20px;"><button class="btn-secondary"
+                @click="closeQRCodeModal">Fechar</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="./script.js"></script>
+</body>
+
+</html>
