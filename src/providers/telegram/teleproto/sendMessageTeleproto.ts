@@ -36,12 +36,15 @@ export const SendMessageTeleproto = async (
       lastMessage: hasMedia.filename,
       lastMessageAt: Date.now(),
     });
+    return result;
   } else {
     const result = await tbot.sendMessage(ticket.contato, { message: body });
+
     await AuxiTbot(tbot, result);
     await ticketService.updateTicket(ticket.id, {
       lastMessage: body.length > 255 ? body.slice(0, 252) + "..." : body,
       lastMessageAt: Date.now(),
     });
+    return result;
   }
 };

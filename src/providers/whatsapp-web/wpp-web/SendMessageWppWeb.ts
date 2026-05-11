@@ -31,24 +31,35 @@ export const SendMessageWppWeb = async (
         "image/webp",
       ].includes(mimetype)
     ) {
-      await wbot.sendImageFromBase64(
+      const messageSent = await wbot.sendImageFromBase64(
         ticket.contato,
         fileData,
         hasMedia.filename,
         body,
       );
+      await ticketService.updateTicket(ticket.id, {
+        lastMessage: hasMedia.filename,
+        lastMessageAt: Date.now(),
+      });
+      return messageSent;
     } else {
-      await wbot.sendFile(ticket.contato, fileData, hasMedia.filename);
+      const messageSent = await wbot.sendFile(
+        ticket.contato,
+        fileData,
+        hasMedia.filename,
+      );
+      await ticketService.updateTicket(ticket.id, {
+        lastMessage: hasMedia.filename,
+        lastMessageAt: Date.now(),
+      });
+      return messageSent;
     }
-    await ticketService.updateTicket(ticket.id, {
-      lastMessage: hasMedia.filename,
-      lastMessageAt: Date.now(),
-    });
   } else {
-    await wbot.sendText(ticket.contato, body);
+    const messageSent = await wbot.sendText(ticket.contato, body);
     await ticketService.updateTicket(ticket.id, {
       lastMessage: body.length > 255 ? body.slice(0, 252) + "..." : body,
       lastMessageAt: Date.now(),
     });
+    return messageSent;
   }
 };

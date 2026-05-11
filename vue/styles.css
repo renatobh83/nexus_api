@@ -682,6 +682,9 @@ input:checked + .slider:before {
 .message-wrapper.received {
   justify-content: flex-start;
 }
+.message-wrapper.new-message {
+  animation: highlight 1s ease-out;
+}
 
 .message-bubble {
   max-width: 65%;
@@ -1122,7 +1125,10 @@ input:checked + .slider:before {
   justify-content: space-between;
   margin-bottom: 20px;
 }
-
+.updated {
+  opacity: 0.5;
+  transform: scale(0.98);
+}
 .users-table {
   width: 100%;
   background: white;
@@ -1468,6 +1474,10 @@ input:checked + .slider:before {
   .ticket-item {
     padding: 12px;
     margin: 0 4px 6px 4px;
+    transition:
+      opacity 0.3s ease,
+      transform 0.3s ease,
+      background-color 0.3s ease;
   }
 
   .ticket-avatar {

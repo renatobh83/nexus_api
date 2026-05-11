@@ -79,8 +79,9 @@
               <template v-if="!loadingTickets">
                 <div v-if="filteredTickets.length === 0" class="empty-state">📭 Nenhum ticket
                 </div>
-                <div v-for="ticket in filteredTickets" :key="ticket.id" class="ticket-item"
-                  :class="{ active: currentTicket?.id === ticket.id }" @click="selectTicket(ticket.id)">
+                <div v-for="ticket in filteredTickets" :key="ticket.id" class="ticket-item" :data-ticket="ticket.id"
+                  :class="{ active: currentTicket?.id === ticket.id , updated: updatedTickets[ticket.id] }"
+                  @click="selectTicket(ticket.id)">
                   <div class="ticket-avatar">{{ getTicketAvatar(ticket) }}
                     <span class="channel-badge">{{ getChannelIconByTicket(ticket) }}</span>
                   </div>
@@ -118,8 +119,9 @@
               <div v-if="loadingMessages" class="loading-state">
                 <div class="spinner"></div>Carregando...
               </div>
+
               <div v-else-if="currentMessages.length === 0" class="empty-state">💬 Nenhuma mensagem ainda</div>
-              <div v-for="msg in currentMessages" :key="msg.id" class="message-wrapper"
+              <div v-for="msg in currentMessages" :key="msg.id" class="message-wrapper" :data-message-id="msg.id"
                 :class="msg.fromMe ? 'sent' : 'received'">
                 <div class="message-bubble">
                   <!-- Mensagem apagada -->
@@ -179,15 +181,31 @@
                     <div v-else v-html="formatMessage(msg.body)"></div>
                   </div>
                   <div class="message-footer">
+
                     <span>{{ formatTime(msg.createdAt) }}</span>
                     <span v-if="msg.fromMe" class="msg-status">
-                      <span v-if="msg.ack >= 2">✓✓</span>
+                      <span v-if="msg.ack !== 1">✓✓</span>
                       <span v-else-if="msg.ack === 1">✓</span>
-                      <span v-else-if="msg.ack === 0" class="pending">⏱️</span>
+                      <!-- <span v-else-if="msg.ack === 0" class="pending">⏱️</span> -->
                     </span>
                   </div>
                 </div>
               </div>
+              <template v-for="message in tempMessages" :key="message.id" v-if="tempMessages.length">
+
+                <div class="message-wrapper sent" :data-temp="message.id">
+                  <div class="message-bubble" style="opacity: 0.7;">
+                    <div class="message-body">
+                      <div v-html="formatMessage(message.body)"></div>
+                      <!-- ${message.mediaUrl ? `<div style="margin-top: 5px;"><img src="${message.mediaUrl}"
+                          style="max-width: 150px; border-radius: 4px;"></div>` : ''} -->
+                    </div>
+                    <div class="message-footer">
+                      <span>⏳ Enviando...</span>
+                    </div>
+                  </div>
+                </div>
+              </template>
             </div>
 
             <!-- PRÉ-VISUALIZAÇÃO DE ARQUIVOS -->
@@ -484,10 +502,11 @@
     const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
     createApp({
       setup() {
-        const URL_BASE = "https://fast.panelapps.site";
+        const URL_BASE = "http://localhost:3000";
         let socket = null;
         // Estado
         const activeTab = ref('chats');
+        const updatedTickets = ref({});
         const socketConnected = ref(false);
         const sidebarOpen = ref(false);
         const messageAreaRef = ref(null)
@@ -503,6 +522,7 @@
         const showOnlyClosed = ref(false);
         const currentTicket = ref(null);
         const currentMessages = ref([]);
+        let tempMessages = ref([]);
         const loadingTickets = ref(false);
         const loadingMessages = ref(false);
         const newMessageText = ref('');
@@ -554,6 +574,10 @@
           });
           return filtered.sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0));
         });
+        const allMessages = computed(() => {
+          const all = [...currentMessages.value];
+          return all.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        })
         const filteredUsers = computed(() => {
           if (currentUser.value.role === 'administrador') {
             return users.value;
@@ -567,6 +591,101 @@
           return currentUser.value.role === 'administrador';
         });
         //funcoes
+        // === SOCKET.IO ===
+        function initSocket() {
+          if (socket && socketConnected) {
+            console.log('Socket já conectado');
+            return;
+          }
+          socket = io(URL_BASE, {
+            transports: ['websocket', 'polling'], reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000
+          });
+          socket.on('connect', () => {
+            socketConnected.value = true
+            console.log('✅ Socket conectado');
+            connectionAttempts = 0;
+
+            // document.getElementById('connection-status').textContent = '🟢 Socket Conectado';
+            // document.getElementById('connection-status').className = 'connection-status connected';
+          });
+          socket.on('disconnect', () => {
+            socketConnected.value = false
+            // document.getElementById('connection-status').textContent = '🔴 Socket Desconectado';
+            // document.getElementById('connection-status').className = 'connection-status disconnected';
+          });
+          socket.on('connect_error', (error) => {
+            console.error('Erro de conexão:', error);
+            connectionAttempts++;
+
+            if (connectionAttempts >= 3) {
+              console.warn('Múltiplas tentativas de conexão falharam. Verifique se o servidor Socket está rodando.');
+            }
+          });
+          socket.on('new-message', async (message) => {
+            console.log('Nova mensagem:', message);
+
+
+            const ticketId = message.ticketid;
+            const ticket = allTickets.value.find(t => t.id === ticketId);
+
+
+            const ticketName = ticket?.owner || ticket?.name || `Ticket ${ticketId}`;
+
+            if (!message.fromMe && message.fromMe !== true && message.fromMe !== 1 && message.fromMe !== 'true') {
+              const messagePreview = message.body?.substring(0, 60) || "Nova mensagem";
+              showNotification(
+                `💬 Nova mensagem de ${ticketName}`,
+                messagePreview,
+                `msg-${message.id}`
+              )
+              scrool()
+              // playNotificationSound()
+            }
+            if (ticket) {
+              // CORREÇÃO: Adicionar a nova mensagem no início do array (mais recente primeiro)
+              if (!ticket.messages) ticket.messages = [];
+              ticket.messages.unshift(message); // unshift adiciona no início
+
+              // Atualizar última mensagem
+              ticket.lastMessage = message.body;
+              ticket.lastMessageAt = message.createdAt;
+            }
+
+            if (currentTicket.value.id === message.ticketid) await loadMessages(currentTicket.value.id);
+            // await loadTickets();
+
+
+          });
+          // Evento: ticket atualizado (SUBSTITUA O EXISTENTE)
+          socket.on('ticket-updated', async (data) => {
+            console.log('🔄 Ticket atualizado:', data);
+            // NOTIFICAÇÃO: Ticket mudou para status pendente
+            if (data.status === 'pending' && data.previousStatus !== 'pending') {
+              const ticketName = data.owner || data.name || `Ticket ${data.id}`;
+              showNotification(
+                `🆕 Novo ticket pendente`,
+                `${ticketName} aguarda atendimento`,
+                `ticket-${data.id}-pending`
+              );
+              // playNotificationSound()
+            }
+            updateSingleTicket(data)
+            // await loadTickets();
+          });
+          socket.on('channel-update', (data) => {
+            console.log('Channel update:', data);
+            if (currentChannelId && currentChannelId === (data.channelId || data.id)) {
+              if (data.status === 'qrcode' && data.qrcode) showQRCode(data.qrcode);
+              if (data.pairingCode) showPairingCode(data.pairingCode);
+              if (data.status === 'CONNECTED') {
+                updateQRCodeStatus('connected', '✅ Conectado!');
+                setTimeout(() => { closeQRCodeModal(); loadChannels(); }, 2000);
+              }
+            }
+          });
+        }
         const toggleUserMenu = () => {
           userMenuOpen.value = !userMenuOpen.value;
         };
@@ -688,19 +807,34 @@
             notification.close();
           };
         }
-        async function attendTicket(id) { await updateTicketStatus(id, 'open', '🎧 Ticket em atendimento'); }
-        async function closeTicket(id) { if (confirm('Finalizar ticket?')) await updateTicketStatus(id, 'closed', '✅ Ticket finalizado'); }
-        async function reopenTicket(id) { await updateTicketStatus(id, 'pending', '🔄 Ticket reaberto'); }
+        async function attendTicket(id) {
+          updatedTickets.value[id] = true;
+          await updateTicketStatus(id, 'open', '🎧 Ticket em atendimento');
+        }
+        async function closeTicket(id) {
+          if (confirm('Finalizar ticket?'))
+            updatedTickets.value[id] = true;
+          await updateTicketStatus(id, 'closed', '✅ Ticket finalizado');
+        }
+        async function reopenTicket(id) {
+          updatedTickets.value[id] = true;
+          await updateTicketStatus(id, 'pending', '🔄 Ticket reaberto');
+        }
         async function updateTicketStatus(id, status, msg) {
           try {
             const dataForUpdate = {
               ...currentUser.value,
               status
             }
-            await fetch(`${URL_BASE}/api/v1/tickets/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dataForUpdate) });
+            const response = await fetch(`${URL_BASE}/api/v1/tickets/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dataForUpdate) });
             showNotification('Atualização de Ticket',
               msg);
-            await loadTickets();
+            if (response.ok) {
+              const data = await response.json()
+              updateSingleTicket(data)
+              updatedTickets.value[id] = false;
+            }
+            // await loadTickets();
             if (currentTicket?.id === id) await loadMessages(id);
           } catch (error) { showNotification('Erro ao atualizar ticket', 'error'); }
         }
@@ -888,32 +1022,23 @@
           } catch (e) { console.error(e); }
           finally { loadingTickets.value = false; }
         };
-        function loadMessages(ticketId) {
-          const ticket = allTickets.value.find(t => t.id === ticketId);
-          currentMessages.value = ticket?.messages ? [...ticket.messages].reverse() : [];
+        const updateSingleTicket = (updatedTicket) => {
+          // 1. Encontra o índice do ticket na lista atual
+          const index = allTickets.value.findIndex(t => t.id === updatedTicket.id);
 
-        }
-        const sendMessage = async () => {
-          if (!currentTicket.value || !newMessageText.value.trim()) return;
-          const text = newMessageText.value;
-          newMessageText.value = '';
-          try {
-            const formData = new FormData();
-            formData.append('body', text);
-            formData.append('fromMe', 'true');
-            await fetch(`${URL_BASE}/api/v1/messages/${currentTicket.value.id}`, { method: 'POST', body: formData });
-            loadMessages(currentTicket.value.id);
-          } catch (e) { console.error(e); alert('Erro ao enviar'); }
+          if (index !== -1) {
+            // 2. Se o ticket já existe, atualiza-o mesclando os dados antigos com os novos
+            // Isso garante que você não perca propriedades locais que podem não vir no socket
+            allTickets.value[index] = { ...allTickets.value[index], ...updatedTicket };
+          } else {
+            // 3. Se for um ticket novo (não estava na lista), adiciona-o
+            allTickets.value.push(updatedTicket);
+          }
+
+          // 4. Reordena a lista, já que o 'lastMessageAt' mudou
+          allTickets.value.sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0));
         };
-        const selectTicket = async (ticketId) => {
-          if (currentTicket.value?.id === ticketId) return;
-          currentTicket.value = allTickets.value.find(t => t.id === ticketId);
-          if (!currentTicket.value) return;
-          loadingMessages.value = true;
-          if (socket?.connected) socket.emit('join-ticket', ticketId);
-          loadMessages(ticketId)
-          loadingMessages.value = false;
-          await nextTick();
+        const scrool = () => {
           const area = document.querySelector('.messages-area');
           if (area) {
             // Scroll imediato para o que já carregou
@@ -930,6 +1055,80 @@
             // Opcional: Desconectar após alguns segundos para não ficar rodando sempre
             setTimeout(() => resizeObserver.disconnect(), 3000);
           }
+        }
+        function loadMessages(ticketId) {
+          tempMessages.value = []
+          const ticket = allTickets.value.find(t => t.id === ticketId);
+          if (ticket && ticket.messages) {
+            // Ordenar mensagens por data (mais antigas primeiro para exibição)
+            currentMessages.value = [...ticket.messages].sort((a, b) =>
+              new Date(a.createdAt) - new Date(b.createdAt)
+            );
+          } else {
+            currentMessages.value = [];
+          }
+
+          scrool();
+        }
+
+
+        const sendMessage = async () => {
+          if (!currentTicket.value || !newMessageText.value.trim()) return;
+          const text = newMessageText.value.trim()
+          const tempId = 'temp_' + Date.now() + '_' + Math.random();
+
+          try {
+            const tempMessage = {
+              id: tempId,
+              body: text,
+              fromMe: true,
+              createdAt: new Date().toISOString(),
+              ack: 0,
+              mediaType: 'text',
+              isDeleted: false,
+              isForwarded: false,
+              isTemp: true  // Marcar como temporária
+            };
+            // Adicionar mensagem temporária
+            tempMessages.value.push(tempMessage);
+
+            // Limpar input imediatamente
+            newMessageText.value = '';
+            await nextTick();
+            scrool();
+            // appendMessageOptimistic(tempMessage);
+            const formData = new FormData();
+            formData.append('body', text);
+            formData.append('fromMe', 'true');
+            const response = await fetch(`${URL_BASE}/api/v1/messages/${currentTicket.value.id}`, { method: 'POST', body: formData });
+
+
+
+            // } else {
+            //   // Se falhou, remover a mensagem temporária
+            //   removeTempMessage(tempId);
+            //   alert('Erro ao enviar mensagem');
+            // }
+
+            // loadMessages(currentTicket.value.id);
+
+
+          } catch (e) {
+            console.error(e); alert('Erro ao enviar');
+            removeTempMessage(tempId);
+          }
+        };
+        const selectTicket = async (ticketId) => {
+          if (currentTicket.value?.id === ticketId) return;
+          currentTicket.value = allTickets.value.find(t => t.id === ticketId);
+          if (!currentTicket.value) return;
+          loadingMessages.value = true;
+          if (socket?.connected) socket.emit('join-ticket', ticketId);
+          loadMessages(ticketId)
+          loadingMessages.value = false;
+          await nextTick();
+          scrool()
+
         };
         const loadUsers = async () => {
           loadingUsers.value = true;
@@ -996,10 +1195,11 @@
           loadChannels();
           loadTickets();
           loadUsers();
+          initSocket()
         });
 
         // Rolar sempre que adicionar nova mensagem
-        watch(currentMessages, async () => {
+        watch(tempMessages, async () => {
           await nextTick() // Aguarda o Vue atualizar o DOM
           if (messageAreaRef.value) {
             messageAreaRef.value.scrollTop = messageAreaRef.value.scrollHeight
@@ -1007,11 +1207,13 @@
         }, { deep: true })
 
         return {
+          updatedTickets,
           isAuthenticated,
           users,
           configSubtab,
           broadcastFileInput,
           activeTab,
+          tempMessages,
           messageAreaRef,
           loadingTickets,
           currentTicket,

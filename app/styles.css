@@ -675,6 +675,16 @@ input:checked + .slider:before {
 .message-wrapper.new-message {
   animation: highlight 1s ease-out;
 }
+.message-bubble.temp-message {
+  opacity: 0.7;
+  background-color: #e8f0fe;
+}
+
+.message-bubble .sending-status {
+  font-size: 11px;
+  color: #667781;
+  margin-left: 8px;
+}
 
 .message-bubble {
   max-width: 65%;

@@ -56,9 +56,9 @@ export async function messagesController(fastify: FastifyInstance) {
         ticket,
       };
 
-      await service.createMessageSystem(messageData);
+      const messageSent = await service.createMessageSystem(messageData);
 
-      reply.status(200).send("Messagem enviada");
+      reply.status(200).send(messageSent);
     },
   );
 }

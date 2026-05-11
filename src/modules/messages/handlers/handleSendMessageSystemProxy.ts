@@ -26,10 +26,10 @@ export const SendMessageSystemProxy = async (
   const channel = ticket.channel?.type;
   switch (channel) {
     case "whatsapp":
-      SendMessageWppWeb(body, ticket, hasMedia);
+      return SendMessageWppWeb(body, ticket, hasMedia);
       break;
     case "telegram":
-      SendMessageTeleproto(body, ticket, hasMedia);
+      return SendMessageTeleproto(body, ticket, hasMedia);
       break;
     default:
       break;

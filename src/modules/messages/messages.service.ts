@@ -22,7 +22,11 @@ export class MessageService {
     };
     const message = await this.messageRepository.create(messageData);
     const io = await waitForSocket();
-    io.emit("new-message", message);
+
+    io.emit("new-message", {
+      ...message,
+      ack: 2,
+    });
     return message;
   }
 
@@ -32,12 +36,12 @@ export class MessageService {
 
   async createMessageSystem(data: any) {
     const body = buildMessageBody(data.message.body, data.ticket);
-    await Promise.all(
+    return await Promise.all(
       (data.filesArray && data.filesArray.length
         ? data.filesArray
         : [null]
       ).map(async (media: string) => {
-        SendMessageSystemProxy(body, data.ticket, media);
+        return SendMessageSystemProxy(body, data.ticket, media);
       }),
     );
   }

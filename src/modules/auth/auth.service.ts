@@ -14,6 +14,9 @@ export class AuthService {
     if (!user) {
       throw new Error("ERR_USER_NOT_FOUND");
     }
+    if (!user.isActive) {
+      throw new Error("ERR_USER_NOT_ACTIVE");
+    }
     const isPasswordValid = await compare(password, user.passwordHash!);
 
     if (!isPasswordValid) {
