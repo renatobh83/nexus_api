@@ -15,13 +15,13 @@ export class AuthService {
       throw new AppError("ERR_USER_NOT_FOUND");
     }
 
-    if (!user.isActive) {
-      throw new AppError("Usuário não esta ativo.");
-    }
     const isPasswordValid = await compare(password, user.passwordHash!);
 
     if (!isPasswordValid) {
       throw new AppError("ERR_INVALID_CREDENTIALS", 403);
+    }
+    if (!user.isActive) {
+      throw new AppError("Usuário não esta ativo.");
     }
     const updateLogin = await this.usersRepository.updateUser(user.id, {
       isOnline: true,
