@@ -33,7 +33,7 @@ createApp({
     // =========================================================================
 
     /** URL base da API e servidor Socket.IO */
-    const URL_BASE = "http://localhost:3000";
+    const URL_BASE = "https://fast.panelapps.site/";
 
     /** Referência ao socket Socket.IO (inicializado em initSocket) */
     let socket = null;
@@ -48,6 +48,11 @@ createApp({
     const configSubtab = ref("users");
     const userMenuOpen = ref(false);
     const socketConnected = ref(false);
+    const showAlerta = ref(false);
+
+    // Alerta
+    const alertaMessage = ref("");
+    const isSuccess = ref(true);
 
     // --- Autenticação ---
     const isAuthenticated = ref(false);
@@ -322,6 +327,7 @@ createApp({
             message.body?.substring(0, 60) || "Nova mensagem",
             `msg-${message.id}`,
           );
+          sonnerAlert(`Nova mensagem de ${ticketName}`);
           scrollToBottom();
         }
 
@@ -346,6 +352,7 @@ createApp({
         // Notifica quando um ticket passa para pendente
         if (data.status === "pending" && data.previousStatus !== "pending") {
           const name = data.owner || data.name || `Ticket ${data.id}`;
+
           showNotification(
             "🆕 Novo ticket pendente",
             `${name} aguarda atendimento`,
@@ -373,9 +380,10 @@ createApp({
         // showQRCode(data.qrcode);
         if (data.pairingCode) {
           isPairingCode.value = true;
-          showPairingCode.value = data.pairingCode
+          showPairingCode.value = data.pairingCode;
         }
         if (data.status === "CONNECTED") {
+          sonnerAlert(`Canal conectado `);
           updateQRCodeStatus(STATUS.SUCCESS, true);
           setTimeout(() => {
             qrCodeModalVisible.value = false;
@@ -396,6 +404,7 @@ createApp({
     async function attendTicket(id) {
       updatedTickets.value[id] = true;
       await updateTicketStatus(id, "open", "🎧 Ticket em atendimento");
+      sonnerAlert("🎧 Ticket em atendimento");
     }
 
     /**
@@ -405,6 +414,7 @@ createApp({
     async function reopenTicket(id) {
       updatedTickets.value[id] = true;
       await updateTicketStatus(id, "pending", "🔄 Ticket reaberto");
+      sonnerAlert("🔄 Ticket reaberto");
     }
 
     /**
@@ -415,6 +425,7 @@ createApp({
       if (!confirm("Deseja finalizar este ticket?")) return;
       updatedTickets.value[id] = true;
       await updateTicketStatus(id, "closed", "✅ Ticket finalizado");
+      sonnerAlert("✅ Ticket finalizado");
     }
     /**
      * Seleciona um ticket.
@@ -449,7 +460,8 @@ createApp({
         if (response.ok) {
           const updatedData = await response.json();
           updateSingleTicket(updatedData);
-          showNotification("Atualização de Ticket", msg);
+          // sonnerAlert("Ticket atualizado");
+          // showNotification("Atualização de Ticket", msg);
         } else {
           throw new Error(`HTTP ${response.status}`);
         }
@@ -459,7 +471,7 @@ createApp({
         }
       } catch (error) {
         console.error("Erro ao atualizar ticket:", error);
-        showNotification("Erro", "Não foi possível atualizar o ticket.");
+        sonnerAlert("Não foi possível atualizar o ticket.", false);
       } finally {
         updatedTickets.value[id] = false;
       }
@@ -600,6 +612,7 @@ createApp({
     const sendMessage = async () => {
       if (!currentTicket.value || !newMessageText.value.trim()) return;
       const text = newMessageText.value.trim();
+      newMessageText.value = "";
       const tempId = "temp_" + Date.now() + "_" + Math.random();
       const tempMessage = {
         id: tempId,
@@ -873,7 +886,7 @@ createApp({
       qrCodeStr.value = "";
       currentChannelId.value = channelId;
       // TODO Criar funcao do qrcode
-      // openQRCodeModal();
+
       qrCodeModalVisible.value = true;
       try {
         await fetch(`${URL_BASE}/api/v1/channel/${channelId}/connect`, {
@@ -905,10 +918,11 @@ createApp({
         await fetch(`${URL_BASE}/api/v1/channel/${channelId}/disconnect`, {
           method: "POST",
         });
-        showNotification("Canal desconectado", "success");
+        sonnerAlert("Canal desconectado");
+
         await loadChannels();
       } catch (error) {
-        showNotification("Erro ao desconectar", "error");
+        sonnerAlert("Erro ao desconectar", false);
       }
     };
     // =========================================================================
@@ -949,6 +963,7 @@ createApp({
     const saveUser = async () => {
       if (!editingUser.value.name || !editingUser.value.email)
         return alert("Preencha nome e email");
+
       const method = editingUser.value.id ? "PUT" : "POST";
       const url = editingUser.value.id
         ? `${URL_BASE}/api/v1/users/${editingUser.value.id}`
@@ -1012,13 +1027,7 @@ createApp({
     const closeQRCodeModal = () => {
       qrCodeModalVisible.value = false;
     };
-    /**
-     * Open Modal qrCode
-     */
-    const openQRCodeModal = () => {
-      generateQRCode(qrCodeStr);
-      qrCodeModalVisible.value = true;
-    };
+
     /**
      * Funcao responsavel por gerar o Qrcode
      * @param {string} qrCode - String para gerar o qrcode
@@ -1056,7 +1065,10 @@ createApp({
     /** Solicita permissão do navegador para exibir notificações push. */
     async function requestNotificationPermission() {
       if (!("Notification" in window)) return false;
+
       if (Notification.permission === "granted") return true;
+      if (Notification.permission === "default") return true;
+
       if (Notification.permission !== "denied") {
         return (await Notification.requestPermission()) === "granted";
       }
@@ -1093,6 +1105,12 @@ createApp({
         throw new Error("Service Worker não registrado");
       }
     }
+    const sonnerAlert = (msg, success = true) => {
+      showAlerta.value = true;
+      isSuccess.value = success;
+      alertaMessage.value = msg;
+      setTimeout(() => (showAlerta.value = false), 3000);
+    };
     /**
      * Exibe uma notificação push do navegador.
      * @param {string} title   - Título da notificação.
@@ -1101,19 +1119,18 @@ createApp({
      */
     async function showNotification(title, body, tag = "ticket-notification") {
       // TODO Implementar logica mais robusta para aceitar em mobile
-      if (Notification.permission !== "granted") return;
 
+      if (Notification.permission !== "granted") return;
       // Verifica se o usuario esta acessando de um mobile
       const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-      const notificacaoData = {
-        type: tag,
-      };
+
       // 🔹 Se houver suporte a Service Worker, use sempre ele
       const hasSW = "serviceWorker" in navigator;
 
-      if (hasSW) {
-        await showServiceWorkerNotification(title);
-      }
+      // if (hasSW) {
+      //   console.log(hasSW);
+      //   // await showServiceWorkerNotification(title);
+      // }
 
       const notification = new Notification(title, {
         body,
@@ -1128,7 +1145,6 @@ createApp({
       setTimeout(() => notification.close(), 5000);
 
       notification.onclick = () => {
-        window.focus();
         notification.close();
       };
     }
@@ -1217,7 +1233,7 @@ createApp({
       if (!checkAuthentication()) return;
 
       // 2. Solicita permissão de notificação de forma não-bloqueante
-      // requestNotificationPermission();
+      requestNotificationPermission();
 
       // 3. Conecta ao socket para eventos em tempo real
       initSocket();
@@ -1273,6 +1289,11 @@ createApp({
       broadcastFileName,
       selectedBroadcastFiles,
       sendingBroadcast,
+      showAlerta,
+
+      // Alerta
+      alertaMessage,
+      isSuccess,
 
       // Computed
       filteredTickets,
@@ -1326,7 +1347,6 @@ createApp({
       qrCodeContainerRef,
       qrCodeModalVisible,
       qrcodeImage,
-      openQRCodeModal,
       qrString,
       isLoading,
       statusMessage,

@@ -26,9 +26,6 @@ export async function usersController(fastify: FastifyInstance) {
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { userId } = request.params as any;
       const userData = request.body as any;
-      userData.isActive === "false"
-        ? (userData.isActive = false)
-        : (userData.isActive = true);
 
       const user = await usersService.updateUser(userId, userData);
       reply.status(200).send(user);

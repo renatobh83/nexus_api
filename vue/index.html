@@ -37,7 +37,7 @@
         </div>
       </div>
       <div style="position: relative;">
-        <button class="menu-hamburger" @click="toggleSidebar">☰</button>
+        <button class="menu-hamburger" :class="{ activeHam: activeTab === 'chats' }" @click="toggleSidebar">☰</button>
 
         <div class="top-menu">
           <div class="menu-item" :class="{ active: activeTab === 'chats' }" @click="activeTab = 'chats'">💬 Chats</div>
@@ -242,6 +242,7 @@
         </div>
 
         <!-- ABA CONFIGURACOES -->
+
         <div class="tab-configuracoes" :class="{ hidden: activeTab !== 'configuracoes' }">
           <div class="config-container">
             <div class="config-sidebar">
@@ -307,7 +308,7 @@
                     <div class="channel-actions">
                       <button v-if="ch.status === 'CONNECTED'" class="channel-btn disconnect"
                         @click="disconnectChannel(ch.id)">Desconectar</button>
-                      <button v-if="ch.status === 'qrcode'" class="channel-btn" @click="openQRCodeModal">QrCode</button>
+                      <!-- <button v-if="ch.status === 'qrcode'" class="channel-btn" @click="openQRCodeModal">QrCode</button> -->
                       <button v-if="ch.status === 'CONNECTED' || ch.status === 'qrcode'" class="channel-btn refresh"
                         @click="refreshChannel(ch.id)">Reconectar</button>
                       <button v-else class="channel-btn connect" @click="connectChannel(ch.id)">Conectar</button>
@@ -522,6 +523,9 @@
                 @click="saveUser">Salvar</button></div>
           </div>
         </div>
+      </div>
+      <div class="alerta" :class="{ 'alerta-success': isSuccess, 'alerta-error': !isSuccess }" v-if="showAlerta">
+        <span>{{alertaMessage}}</span>
       </div>
     </template>
     <template v-else>

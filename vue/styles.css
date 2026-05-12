@@ -308,6 +308,23 @@ body {
 .qrcode-loader.none {
   display: none;
 }
+.alerta {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  color: white;
+  border-radius: 8px;
+  z-index: 9999;
+  animation: slideIn 0.3s ease;
+  background: #4caf50;
+}
+.alerta-success {
+  background: #4caf50;
+}
+.alerta-error {
+  background: #f44336;
+}
 /* Sidebar chats */
 .sidebar {
   width: 100%;
@@ -833,6 +850,8 @@ input:checked + .slider:before {
 }
 
 .message-bubble {
+  font-size: 14px;
+  line-height: 1.4;
   max-width: 65%;
   position: relative;
   border-radius: 8px;
@@ -1544,7 +1563,7 @@ input:checked + .slider:before {
     color: #999 !important;
   }
 
-  .menu-hamburger {
+  .activeHam {
     display: block;
   }
 

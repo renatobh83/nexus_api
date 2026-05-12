@@ -1,4 +1,4 @@
-import { compare } from "bcryptjs";
+import { compare, compareSync } from "bcryptjs";
 import { UsersRepository } from "../users/users.repository.js";
 import { AppError } from "../../utils/AppError.js";
 
@@ -12,10 +12,11 @@ export class AuthService {
     const user = await this.usersRepository.findByEmail(email);
 
     if (!user) {
-      throw new Error("ERR_USER_NOT_FOUND");
+      throw new AppError("ERR_USER_NOT_FOUND");
     }
+
     if (!user.isActive) {
-      throw new Error("ERR_USER_NOT_ACTIVE");
+      throw new AppError("Usuário não esta ativo.");
     }
     const isPasswordValid = await compare(password, user.passwordHash!);
 
