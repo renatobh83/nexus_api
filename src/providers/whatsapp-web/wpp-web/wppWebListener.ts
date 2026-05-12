@@ -25,7 +25,7 @@ const resolveContact = async (
   const { phoneNumber } = await session.getPnLidEntry(message.from!);
   return session.getContact(phoneNumber._serialized);
 };
-
+let isSyncing = true;
 export const wbotWebListener = async (wbot: Session): Promise<void> => {
   /**
    *  Listens to all new messages, sent and received.
@@ -33,8 +33,13 @@ export const wbotWebListener = async (wbot: Session): Promise<void> => {
    *  Nao pega mensagem de status
    *  Nao pega mensagem de listas
    */
-
+  setTimeout(() => {
+    isSyncing = false;
+  }, 5000);
   wbot.onAnyMessage(async (message: Message) => {
+    if (isSyncing) {
+      return;
+    }
     if (message.chatId === "status@broadcast") return;
     if (message.type === "list" || message.type === "unknown") return;
     const messageContent = message.body || message.caption || "";

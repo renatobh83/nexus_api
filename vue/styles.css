@@ -162,6 +162,152 @@ body {
   display: none;
 }
 
+/* QR Code Modal */
+.qrcode-modal {
+  display: flex;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 3000;
+  justify-content: center;
+  align-items: center;
+}
+
+.qrcode-modal.active {
+  display: flex;
+}
+
+.qrcode-content {
+  background: white;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 450px;
+  text-align: center;
+  animation: modalSlideIn 0.3s ease;
+  overflow: hidden;
+}
+
+.qrcode-header {
+  background: #075e54;
+  color: white;
+  padding: 20px;
+}
+
+.qrcode-header h3 {
+  font-size: 18px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.qrcode-header p {
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+.qrcode-body {
+  padding: 30px;
+}
+
+.qrcode-container {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  min-height: 320px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#qrcodeImage {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#qrcodeImage img,
+#qrcodeImage canvas,
+#qrcodeImage #qrcode {
+  width: 280px !important;
+  height: 280px !important;
+  max-width: 280px;
+  max-height: 280px;
+}
+
+.pairing-container {
+  background: #f0f2f5;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.pairing-code {
+  font-size: 28px;
+  font-weight: bold;
+  color: #075e54;
+  letter-spacing: 2px;
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  font-family: monospace;
+  margin-top: 10px;
+  word-break: break-all;
+}
+
+.qrcode-status {
+  font-size: 13px;
+  color: #667781;
+  margin-top: 15px;
+}
+
+.qrcode-status.connecting {
+  color: #ff9800;
+}
+
+.qrcode-status.connected {
+  color: #4caf50;
+}
+
+.qrcode-status.error {
+  color: #f44336;
+}
+
+.qrcode-close {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  background: #f0f2f5;
+  padding: 15px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.qrcode-close button {
+  background: #075e54;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+.qrcode-close button:hover {
+  background: #9bb3b0;
+}
+.qrcode-loader {
+  width: 50px;
+  height: 50px;
+  border: 3px solid #f0f2f5;
+  border-top: 3px solid #075e54;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+.qrcode-loader.none {
+  display: none;
+}
 /* Sidebar chats */
 .sidebar {
   width: 100%;

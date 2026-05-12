@@ -27,12 +27,14 @@ export const initWppWeb = async (
 ): Promise<Session> => {
   try {
     // let wbot: Session;
-    console.log(channel.wppUser);
+
     const wbotRef: { current?: Session } = {};
+
     const options = {
       logQR: true,
       phoneNumber: channel.pairingCodeEnabled ? channel.wppUser! : undefined,
       headless: true,
+      autoClose: 50000,
       puppeteerOptions: {
         userDataDir: "./userDataDir/" + channel.name,
       },
@@ -218,20 +220,18 @@ async function waitForApiValue(client: Session, interval = 1000) {
  */
 export async function removeSession(session: string) {
   try {
-    const sessionPath = path.join(
-      __dirname,
-      "..",
-      "..",
-      "..",
-      "..",
-      "userDataDir",
-      session,
-    );
-
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    await promises.access(sessionPath);
-    fs.rmSync(sessionPath, { recursive: true, force: true });
+    // const sessionPath = path.join(
+    //   __dirname,
+    //   "..",
+    //   "..",
+    //   "..",
+    //   "..",
+    //   "userDataDir",
+    //   session,
+    // );
+    // await new Promise((resolve) => setTimeout(resolve, 2000));
+    // await promises.access(sessionPath);
+    // fs.rmSync(sessionPath, { recursive: true, force: true });
   } catch (error) {
     console.log("Erro ao remover sessão:", error);
   }
