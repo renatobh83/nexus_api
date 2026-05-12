@@ -29,7 +29,7 @@ export class ChannelManager {
           if (channel.type === "whatsapp") {
             initWppWeb(channel, this.channelService);
           } else if (channel.type === "telegram") {
-            // initTeleproto(channel, this.channelService);
+            initTeleproto(channel, this.channelService);
           }
         } catch (error) {
           console.error(
