@@ -304,7 +304,9 @@
                         {{ ch.status === 'CONNECTED' ? 'Conectado' : 'Desconectado' }}
                       </span>
                     </div>
-                    <div class="channel-name">{{ ch.name }}</div>
+                    <div class="channel-name">{{ ch.name }}
+                      <button @click="editChannel(ch)">✏️</button>
+                    </div>
                     <div class="channel-actions" v-if="isAdmin">
                       <button v-if="ch.status === 'CONNECTED'" class="channel-btn disconnect"
                         @click="disconnectChannel(ch.id)">Desconectar</button>
@@ -402,7 +404,7 @@
       <div id="channelModal" class="modal" :class="{ active: channelModalVisible }">
         <div class="modal-content">
           <div class="modal-header">
-            <h3>Adicionar Canal</h3>
+            <h3>{{ editingChannel.id ? 'Editar Canal' : 'Adicionar Canal' }}</h3>
             <button class="modal-close" @click="channelModalVisible = false">&times;</button>
           </div>
           <div class="modal-body">
@@ -486,7 +488,7 @@
 
 
             <div class="modal-buttons">
-              <button class="btn-secondary" @click="channelModalVisible = false">Cancelar</button>
+              <button class="btn-secondary" @click="closeChannelModal">Cancelar</button>
               <button class="btn-primary" @click="createChannel">Criar</button>
             </div>
           </div>

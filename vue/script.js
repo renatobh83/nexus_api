@@ -33,7 +33,8 @@ createApp({
     // =========================================================================
 
     /** URL base da API e servidor Socket.IO */
-    const URL_BASE = "https://fast.panelapps.site/";
+    // const URL_BASE = "https://fast.panelapps.site/";
+    const URL_BASE = "http://localhost:3000";
 
     /** Referência ao socket Socket.IO (inicializado em initSocket) */
     let socket = null;
@@ -84,6 +85,7 @@ createApp({
     // --- Usuários ---
     const users = ref([]);
     const loadingUsers = ref(false);
+
     const userModalVisible = ref(false);
     const editingUser = ref({
       id: null,
@@ -97,7 +99,6 @@ createApp({
     const channels = ref([]);
     const loadingChannels = ref(false);
     const currentChannelId = ref(null);
-    const qrcodeModalVisible = ref(false);
     const channelModalVisible = ref(false);
     const selectedChannelType = ref("");
     const newChannelName = ref("");
@@ -106,6 +107,9 @@ createApp({
     const businessAccountId = ref("");
     const accessToken = ref("");
     const phoneNumberId = ref("");
+    const editingChannel = ref({
+      selectedChannelType: "",
+    });
 
     // --- Broadcast ---
     const broadcastModalVisible = ref(false);
@@ -126,7 +130,6 @@ createApp({
     const qrString = ref("");
     const isLoading = ref(false);
     const currentStatus = ref(STATUS.CONNECTING);
-    const qrCodeStr = ref("");
     const showPairingCode = ref("");
     // =========================================================================
     // 3. COMPUTED PROPERTIES
@@ -375,7 +378,6 @@ createApp({
 
         if (data.status === "qrcode" && data.qrcode) {
           generateQRCode(data.qrcode);
-          qrCodeStr(data.qrCode);
         }
         // showQRCode(data.qrcode);
         if (data.pairingCode) {
@@ -387,7 +389,7 @@ createApp({
           updateQRCodeStatus(STATUS.SUCCESS, true);
           setTimeout(() => {
             qrCodeModalVisible.value = false;
-            loadChannels();
+            updateSingleChannel(data);
           }, 2000);
         }
       });
@@ -817,6 +819,7 @@ createApp({
      * Abri modal novo canal
      */
     const openAddChannelModal = () => {
+      editingChannel.value = {};
       selectedChannelType.value = "";
       newChannelName.value = "";
       newChannelToken.value = "";
@@ -827,6 +830,22 @@ createApp({
       channelModalVisible.value = true;
     };
     /**
+     * Substitui (ou insere) um canal na lista local pelo dado recebido da API/Socket.
+     * Evita recarregar toda a lista de canal.
+     * @param {Object} updatedChannel - Objeto do ticket com dados atualizados.
+     */
+    function updateSingleChannel(updatedChannel) {
+      const index = channels.value.findIndex((t) => t.id === updatedChannel.id);
+      if (index !== -1) {
+        channels.value[index] = {
+          ...channels.value[index],
+          ...updatedChannel,
+        };
+      } else {
+        channels.value.unshift(updatedChannel);
+      }
+    }
+    /**
      * Cria um novo canal de atendimento
      */
     const createChannel = async () => {
@@ -836,10 +855,16 @@ createApp({
         name: newChannelName.value,
         type: selectedChannelType.value,
       };
+
       if (selectedChannelType.value === "telegram")
         data.tokenTelegram = newChannelToken.value;
       if (selectedChannelType.value === "whatsapp") {
-        data.pairingCodeEnabled = true;
+        if (newChannelNumber.value) {
+          data.pairingCodeEnabled = true;
+        } else {
+          data.pairingCodeEnabled = false;
+        }
+
         data.wppUser = newChannelNumber.value;
       }
       if (selectedChannelType.value === "wpp-business") {
@@ -847,14 +872,86 @@ createApp({
         data.accessToken = accessToken.value;
         data.phoneNumberId = phoneNumberId.value;
       }
+      const isEditing = editingChannel.value && editingChannel.value.id;
+      const url = isEditing
+        ? `${URL_BASE}/api/v1/channel/${editingChannel.value.id}`
+        : `${URL_BASE}/api/v1/channel`;
+      const method = isEditing ? "PUT" : "POST";
+      try {
+        const response = await fetch(url, {
+          method: method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
 
-      await fetch(`${URL_BASE}/api/v1/channel`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+        if (!response.ok) throw new Error("Erro ao salvar canal");
+        const channel = await response.json();
+        sonnerAlert(
+          isEditing
+            ? "Canal atualizado com sucesso!"
+            : "Canal criado com sucesso!",
+        );
+        channelModalVisible.value = false;
+
+        // Limpa o editingChannel após salvar
+        editingChannel.value = {};
+        updateSingleChannel(channel);
+        // await loadChannels();
+      } catch (error) {
+        console.error("Erro:", error);
+        sonnerAlert("Erro ao salvar canal", false);
+      }
+      // await fetch(`${URL_BASE}/api/v1/channel`, {
+      //   method: "POST",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify(data),
+      // });
+      // channelModalVisible.value = false;
+      // await loadChannels();
+    };
+    // Função para fechar o modal e limpar
+    const closeChannelModal = () => {
       channelModalVisible.value = false;
-      await loadChannels();
+      editingChannel.value = {};
+      selectedChannelType.value = "";
+      newChannelName.value = "";
+      newChannelToken.value = "";
+      newChannelNumber.value = "";
+      businessAccountId.value = "";
+      accessToken.value = "";
+      phoneNumberId.value = "";
+    };
+    // Função para carregar o canal para edição
+    const loadChannelForEdit = (channel) => {
+      if (!channel || !channel.id) return;
+
+      // 1. Primeiro seleciona o tipo do canal
+      selectedChannelType.value = channel.type;
+
+      // 2. Depois carrega os dados específicos de cada tipo
+      newChannelName.value = channel.name || "";
+
+      // Limpa campos anteriores
+      newChannelToken.value = "";
+      newChannelNumber.value = "";
+      businessAccountId.value = "";
+      accessToken.value = "";
+      phoneNumberId.value = "";
+
+      // Preenche campos baseado no tipo
+      if (channel.type === "telegram") {
+        newChannelToken.value = channel.tokenTelegram || channel.token || "";
+      }
+
+      if (channel.type === "whatsapp") {
+        newChannelNumber.value = channel.wppUser || channel.number || "";
+      }
+
+      if (channel.type === "wpp-business") {
+        businessAccountId.value = channel.businessAccountId || "";
+        accessToken.value = channel.accessToken || "";
+        phoneNumberId.value = channel.phoneNumberId || "";
+      }
     };
     /**
      * Faz a selecao de qual canal deve ser criado (WhatsApp, Telegram, etc.).
@@ -877,16 +974,20 @@ createApp({
         loadingChannels.value = false;
       }
     };
-
+    /**
+     * Editando canal
+     * @param {object} channel
+     */
+    const editChannel = (channel) => {
+      editingChannel.value = JSON.parse(JSON.stringify(channel));
+      channelModalVisible.value = true;
+    };
     /**
      * Faz a conexao com o canal selecionado
      * @param {string} channelId - id do canal
      */
     const connectChannel = async (channelId) => {
-      qrCodeStr.value = "";
       currentChannelId.value = channelId;
-      // TODO Criar funcao do qrcode
-
       qrCodeModalVisible.value = true;
       try {
         await fetch(`${URL_BASE}/api/v1/channel/${channelId}/connect`, {
@@ -902,7 +1003,6 @@ createApp({
      *  @param {string} channelId - id do canal
      */
     const refreshChannel = async (channelId) => {
-      qrCodeStr.value = "";
       console.log(`Reconectando canal ${channelId}...`);
       await disconnectChannel(channelId);
       setTimeout(() => connectChannel(channelId), 1000);
@@ -912,7 +1012,6 @@ createApp({
      * @param {string} channelId - id do canal
      */
     const disconnectChannel = async (channelId) => {
-      qrCodeStr.value = "";
       if (!confirm("Desconectar este canal?")) return;
       try {
         await fetch(`${URL_BASE}/api/v1/channel/${channelId}/disconnect`, {
@@ -1004,25 +1103,27 @@ createApp({
      * Pega etapas do qrcode
 
      */
+
     const updateQRCodeStatus = (newStatus, hasImage = false) => {
       currentStatus.value = newStatus;
       qrcodeImage.value = hasImage;
+      // Limpa o timeout anterior se existir
 
       if (newStatus === STATUS.SUCCESS) {
         setTimeout(async () => {
           if (currentStatus.value === STATUS.SUCCESS) {
             updateQRCodeStatus(STATUS.EXPIRED, false);
-            qrCodeModalVisible.value = false;
-            await nextTick();
-            qrCodeModalVisible.value = true;
-            await nextTick();
+            // qrCodeModalVisible.value = false;
+            // await nextTick();
+            // qrCodeModalVisible.value = true;
+            // await nextTick();
           }
         }, 50000);
       }
     };
 
     /**
-     * Funcao para fechar o moda lQrCode
+     * Funcao para fechar o modal QrCode
      */
     const closeQRCodeModal = () => {
       qrCodeModalVisible.value = false;
@@ -1241,6 +1342,19 @@ createApp({
       // 4. Carrega dados iniciais em paralelo
       await Promise.all([loadTickets(), loadChannels(), loadUsers()]);
     });
+
+    //
+    //  Watcher
+    //
+
+    watch(
+      editingChannel,
+      (newChannel) => {
+        loadChannelForEdit(newChannel);
+      },
+      { deep: true, imediate: true },
+    );
+
     // =========================================================================
     // EXPOSIÇÃO DO SETUP (retorno para o template Vue)
     // =========================================================================
@@ -1272,7 +1386,6 @@ createApp({
       editingUser,
       channels,
       currentChannelId,
-      qrcodeModalVisible,
       channelModalVisible,
       selectedChannelType,
       newChannelName,
@@ -1313,6 +1426,9 @@ createApp({
       createChannel,
       openAddChannelModal,
       selectChannelType,
+      editingChannel,
+      editChannel,
+      closeChannelModal,
 
       // Usuarios
       openUserModal,

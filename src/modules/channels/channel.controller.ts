@@ -20,6 +20,16 @@ export async function channelController(fastify: FastifyInstance) {
       reply.status(200).send(channel);
     },
   );
+  // Edita um canal
+  fastify.put(
+    "/:channelId",
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { channelId } = request.params as any;
+      const id = parseInt(channelId);
+      const channel = await service.update(id, request.body as any);
+      reply.status(200).send(channel);
+    },
+  );
   /**
    * Cria um novo canal na apliacação
    */
