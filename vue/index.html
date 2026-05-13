@@ -63,7 +63,7 @@
 
             <div class="filter-switch">
               <label class="switch-label">
-                <span>Mostrar apenas fechados</span>
+                <label>Mostrar apenas fechados</label>
                 <div class="switch">
                   <input type="checkbox" v-model="showOnlyClosed">
                   <span class="slider"></span>
@@ -365,7 +365,7 @@
           </div>
           <div class="modal-body">
             <div class="form-group">
-              <label>Canal</label>
+              <span>Canal</span>
               <select v-model="broadcastChannelId">
                 <option value="">Selecione</option>
                 <option v-for="ch in channels.filter(ch => ch.status === 'CONNECTED')" :key="ch.id" :value="ch.id">
@@ -374,21 +374,21 @@
               </select>
             </div>
             <div class="form-group">
-              <label>Número</label>
+              <span>Número</span>
               <input v-model="broadcastNumber" placeholder="31999999999"
                 @input="broadcastNumber = broadcastNumber.replace(/\D/g, '')">
             </div>
             <div class="form-group">
-              <label>Mensagem</label>
+              <span>Mensagem</span>
               <textarea v-model="broadcastMessage" rows="3"></textarea>
             </div>
             <div class="form-group">
-              <label>Anexos</label>
+              <span>Anexos</span>
               <div class="broadcast-attach">
                 <input type="file" ref="broadcastFileInput" style="display:none" @change="handleBroadcastFileSelect"
                   accept="image/*,video/*,audio/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain">
                 <button @click="triggerBroadcastFile" class="insert">📎</button>
-                <span id="broadcastFileName">Nenhum arquivo selecionado</span>
+                <span id="broadcastFileName" v-if="!broadcastFileName">Nenhum arquivo selecionado</span>
               </div>
               <div v-if="broadcastFileName" class="broadcast-file-preview">
                 {{ broadcastFileName }} <button @click="removeBroadcastFile">✕</button>
@@ -409,7 +409,7 @@
           </div>
           <div class="modal-body">
             <div class="form-group">
-              <label>Tipo - {{selectedChannelType}}</label>
+              <span>Tipo - {{selectedChannelType}}</span>
               <div class="channel-options">
 
                 <div class="channel-option" data-channel-type="whatsapp" @click="selectChannelType('whatsapp')"
@@ -438,13 +438,13 @@
             </select> -->
             </div>
             <div class="form-group">
-              <label>Nome</label>
+              <span>Nome</span>
               <input v-model="newChannelName" placeholder="Nome do canal">
             </div>
             <div id="telegramFields" class="dynamic-fields"
               :class="['dynamic-fields', { active: selectedChannelType === 'telegram' }]">
               <div class="form-group">
-                <label>Token do Bot *</label>
+                <span>Token do Bot *</span>
                 <input type="text" id="botToken" placeholder="Ex: 1234567890:ABCdefGHIjklmNOPqrstUvWXyz"
                   autocomplete="off" v-model="newChannelToken">
                 <small style="color: #667781; font-size: 11px;">Crie um bot no @BotFather do Telegram</small>
@@ -453,7 +453,7 @@
             <div id="wppWebFields" class="dynamic-fields"
               :class="['dynamic-fields', { active: selectedChannelType === 'whatsapp' }]">
               <div class="form-group">
-                <label>Número do WhatsApp *</label>
+                <span>Número do WhatsApp *</span>
                 <input v-model="newChannelNumber" type="text" id="whatsappNumber" placeholder="Ex: 31999999999"
                   autocomplete="off">
                 <small style="color: #667781; font-size: 11px;">Digite o número com DDD e país</small>
@@ -462,27 +462,27 @@
             <div id="wppBusinessFields" class="dynamic-fields"
               :class="['dynamic-fields', { active: selectedChannelType === 'wpp-business' }]">
               <div class="form-group">
-                <label>Phone Number ID *</label>
+                <span>Phone Number ID *</span>
                 <input type="text" id="phoneNumberId" placeholder="ID do número de telefone" autocomplete="off"
                   v-model="phoneNumberId">
               </div>
               <div class="form-group">
-                <label>Access Token *</label>
+                <span>Access Token *</span>
                 <input type="text" id="accessToken" placeholder="Token de acesso da API" v-model="accessToken"
                   autocomplete="off">
               </div>
               <div class="form-group">
-                <label>Business Account ID</label>
+                <span>Business Account ID</span>
                 <input type="text" id="businessAccountId" placeholder="ID da conta business (opcional)"
                   v-model="businessAccountId" autocomplete="off">
               </div>
             </div>
             <!-- <div v-if="selectedChannelType === 'telegram'" class="form-group">
-            <label>Token Bot</label>
+            <span>Token Bot</span>
             <input v-model="newChannelToken" placeholder="Token do BotFather">
           </div>
           <div v-if="selectedChannelType === 'whatsapp'" class="form-group">
-            <label>Número</label>
+            <span>Número</span>
             <input v-model="newChannelNumber" placeholder="5511999999999">
           </div> -->
 
@@ -502,20 +502,26 @@
             <h3>{{ editingUser.id ? 'Editar' : 'Adicionar' }} Usuário</h3><button class="modal-close"
               @click="userModalVisible = false">&times;</button>
           </div>
+
           <div class="modal-body">
-            <div class="form-group"><label>Nome</label><input v-model="editingUser.name" placeholder="Nome"></div>
-            <div class="form-group"><label>Email</label><input v-model="editingUser.email" type="email"></div>
-            <div class="form-group"><label>Senha</label><input v-model="editingUser.passwordHash" type="password"></div>
+            <div class="form-group"><span>Nome</span><input id="nomeUsuario" v-model="editingUser.name"
+                placeholder="Nome" /></div>
+            <div class="form-group"><span>Email</span><input id="emailUsuario" v-model="editingUser.email" type="email">
+            </div>
+            <div class="form-group">
+              <span>Senha</span>
+              <input id="passwordUsuario" v-model="editingUser.passwordHash" type="password">
+            </div>
             <div class="form-group" v-if="isAdmin">
-              <label>Perfil</label>
-              <select v-model="editingUser.role">
+              <span>Perfil</span>
+              <select v-model="editingUser.role" id="selectPerfil">
                 <option value="atendente">Atendente</option>
                 <option value="administrador">Admin</option>
               </select>
             </div>
             <div class="form-group" v-if="isAdmin">
-              <label>Status</label>
-              <select v-model="editingUser.isActive">
+              <span>Status</span>
+              <select v-model="editingUser.isActive" id="isActive">
                 <option :value="true">Ativo</option>
                 <option :value="false">Inativo</option>
               </select>

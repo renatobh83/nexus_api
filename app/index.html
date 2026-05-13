@@ -220,14 +220,14 @@
           <small style="color: #667781;">Número completo com código do país (ex: 5511999999999)</small>
         </div>
         <div class="form-group">
-          <label>Mensagem</label>
+          <span>Mensagem</span>
           <textarea id="broadcastMessage" placeholder="Digite sua mensagem..."></textarea>
         </div>
         <div class="form-group">
-          <label>Anexos</label>
+          <span>Anexos</span>
           <div class="broadcast-attach">
             <button type="button" onclick="document.getElementById('broadcastFileInput').click()">📎</button>
-            <span id="broadcastFileName">Nenhum arquivo selecionado</span>
+            <span id="broadcastFileName" v-if="broadcastFileName">{{broadcastFileNam}}</span>
           </div>
           <input type="file" id="broadcastFileInput" style="display: none;"
             accept="image/*,video/*,audio/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain">

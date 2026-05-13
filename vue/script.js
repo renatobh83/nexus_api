@@ -745,6 +745,14 @@ createApp({
       selectedBroadcastFiles.value = [];
       broadcastModalVisible.value = true;
     };
+    const closeBroadcastModal = () => {
+      broadcastChannelId.value = "";
+      broadcastNumber.value = "";
+      broadcastMessage.value = "";
+      broadcastFileName.value = "";
+      selectedBroadcastFiles.value = [];
+      broadcastModalVisible.value = false;
+    };
 
     /** Aciona o input oculto de arquivo para broadcast. */
     const triggerBroadcastFile = () => {
@@ -791,7 +799,7 @@ createApp({
       if (fileObj?.preview) URL.revokeObjectURL(fileObj.preview);
 
       selectedBroadcastFiles.value.splice(index, 1);
-      broadcastFileName.value = selectedBroadcastFiles.value[0]?.name || "";
+      broadcastFileName.value = "";
     };
 
     /**
@@ -803,12 +811,30 @@ createApp({
         alert("Preencha o canal e o número de destino.");
         return;
       }
-      sendingBroadcast.value = true;
+
+      const formData = new FormData();
+      formData.append("to", broadcastNumber.value);
+      formData.append("body", broadcastMessage.value || "");
+
+      if (selectedBroadcastFiles.value[0]) {
+        selectedBroadcastFiles.value.forEach((item, idx) => {
+          formData.append("files", item.file);
+          if (broadcastMessage.value)
+            formData.append(`caption_${idx}`, broadcastMessage.value);
+          // if (item.caption) formData.append(`caption_${idx}`, item.caption);
+        });
+      }
       try {
-        // TODO: montar FormData e chamar API de broadcast
-        console.warn("sendBroadcastMessage: implementação pendente");
+        await fetch(
+          `${URL_BASE}/api/v1/channel/${broadcastChannelId.value}/send`,
+          {
+            method: "POST",
+            body: formData,
+          },
+        );
       } finally {
         sendingBroadcast.value = false;
+        closeBroadcastModal();
       }
     };
 

@@ -68,7 +68,6 @@ export async function channelController(fastify: FastifyInstance) {
 
       if (request.isMultipart()) {
         const parts = request.parts();
-
         for await (const part of parts) {
           if (part.type === "file") {
             const buffer = await part.toBuffer();
