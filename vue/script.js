@@ -26,8 +26,14 @@ const STATUS = {
   SUCCESS: "success",
 };
 const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
+
 createApp({
   setup() {
+    const notifications = useNotifications({
+      playNotificationSound: () => new Audio("/ping.mp3").play(),
+      openChat: (ticket) => console.log("Abrir ticket", ticket),
+    });
+    notifications.requestPermission();
     // =========================================================================
     // 1. CONFIGURAÇÃO E CONSTANTES
     // =========================================================================
@@ -312,7 +318,7 @@ createApp({
       // Nova mensagem recebida
       socket.on("new-message", async (message) => {
         console.log("📨 Nova mensagem recebida:", message);
-
+        notifications.show;
         const ticket = allTickets.value.find((t) => t.id === message.ticketid);
         const ticketName =
           ticket?.owner || ticket?.name || `Ticket ${message.ticketid}`;
@@ -325,11 +331,11 @@ createApp({
           message.fromMe !== "true";
 
         if (isIncoming) {
-          showNotification(
-            `💬 Nova mensagem de ${ticketName}`,
-            message.body?.substring(0, 60) || "Nova mensagem",
-            `msg-${message.id}`,
-          );
+          // showNotification(
+          //   `💬 Nova mensagem de ${ticketName}`,
+          //   message.body?.substring(0, 60) || "Nova mensagem",
+          //   `msg-${message.id}`,
+          // );
           sonnerAlert(`Nova mensagem de ${ticketName}`);
           scrollToBottom();
         }
@@ -1214,13 +1220,13 @@ createApp({
     /** Solicita permissão do navegador para exibir notificações push. */
     async function requestNotificationPermission() {
       if (!("Notification" in window)) return false;
+      notifications.requestPermission();
+      // if (Notification.permission === "granted") return true;
+      // if (Notification.permission === "default") return true;
 
-      if (Notification.permission === "granted") return true;
-      if (Notification.permission === "default") return true;
-
-      if (Notification.permission !== "denied") {
-        return (await Notification.requestPermission()) === "granted";
-      }
+      // if (Notification.permission !== "denied") {
+      //   return (await Notification.requestPermission()) === "granted";
+      // }
       return false;
     }
     /**
