@@ -33,8 +33,8 @@ createApp({
     // =========================================================================
 
     /** URL base da API e servidor Socket.IO */
-    // const URL_BASE = "https://fast.panelapps.site/";
-    const URL_BASE = "http://localhost:3000";
+    const URL_BASE = "https://fast.panelapps.site/";
+    // const URL_BASE = "http://localhost:3000";
 
     /** Referência ao socket Socket.IO (inicializado em initSocket) */
     let socket = null;
@@ -546,21 +546,43 @@ createApp({
     /** Rola a área de mensagens para o final. */
     const scrollToBottom = () => {
       const area = document.querySelector(".messages-area");
-      if (area) {
-        // Scroll imediato para o que já carregou
+      if (!area) return;
+
+      // Scroll imediato
+      area.scrollTop = area.scrollHeight;
+
+      // Aguarda todas as imagens que ainda não carregaram
+      const images = area.querySelectorAll("img");
+      images.forEach((img) => {
+        if (!img.complete) {
+          img.addEventListener(
+            "load",
+            () => {
+              area.scrollTop = area.scrollHeight;
+            },
+            { once: true },
+          );
+
+          img.addEventListener(
+            "error",
+            () => {
+              area.scrollTop = area.scrollHeight;
+            },
+            { once: true },
+          );
+        }
+      });
+
+      // ResizeObserver como fallback (sem timeout fixo — desconecta quando a área parar de crescer)
+      let resizeTimeout;
+      const resizeObserver = new ResizeObserver(() => {
         area.scrollTop = area.scrollHeight;
 
-        // Observador para ajustar o scroll conforme as imagens carregam
-        const resizeObserver = new ResizeObserver(() => {
-          area.scrollTop = area.scrollHeight;
-        });
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => resizeObserver.disconnect(), 1000);
+      });
 
-        // Observa a área de mensagens
-        resizeObserver.observe(area);
-
-        // Opcional: Desconectar após alguns segundos para não ficar rodando sempre
-        setTimeout(() => resizeObserver.disconnect(), 3000);
-      }
+      resizeObserver.observe(area);
     };
 
     // --- Seleção e envio de arquivos no chat ---
