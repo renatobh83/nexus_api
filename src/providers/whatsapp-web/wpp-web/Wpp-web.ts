@@ -32,6 +32,7 @@ export const initWppWeb = async (
 
     const options = {
       logQR: true,
+
       phoneNumber: channel.pairingCodeEnabled ? channel.wppUser! : undefined,
       headless: true,
       autoClose: 50000,

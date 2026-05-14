@@ -11,7 +11,6 @@ import xss from "xss";
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { PUBLIC_DIR } from "../../config/env.js";
 
-
 const fastifyModule = fp(async (fastify: FastifyInstance) => {
   fastify.log.info(
     "🔐 Registrando módulo de segurança e middlewares essenciais...",
@@ -38,10 +37,11 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
     "http://127.0.0.1:5500",
     "http://localhost:5500",
     "http://127.0.0.1:3000",
-    "http://localhost:3000",
+    "http://localhost:3000/",
     "http://127.0.0.1:8080",
     "http://localhost:8080",
     "http://172.18.0.4",
+    "http://localhost:54884",
     "https://test.panelapps.site",
     "undefined",
     "https://fast.panelapps.site",
@@ -50,6 +50,7 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
 
   await fastify.register(cors, {
     origin: (origin, cb) => {
+      console.log(origin);
       // Importante: em desenvolvimento, origens null/undefined devem ser permitidas
       if (!origin || allowedOrigins.includes(origin)) {
         return cb(null, true);

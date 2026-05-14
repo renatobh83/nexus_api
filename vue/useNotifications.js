@@ -54,6 +54,7 @@
 
       if ("serviceWorker" in navigator) {
         try {
+          console.log("Registrando ServiceWorker");
           await navigator.serviceWorker.register("/sw.js", {
             updateViaCache: "none",
           });
@@ -84,29 +85,18 @@
     }
 
     function _getContactName(data) {
-      return (
-        data.payload?.ticket?.contact?.name ||
-        data.payload?.contact?.name ||
-        "Contato"
-      );
+      return data.contato || "Contato";
     }
 
     function _buildMessage(data) {
-      return (
-        data.payload?.body ||
-        data.payload?.ticket?.lastMessage ||
-        data.payload?.lastMessage ||
-        ""
-      );
+      return data.body || data.content || "";
     }
 
     function _buildOptions(data) {
       const body = _buildMessage(data);
       const time = formatTime();
-      const ticketId = data.payload?.ticket?.id || "default";
-      const icon =
-        data.payload?.ticket?.contact?.profilePicUrl ||
-        "https://cdn-icons-png.flaticon.com/512/2645/2645897.png";
+      const ticketId = data.ticketid || "default";
+      const icon = "https://cdn-icons-png.flaticon.com/512/2645/2645897.png";
 
       return {
         body: body ? `${body} — ${time}` : time,
@@ -122,18 +112,17 @@
     function _handleClick(data) {
       return function () {
         if (document.hidden) window.focus();
-
         if (callbacks.value.onNotificationClick) {
           callbacks.value.onNotificationClick(data);
           return;
         }
 
-        const ticket = data.payload?.ticket;
+        const ticket = data.ticketid;
         if (!ticket) return;
 
         callbacks.value.openChat?.(ticket);
 
-        if (ticket.id && callbacks.value.goToChat) {
+        if (ticket && callbacks.value.goToChat) {
           const router = window.$router || null;
           callbacks.value.goToChat(ticket.id, router);
         }
@@ -159,7 +148,7 @@
           { action: "open_ticket", title: "🟢 Abrir Ticket" },
           { action: "dismiss", title: "❌ Fechar" },
         ],
-        data: { ticket: data.payload?.ticket },
+        data: { ticket: data.ticketid },
       });
     }
 

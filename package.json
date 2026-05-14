@@ -34,18 +34,18 @@
     "mime-types": "^3.0.2",
     "pg": "^8.20.0",
     "socket.io": "^4.8.3",
-    "teleproto": "^1.224.1",
-    "wbotconnect": "^1.0.38",
+    "teleproto": "^1.225.0",
+    "wbotconnect": "^1.0.40",
     "xss": "^1.0.15"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.10",
     "@types/mime-types": "^3.0.1",
-    "@types/node": "^25.6.0",
+    "@types/node": "^25.7.0",
     "@types/pg": "^8.20.0",
     "dotenv": "^17.4.2",
     "prisma": "^7.8.0",
-    "tsx": "^4.21.0",
+    "tsx": "^4.21.1",
     "typescript": "^6.0.3"
   }
 }

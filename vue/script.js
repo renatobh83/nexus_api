@@ -30,17 +30,20 @@ const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
 createApp({
   setup() {
     const notifications = useNotifications({
-      playNotificationSound: () => new Audio("/ping.mp3").play(),
+      playNotificationSound: () =>
+        new Audio(
+          "https://notificationsounds.com/storage/sounds/file-sounds-1147-that-was-quick.mp3",
+        ).play(),
       openChat: (ticket) => console.log("Abrir ticket", ticket),
     });
-    notifications.requestPermission();
+
     // =========================================================================
     // 1. CONFIGURAÇÃO E CONSTANTES
     // =========================================================================
 
     /** URL base da API e servidor Socket.IO */
-    const URL_BASE = "https://fast.panelapps.site/";
-    // const URL_BASE = "http://localhost:3000";
+    // const URL_BASE = "https://fast.panelapps.site/";
+    const URL_BASE = "http://localhost:3000";
 
     /** Referência ao socket Socket.IO (inicializado em initSocket) */
     let socket = null;
@@ -318,7 +321,7 @@ createApp({
       // Nova mensagem recebida
       socket.on("new-message", async (message) => {
         console.log("📨 Nova mensagem recebida:", message);
-        notifications.show;
+        notifications.show(message);
         const ticket = allTickets.value.find((t) => t.id === message.ticketid);
         const ticketName =
           ticket?.owner || ticket?.name || `Ticket ${message.ticketid}`;
@@ -1217,92 +1220,31 @@ createApp({
     // =========================================================================
     // 12. UTILITÁRIOS DE UI E FORMATAÇÃO
     // =========================================================================
+    // Funcao para abrir o ticket a parir do click da notificacao recebida
+    const handleSWMessage = (event) => {
+      if (event.data && event.data.type === "NOTIFICATION_CLICK") {
+        selectTicket(event.data.payload.ticket);
+      }
+    };
     /** Solicita permissão do navegador para exibir notificações push. */
     async function requestNotificationPermission() {
       if (!("Notification" in window)) return false;
-      notifications.requestPermission();
-      // if (Notification.permission === "granted") return true;
-      // if (Notification.permission === "default") return true;
+      // notifications.requestPermission();
+      if (Notification.permission === "granted") return true;
 
-      // if (Notification.permission !== "denied") {
-      //   return (await Notification.requestPermission()) === "granted";
-      // }
+      if (Notification.permission !== "denied") {
+        return (await notifications.requestPermission()) === "granted";
+      }
       return false;
     }
-    /**
-     * Mostra notificação usando Service Worker
-     * @param {string} title   - Título da notificação.
-     */
-    async function showServiceWorkerNotification(
-      title,
-      // options,
-      // notificationData,
-    ) {
-      const registration = await navigator.serviceWorker.getRegistration();
-      if (registration) {
-        // const tag = options.tag;
-        // const notifications = await registration.getNotifications();
-        // notifications.forEach((n) => {
-        //   if (n.tag === tag) n.close();
-        // });
-        // const opt = {
-        //   ...options,
-        //   actions: [
-        //     { action: "open_ticket", title: "🟢 Abrir Ticket" },
-        //     { action: "dismiss", title: "❌ Fechar" },
-        //   ],
-        //   data: {
-        //     ticket: notificationData.payload.ticket,
-        //   },
-        // };
-        // await registration.showNotification(title, opt);
-      } else {
-        throw new Error("Service Worker não registrado");
-      }
-    }
+
     const sonnerAlert = (msg, success = true) => {
       showAlerta.value = true;
       isSuccess.value = success;
       alertaMessage.value = msg;
       setTimeout(() => (showAlerta.value = false), 3000);
     };
-    /**
-     * Exibe uma notificação push do navegador.
-     * @param {string} title   - Título da notificação.
-     * @param {string} body    - Corpo/descrição.
-     * @param {string} [tag]   - Tag para evitar notificações duplicadas.
-     */
-    async function showNotification(title, body, tag = "ticket-notification") {
-      // TODO Implementar logica mais robusta para aceitar em mobile
 
-      if (Notification.permission !== "granted") return;
-      // Verifica se o usuario esta acessando de um mobile
-      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-      // 🔹 Se houver suporte a Service Worker, use sempre ele
-      const hasSW = "serviceWorker" in navigator;
-
-      // if (hasSW) {
-      //   console.log(hasSW);
-      //   // await showServiceWorkerNotification(title);
-      // }
-
-      const notification = new Notification(title, {
-        body,
-        icon: "https://cdn-icons-png.flaticon.com/512/5968/5968841.png",
-        badge: "https://cdn-icons-png.flaticon.com/512/5968/5968841.png",
-        tag,
-        requireInteraction: false,
-        silent: false,
-        vibrate: [200, 100, 200],
-      });
-
-      setTimeout(() => notification.close(), 5000);
-
-      notification.onclick = () => {
-        notification.close();
-      };
-    }
     /** Abre/fecha a sidebar em telas pequenas. */
     const toggleSidebar = () => {
       sidebarOpen.value = !sidebarOpen.value;
@@ -1395,8 +1337,20 @@ createApp({
 
       // 4. Carrega dados iniciais em paralelo
       await Promise.all([loadTickets(), loadChannels(), loadUsers()]);
-    });
 
+      // Registrar evento para pegar evento so service worker
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.ready.then((registration) => {
+          navigator.serviceWorker.addEventListener("message", handleSWMessage);
+        });
+      }
+    });
+    // Lifecycle: cleanup service worker
+    onMounted(() => {
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.removeEventListener("message", handleSWMessage);
+      }
+    });
     //
     //  Watcher
     //

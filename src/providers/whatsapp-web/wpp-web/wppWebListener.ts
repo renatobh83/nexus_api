@@ -50,6 +50,9 @@ export const wbotWebListener = async (wbot: Session): Promise<void> => {
 
     await handleMessage(internal, session, contato);
   });
+  wbot.onInterfaceChange((state) => {
+    console.log("onInterfaceChange", state);
+  });
 
   // /**
   //  * Evento de mensagem recebida
