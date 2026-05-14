@@ -37,10 +37,11 @@ self.addEventListener("notificationclick", function (event) {
 
         // Tenta enviar mensagem para uma aba já aberta
         for (const client of allClients) {
+          console.log(client.url);
           if (
+            client.url.includes("https://test.panelapps.site") ||
             client.url.includes("http://localhost:5173") ||
-            client.url.includes("http://localhost:54884/") ||
-            client.url.includes("https://test.panelapps.site")
+            client.url.includes("http://localhost:51333")
           ) {
             client.postMessage({
               type: "NOTIFICATION_CLICK",
@@ -53,7 +54,7 @@ self.addEventListener("notificationclick", function (event) {
 
         // Se nenhuma aba correspondente estiver aberta, abre uma nova
         console.log("🌐 Nenhuma aba ativa — abrindo nova janela:", urlToOpen);
-        await clients.openWindow(urlToOpen);
+        //await clients.openWindow(urlToOpen);
       })(),
     );
   }
