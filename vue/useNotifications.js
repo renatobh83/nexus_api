@@ -154,6 +154,7 @@
 
     function _showDirect(title, options, data) {
       const notification = new Notification(title, options);
+
       notification.onclick = _handleClick(data);
     }
 

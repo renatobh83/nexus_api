@@ -75,7 +75,6 @@ export const toInternalSession = (session: Session): SessionInternal => ({
 
   downloadMedia: async (message: any): Promise<string> => {
     const media = await session.downloadMedia(message.messageId);
-
     const matches = media.match(/^data:(.+);base64,(.+)$/);
     const base64Data = matches ? matches[2] : media;
 

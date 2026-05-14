@@ -123,6 +123,7 @@
               <div v-else-if="currentMessages.length === 0" class="empty-state">💬 Nenhuma mensagem ainda</div>
               <div v-for="msg in currentMessages" :key="msg.id" class="message-wrapper" :data-message-id="msg.id"
                 :class="msg.fromMe ? 'sent' : 'received'">
+
                 <div class="message-bubble">
                   <!-- Mensagem apagada -->
                   <div v-if="msg.isDeleted" style="font-style: italic; color: #667781;">
@@ -141,15 +142,15 @@
 
                     <!-- VÍDEO -->
                     <template v-else-if="['video', 'videoMessage'].includes(msg.mediaType)">
-                      <video controls style="max-width: 250px; border-radius: 6px;">
+                      <video controls style="max-width: 250px; border-radius: 6px;" crossorigin="anonymous">
                         <source :src="getMediaUrl(msg.mediaUrl)">
                       </video>
                       <div v-if="msg.body" style="margin-top: 6px;" v-html="formatMessage(msg.body)"></div>
                     </template>
 
                     <!-- ÁUDIO -->
-                    <template v-else-if="['audio', 'audioMessage'].includes(msg.mediaType)">
-                      <audio controls style="width: 250px;">
+                    <template v-else-if="['audio', 'audioMessage' ,'audio/ogg; codecs=opus'].includes(msg.mediaType)">
+                      <audio controls style="width: 250px;" crossorigin="anonymous">
                         <source :src="getMediaUrl(msg.mediaUrl)">
                       </audio>
                       <div v-if="msg.body" style="margin-top: 6px;" v-html="formatMessage(msg.body)"></div>
@@ -181,7 +182,6 @@
                     <div v-else v-html="formatMessage(msg.body)"></div>
                   </div>
                   <div class="message-footer">
-
                     <span>{{ formatTime(msg.createdAt) }}</span>
                     <span v-if="msg.fromMe" class="msg-status">
                       <span v-if="msg.ack !== 1">✓✓</span>

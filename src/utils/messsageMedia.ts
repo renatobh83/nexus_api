@@ -52,6 +52,7 @@ export function getSafeExtension(filename: string, mimetype: any) {
     "audio/x-wav": ".wav",
     "audio/webm": ".webm",
     "audio/ogg": ".ogg",
+    "audio/ogg; codecs=opus": ".ogg",
     "audio/x-m4a": ".m4a",
     "audio/mp4": ".m4a",
     "audio/aac": ".aac",

@@ -35,11 +35,13 @@ export const wbotWebListener = async (wbot: Session): Promise<void> => {
    */
   setTimeout(() => {
     isSyncing = false;
+    console.log("Escultando evento onAnyMessage");
   }, 5000);
   wbot.onAnyMessage(async (message: Message) => {
     if (isSyncing) {
       return;
     }
+
     if (message.chatId === "status@broadcast") return;
     if (message.type === "list" || message.type === "unknown") return;
     const messageContent = message.body || message.caption || "";
@@ -49,6 +51,9 @@ export const wbotWebListener = async (wbot: Session): Promise<void> => {
     const contato = await resolveContact(message, wbot);
 
     await handleMessage(internal, session, contato);
+  });
+  wbot.onInterfaceChange((state) => {
+    console.log(state);
   });
 
   // /**

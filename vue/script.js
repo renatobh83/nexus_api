@@ -34,7 +34,9 @@ createApp({
         new Audio(
           "https://notificationsounds.com/storage/sounds/file-sounds-1147-that-was-quick.mp3",
         ).play(),
-      openChat: (ticket) => console.log("Abrir ticket", ticket),
+      openChat: (ticket) => {
+        selectTicket(ticket);
+      },
     });
 
     // =========================================================================
@@ -321,7 +323,7 @@ createApp({
       // Nova mensagem recebida
       socket.on("new-message", async (message) => {
         console.log("📨 Nova mensagem recebida:", message);
-        notifications.show(message);
+
         const ticket = allTickets.value.find((t) => t.id === message.ticketid);
         const ticketName =
           ticket?.owner || ticket?.name || `Ticket ${message.ticketid}`;
@@ -334,6 +336,7 @@ createApp({
           message.fromMe !== "true";
 
         if (isIncoming) {
+          notifications.show(message);
           // showNotification(
           //   `💬 Nova mensagem de ${ticketName}`,
           //   message.body?.substring(0, 60) || "Nova mensagem",
@@ -360,18 +363,16 @@ createApp({
       // Ticket atualizado (status, atribuição, etc.)
       socket.on("ticket-updated", async (data) => {
         console.log("🔄 Ticket atualizado:", data);
-
         // Notifica quando um ticket passa para pendente
         if (data.status === "pending" && data.previousStatus !== "pending") {
           const name = data.owner || data.name || `Ticket ${data.id}`;
-
-          showNotification(
-            "🆕 Novo ticket pendente",
-            `${name} aguarda atendimento`,
-            `ticket-${data.id}-pending`,
-          );
+          // TODO ver notificao aqui
+          // showNotification(
+          //   "🆕 Novo ticket pendente",
+          //   `${name} aguarda atendimento`,
+          //   `ticket-${data.id}-pending`,
+          // );
         }
-
         updateSingleTicket(data);
       });
 

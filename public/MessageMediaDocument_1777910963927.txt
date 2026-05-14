@@ -1,1 +1,0 @@
-DRIVERQUERY /V /FO LIST | findstr /I "Print"

@@ -16,7 +16,6 @@ import {
   SessionInternal,
 } from "../../../providers/session.types.js";
 
-
 const messageService = new MessageService();
 
 export const VerifyMessage = async (
@@ -29,12 +28,10 @@ export const VerifyMessage = async (
     message.type === "list"
       ? "message.list.description"
       : message.content || message.body;
-  
+
   const media =
-    message.type !== "chat"
-      ? await session.downloadMedia(message)
-      : "";
-  
+    message.type !== "chat" ? await session.downloadMedia(message) : "";
+
   // const mediaString = Buffer.isBuffer(media) ? media.toString('utf8') : media;
   // const matches = media.match(/^data:(.+);base64,(.+)$/);
   // const base64Data = matches ? matches[2] : media;
@@ -42,7 +39,7 @@ export const VerifyMessage = async (
   // const fileData = Buffer.from(base64Data, "base64");
 
   // let ext = getSafeExtension(message.caption!, message.mimetype);
-  
+
   // const filename = buildFilename(message, ext);
   // if (media) {
   //   await writeFileAsync(join(PUBLIC_DIR, filename), fileData);
@@ -67,6 +64,9 @@ export const VerifyMessage = async (
     content:
       message.type === "chat" ? message.content : message.caption || media,
     mimetype: message.mimetype,
+    ticket: {
+      connect: undefined,
+    },
   };
   messageData.ticket = {
     connect: { id: ticketId },
