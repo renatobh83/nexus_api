@@ -138,6 +138,7 @@ model Message {
   to             String
   type           enum_MessageType       @default(chat)
   caption        String?
+  msgFrom        String?
   chatId         String?
   content        String
   mimetype       String?

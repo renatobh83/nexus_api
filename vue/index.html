@@ -131,6 +131,7 @@
                   </div>
 
                   <!-- Conteúdo normal (não apagado) -->
+                  
                   <div v-else>
                     <!-- IMAGEM -->
                     <template v-if="['image', 'jpg', 'image/jpeg', 'png', 'imageMessage'].includes(msg.mediaType)">
@@ -546,6 +547,7 @@
   <!-- fim #app -->
 
   <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+  <script src="useFormataMessagem.js"></script>
   <script src="useNotifications.js"></script>
   <script src="./script.js"> </script>
 </body>

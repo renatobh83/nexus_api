@@ -654,8 +654,10 @@ createApp({
      */
     const sendMessage = async () => {
       if (!currentTicket.value || !newMessageText.value.trim()) return;
-      const text = newMessageText.value.trim();
+      
+      const text = `*${currentUser.value.name}*:\n ${ newMessageText.value.trim()}`;
       newMessageText.value = "";
+      
       const tempId = "temp_" + Date.now() + "_" + Math.random();
       const tempMessage = {
         id: tempId,
@@ -694,7 +696,7 @@ createApp({
       });
 
       if (newMessageText.value.trim()) {
-        formData.append("body", newMessageText.value.trim());
+        formData.append("body",  `*${currentUser.value.name}*:\n ${ newMessageText.value.trim()}`);
       }
 
       try {
@@ -1271,7 +1273,7 @@ createApp({
      * @param {string} text - Texto da mensagem.
      * @returns {string}
      */
-    const formatMessage = (text) => (text ? text.replace(/\n/g, "<br>") : "");
+    const formatMessage = (text) => (formatarMensagem(text));
     /**
      * Retorna a inicial do nome do contato para o avatar do ticket.
      * @param {Object} ticket - Objeto do ticket.
@@ -1345,7 +1347,6 @@ createApp({
     onMounted(async () => {
       // 1. Verifica autenticação antes de qualquer coisa
       if (!checkAuthentication()) return;
-
 
 
       // 3. Conecta ao socket para eventos em tempo real
