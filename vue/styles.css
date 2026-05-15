@@ -581,6 +581,7 @@ input:checked + .slider:before {
   background: #e1f5fe;
   border-left: 4px solid #075e54;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin-left: 5px;
 }
 
 .ticket-item.disabled {
