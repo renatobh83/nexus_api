@@ -306,7 +306,7 @@
                       </span>
                     </div>
                     <div class="channel-name">{{ ch.name }}
-                      <button @click="editChannel(ch)">✏️</button>
+                      <button @click="editChannel(ch)"  v-if="isAdmin">✏️</button>
                     </div>
                     <div class="channel-actions" v-if="isAdmin">
                       <button v-if="ch.status === 'CONNECTED'" class="channel-btn disconnect"
