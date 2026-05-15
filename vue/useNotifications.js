@@ -163,7 +163,7 @@
     async function show(data) {
       if (!_canShow()) return;
 
-      const title = `Mensagem de ${_getContactName(data)}`;
+      const title = _getContactName(data);
       const options = _buildOptions(data);
       const hasSW = "serviceWorker" in navigator;
 

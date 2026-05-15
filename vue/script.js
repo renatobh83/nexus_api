@@ -25,7 +25,7 @@ const STATUS = {
   EXPIRED: "expired",
   SUCCESS: "success",
 };
-const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
+const { createApp, ref, computed, onMounted, nextTick, watch, onUnmounted } = Vue;
 
 createApp({
   setup() {
@@ -331,12 +331,15 @@ createApp({
         // Notifica apenas mensagens recebidas (não enviadas pelo atendente)
         const isIncoming =
           !message.fromMe &&
-          message.fromMe !== true &&
-          message.fromMe !== 1 &&
-          message.fromMe !== "true";
-
+          ticket.status !== "pending"  && currentUser.value.id === ticket.userId
+        
         if (isIncoming) {
-          notifications.show(message);
+          const dataNoti = {
+            body:  message.body?.substring(0, 60) || "Nova mensagem",
+            ticketId: ticket.id,
+            contato: `💬 Nova mensagem de ${ticketName}`
+          }
+          notifications.show(dataNoti);
           // showNotification(
           //   `💬 Nova mensagem de ${ticketName}`,
           //   message.body?.substring(0, 60) || "Nova mensagem",
@@ -366,6 +369,12 @@ createApp({
         // Notifica quando um ticket passa para pendente
         if (data.status === "pending" && data.previousStatus !== "pending") {
           const name = data.owner || data.name || `Ticket ${data.id}`;
+          const dataNoti = {
+            body: data.lastMessage,
+            ticketId: data.id,
+            contato:  `🆕 Novo ticket pendente ${name}`
+          }
+          notifications.show(dataNoti)
           // TODO ver notificao aqui
           // showNotification(
           //   "🆕 Novo ticket pendente",
@@ -856,6 +865,7 @@ createApp({
           // if (item.caption) formData.append(`caption_${idx}`, item.caption);
         });
       }
+      sendingBroadcast.value = true;
       try {
         await fetch(
           `${URL_BASE}/api/v1/channel/${broadcastChannelId.value}/send`,
@@ -1192,6 +1202,9 @@ createApp({
      * @param {string} qrCode - String para gerar o qrcode
      */
     const generateQRCode = async (qrCode) => {
+      if (qrCodeContainerRef.value) {
+        qrCodeContainerRef.value.innerHTML = ""; // limpa anterior
+      }
       qrCodeModalVisible.value = true;
       if (!qrCode) {
         isLoading.value = true;
@@ -1222,6 +1235,9 @@ createApp({
     // 12. UTILITÁRIOS DE UI E FORMATAÇÃO
     // =========================================================================
     // Funcao para abrir o ticket a parir do click da notificacao recebida
+
+
+
     const handleSWMessage = (event) => {
       if (event.data && event.data.type === "NOTIFICATION_CLICK") {
         selectTicket(event.data.payload.ticket);
@@ -1330,8 +1346,7 @@ createApp({
       // 1. Verifica autenticação antes de qualquer coisa
       if (!checkAuthentication()) return;
 
-      // 2. Solicita permissão de notificação de forma não-bloqueante
-      requestNotificationPermission();
+
 
       // 3. Conecta ao socket para eventos em tempo real
       initSocket();
@@ -1347,11 +1362,13 @@ createApp({
       }
     });
     // Lifecycle: cleanup service worker
-    onMounted(() => {
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.removeEventListener("message", handleSWMessage);
-      }
+    onUnmounted(() => {
+      navigator.serviceWorker.removeEventListener("message", handleSWMessage);
     });
+    document.addEventListener('click', () => {
+      requestNotificationPermission();
+    }, { once: true });
+
     //
     //  Watcher
     //
@@ -1361,7 +1378,7 @@ createApp({
       (newChannel) => {
         loadChannelForEdit(newChannel);
       },
-      { deep: true, imediate: true },
+      { deep: true, immediate: true },
     );
 
     // =========================================================================
