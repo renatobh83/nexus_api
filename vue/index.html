@@ -131,9 +131,10 @@
                   </div>
                   <!-- Conteúdo normal (não apagado) -->
 
-                  <div v-show="msg.isGroupMsg" class="sender" v-html="msg.sender"></div>
+
 
                   <div v-else>
+                    <div v-show="msg.isGroupMsg" class="sender" v-html="msg.sender"></div>
                     <!-- IMAGEM -->
                     <template v-if="['image', 'jpg', 'image/jpeg', 'png', 'imageMessage'].includes(msg.mediaType)">
                       <img :src="getMediaUrl(msg.mediaUrl)" crossorigin="anonymous" alt="Imagem"
