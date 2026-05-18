@@ -34,7 +34,7 @@ export const initWppWeb = async (
       logQR: true,
       phoneNumber: channel.pairingCodeEnabled ? channel.wppUser! : undefined,
       headless: true,
-      autoClose: 50000,
+
       puppeteerOptions: {
         userDataDir: "./userDataDir/" + channel.name,
       },

@@ -36,7 +36,7 @@ export const wbotWebListener = async (wbot: Session): Promise<void> => {
   setTimeout(() => {
     isSyncing = false;
     console.log("Escultando evento onAnyMessage");
-  }, 5000);
+  }, 10000);
   wbot.onAnyMessage(async (message: Message) => {
     if (isSyncing) {
       return;
@@ -46,11 +46,15 @@ export const wbotWebListener = async (wbot: Session): Promise<void> => {
     if (message.type === "list" || message.type === "unknown") return;
     const messageContent = message.body || message.caption || "";
 
-    const internal = toInternalMessage(message);
+    const messageInternal = toInternalMessage(message);
     const session = toInternalSession(wbot);
     const contato = await resolveContact(message, wbot);
-
-    await handleMessage(internal, session, contato);
+    if (message.isGroupMsg) {
+      const { phoneNumber } = await session.getPnLidEntry(message.sender.id);
+      const contatoSender = await session.getContact(phoneNumber._serialized);
+      messageInternal.sender = contatoSender.pushname || null;
+    }
+    await handleMessage(messageInternal, session, contato);
   });
 
   // /**

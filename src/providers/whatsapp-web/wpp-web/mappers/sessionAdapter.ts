@@ -39,6 +39,7 @@ export const toInternalMessage = (msg: Message): MessageInternal => ({
   isNotification: msg.isNotification,
   to: msg.to,
   from: msg.from,
+  sender: msg.sender.id,
   caption: msg.caption,
   content: msg.content,
   mimetype: msg.mimetype,

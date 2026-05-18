@@ -870,7 +870,11 @@ input:checked + .slider:before {
   background: white;
   border-top-left-radius: 0;
 }
-
+.sender {
+  font-weight: 600;
+  font-size: 11px;
+  color: #667781;
+}
 .message-body {
   font-size: 14px;
   line-height: 1.4;

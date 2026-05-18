@@ -56,6 +56,7 @@ export interface MessageInternal {
   ticketId: number | undefined;
   reaction?: string | null | undefined;
   mimetype: string | null | any;
+  sender: string | null;
   reactionFromMe?: string | null | undefined;
   sendType?:
     | "campaign"

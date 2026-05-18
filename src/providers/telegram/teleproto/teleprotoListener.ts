@@ -1,4 +1,5 @@
 import { EditedMessage } from "teleproto/events/EditedMessage.js";
+
 import { NewMessage } from "teleproto/events/NewMessage.js";
 import {
   toInternalMessageTbot,
@@ -40,6 +41,26 @@ export const teleprotoListener = async (tbot: SessionTbot) => {
   }, new EventBuilder({}));
   tbot.addEventHandler(async (event) => {}, new EditedMessage({}));
 };
+// ───────────────────────────────────────────
+// Helper: baixa a foto e retorna base64
+// ───────────────────────────────────────────
+async function downloadPhoto(
+  session: SessionTbot,
+  entity: any,
+): Promise<string | null> {
+  try {
+    const buffer = await session.downloadProfilePhoto(entity, {
+      isBig: false, // true para alta resolução
+    });
+
+    if (!buffer || buffer.length === 0) return null;
+
+    const base64 = Buffer.from(buffer).toString("base64");
+    return `data:image/jpeg;base64,${base64}`;
+  } catch {
+    return null;
+  }
+}
 export const resolveContact = async (
   msg: Api.Message,
   session: SessionTbot,
@@ -52,7 +73,7 @@ export const resolveContact = async (
       pushname: (sender as any).username,
       formattedName: (sender as any).username,
       shortName: (sender as any).title || (sender as any).username,
-      photo: (sender as any).photo,
+      photo: await downloadPhoto(session, sender),
     };
   } else if (msg.out) {
     const userId = "userId" in msg.peerId ? msg.peerId.userId?.toString() : "";
@@ -64,7 +85,7 @@ export const resolveContact = async (
       pushname: (userEntity as any).lastName,
       formattedName: (userEntity as any).username,
       shortName: (userEntity as any).firstName,
-      photo: (userEntity as any).photo,
+      photo: await downloadPhoto(session, userEntity),
     };
   } else {
     const sender = await msg.getSender();
@@ -75,7 +96,7 @@ export const resolveContact = async (
       pushname: (sender && (sender as any).lastName) || "N/A",
       formattedName: (sender && (sender as any).username) || "N/A",
       shortName: (sender && (sender as any).firstName) || "N/A",
-      photo: (sender as any).photo,
+      photo: sender ? await downloadPhoto(session, sender) : null,
     };
   }
 };

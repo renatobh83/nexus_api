@@ -32,18 +32,6 @@ export const VerifyMessage = async (
   const media =
     message.type !== "chat" ? await session.downloadMedia(message) : "";
 
-  // const mediaString = Buffer.isBuffer(media) ? media.toString('utf8') : media;
-  // const matches = media.match(/^data:(.+);base64,(.+)$/);
-  // const base64Data = matches ? matches[2] : media;
-
-  // const fileData = Buffer.from(base64Data, "base64");
-
-  // let ext = getSafeExtension(message.caption!, message.mimetype);
-
-  // const filename = buildFilename(message, ext);
-  // if (media) {
-  //   await writeFileAsync(join(PUBLIC_DIR, filename), fileData);
-  // }
   const messageData: Prisma.MessageCreateInput = {
     messageId: message.messageId,
     body: message.type === "chat" ? body : message.caption || media,
@@ -60,6 +48,7 @@ export const VerifyMessage = async (
     fromMe: message.fromMe,
     contato: contato.formattedName || contato.name,
     type: message.type,
+    sender: message.sender,
     to: message.to,
     content:
       message.type === "chat" ? message.content : message.caption || media,
@@ -71,5 +60,6 @@ export const VerifyMessage = async (
   messageData.ticket = {
     connect: { id: ticketId },
   };
+
   return await messageService.createMessage(messageData);
 };

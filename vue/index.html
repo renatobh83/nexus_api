@@ -129,9 +129,10 @@
                   <div v-if="msg.isDeleted" style="font-style: italic; color: #667781;">
                     Mensagem apagada
                   </div>
-
                   <!-- Conteúdo normal (não apagado) -->
-                  
+
+                  <div v-show="msg.isGroupMsg" class="sender" v-html="msg.sender"></div>
+
                   <div v-else>
                     <!-- IMAGEM -->
                     <template v-if="['image', 'jpg', 'image/jpeg', 'png', 'imageMessage'].includes(msg.mediaType)">
@@ -306,7 +307,7 @@
                       </span>
                     </div>
                     <div class="channel-name">{{ ch.name }}
-                      <button @click="editChannel(ch)"  v-if="isAdmin">✏️</button>
+                      <button @click="editChannel(ch)" v-if="isAdmin">✏️</button>
                     </div>
                     <div class="channel-actions" v-if="isAdmin">
                       <button v-if="ch.status === 'CONNECTED'" class="channel-btn disconnect"

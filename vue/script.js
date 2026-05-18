@@ -25,7 +25,8 @@ const STATUS = {
   EXPIRED: "expired",
   SUCCESS: "success",
 };
-const { createApp, ref, computed, onMounted, nextTick, watch, onUnmounted } = Vue;
+const { createApp, ref, computed, onMounted, nextTick, watch, onUnmounted } =
+  Vue;
 
 createApp({
   setup() {
@@ -44,8 +45,8 @@ createApp({
     // =========================================================================
 
     /** URL base da API e servidor Socket.IO */
-    const URL_BASE = "https://fast.panelapps.site/";
-    // const URL_BASE = "http://localhost:3000";
+    // const URL_BASE = "https://fast.panelapps.site/";
+    const URL_BASE = "http://localhost:3000";
 
     /** Referência ao socket Socket.IO (inicializado em initSocket) */
     let socket = null;
@@ -331,14 +332,15 @@ createApp({
         // Notifica apenas mensagens recebidas (não enviadas pelo atendente)
         const isIncoming =
           !message.fromMe &&
-          ticket.status !== "pending"  && currentUser.value.id === ticket.userId
-        
+          ticket.status !== "pending" &&
+          currentUser.value.id === ticket.userId;
+
         if (isIncoming) {
           const dataNoti = {
-            body:  message.body?.substring(0, 60) || "Nova mensagem",
+            body: message.body?.substring(0, 60) || "Nova mensagem",
             ticketId: ticket.id,
-            contato: `💬 Nova mensagem de ${ticketName}`
-          }
+            contato: `💬 Nova mensagem de ${ticketName}`,
+          };
           notifications.show(dataNoti);
           // showNotification(
           //   `💬 Nova mensagem de ${ticketName}`,
@@ -372,9 +374,9 @@ createApp({
           const dataNoti = {
             body: data.lastMessage,
             ticketId: data.id,
-            contato:  `🆕 Novo ticket pendente ${name}`
-          }
-          notifications.show(dataNoti)
+            contato: `🆕 Novo ticket pendente ${name}`,
+          };
+          notifications.show(dataNoti);
           // TODO ver notificao aqui
           // showNotification(
           //   "🆕 Novo ticket pendente",
@@ -654,10 +656,10 @@ createApp({
      */
     const sendMessage = async () => {
       if (!currentTicket.value || !newMessageText.value.trim()) return;
-      
-      const text = `*${currentUser.value.name}*:\n ${ newMessageText.value.trim()}`;
+
+      const text = `*${currentUser.value.name}*:\n ${newMessageText.value.trim()}`;
       newMessageText.value = "";
-      
+
       const tempId = "temp_" + Date.now() + "_" + Math.random();
       const tempMessage = {
         id: tempId,
@@ -696,7 +698,10 @@ createApp({
       });
 
       if (newMessageText.value.trim()) {
-        formData.append("body",  `*${currentUser.value.name}*:\n ${ newMessageText.value.trim()}`);
+        formData.append(
+          "body",
+          `*${currentUser.value.name}*:\n ${newMessageText.value.trim()}`,
+        );
       }
 
       try {
@@ -1238,8 +1243,6 @@ createApp({
     // =========================================================================
     // Funcao para abrir o ticket a parir do click da notificacao recebida
 
-
-
     const handleSWMessage = (event) => {
       if (event.data && event.data.type === "NOTIFICATION_CLICK") {
         selectTicket(event.data.payload.ticket);
@@ -1273,7 +1276,7 @@ createApp({
      * @param {string} text - Texto da mensagem.
      * @returns {string}
      */
-    const formatMessage = (text) => (formatarMensagem(text));
+    const formatMessage = (text) => formatarMensagem(text);
     /**
      * Retorna a inicial do nome do contato para o avatar do ticket.
      * @param {Object} ticket - Objeto do ticket.
@@ -1348,7 +1351,6 @@ createApp({
       // 1. Verifica autenticação antes de qualquer coisa
       if (!checkAuthentication()) return;
 
-
       // 3. Conecta ao socket para eventos em tempo real
       initSocket();
 
@@ -1366,9 +1368,13 @@ createApp({
     onUnmounted(() => {
       navigator.serviceWorker.removeEventListener("message", handleSWMessage);
     });
-    document.addEventListener('click', () => {
-      requestNotificationPermission();
-    }, { once: true });
+    document.addEventListener(
+      "click",
+      () => {
+        requestNotificationPermission();
+      },
+      { once: true },
+    );
 
     //
     //  Watcher

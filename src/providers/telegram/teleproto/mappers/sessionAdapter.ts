@@ -56,6 +56,7 @@ export const toInternalMessageTbot = async (
     ? getMediaExtension(msg.media.className, msg.media)
     : undefined,
   chatId: "",
+  sender: null,
 });
 
 export const toInternalSession = (session: SessionTbot): SessionInternal => ({
@@ -73,6 +74,7 @@ export const toInternalSession = (session: SessionTbot): SessionInternal => ({
   },
   downloadMedia: async function (message: MessageInternal): Promise<string> {
     const media = await session.downloadMedia(message.mediaType)!;
+
     const filePath = path.join(process.cwd(), "public", message.mediaUrl);
 
     // Cria o diretório 'downloads' se não existir
