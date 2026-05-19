@@ -91,7 +91,6 @@
                       <span class="ticket-time">{{ formatTime(ticket.lastMessageAt) }}</span>
                     </div>
                     <div class="ticket-preview">{{ (ticket.lastMessage || 'Nenhuma mensagem').substring(0,50) }}</div>
-                    {{ticket.status}}
                     <span class="status-badge" :class="ticket.status">{{ getStatusText(ticket.status) }}</span>
                   </div>
                   <div class="ticket-actions">
