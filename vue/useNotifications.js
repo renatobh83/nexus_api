@@ -133,7 +133,6 @@
 
     async function _showViaServiceWorker(title, options, data) {
       const registration = await navigator.serviceWorker.getRegistration();
-
       if (!registration) throw new Error("Service Worker não registrado.");
 
       // Fecha duplicatas com a mesma tag
@@ -148,7 +147,7 @@
           { action: "open_ticket", title: "🟢 Abrir Ticket" },
           { action: "dismiss", title: "❌ Fechar" },
         ],
-        data: { ticket: data.ticketid },
+        data: { ticket: data.ticketId },
       });
     }
 

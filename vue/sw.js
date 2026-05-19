@@ -26,7 +26,6 @@ self.addEventListener("notificationclick", function (event) {
   }
   if (action === "open_ticket" || !action) {
     const ticketData = clickedNotification.data?.ticket;
-    const urlToOpen = `/atendimento/${ticketData.id}`; // Ajuste para a URL correta do seu ticket
 
     event.waitUntil(
       (async () => {
@@ -37,7 +36,6 @@ self.addEventListener("notificationclick", function (event) {
 
         // Tenta enviar mensagem para uma aba já aberta
         for (const client of allClients) {
-          console.log(client.url);
           if (
             client.url.includes("https://test.panelapps.site") ||
             client.url.includes("http://localhost:5173") ||
@@ -53,8 +51,8 @@ self.addEventListener("notificationclick", function (event) {
         }
 
         // Se nenhuma aba correspondente estiver aberta, abre uma nova
-        console.log("🌐 Nenhuma aba ativa — abrindo nova janela:", urlToOpen);
-        //await clients.openWindow(urlToOpen);
+        console.log("🌐 Nenhuma aba ativa — abrindo nova janela:");
+        // await clients.openWindow(urlToOpen);
       })(),
     );
   }
