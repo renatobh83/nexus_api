@@ -341,6 +341,7 @@ body {
   background: #075e54;
   color: white;
   padding: 10px 16px;
+  max-height: 60px;
 }
 
 .sidebar-header h2 {
