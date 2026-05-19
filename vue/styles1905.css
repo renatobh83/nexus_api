@@ -1,49 +1,37 @@
-/* 
-   CSS Corrigido v2 - Foco em visibilidade total do footer no mobile.
-   
-   Principais mudanças:
-   1. Garantia de que o container pai (.app-container) ocupe 100% da altura visível.
-   2. Uso de flexbox simplificado para evitar que o footer seja empurrado para fora.
-   3. Remoção de posições absolutas que causavam o desaparecimento do elemento.
-   4. Ajuste na área de mensagens para garantir scroll interno sem afetar o footer.
-*/
-
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-html, body {
-  height: 100%;
+body {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  background: #e5ddd5;
+  height: 100vh;
   margin: 0;
   padding: 0;
   overflow: hidden;
 }
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  background: #e5ddd5;
-}
-
 .app-container {
   width: 100%;
   height: 100vh;
-  height: 100dvh; /* Altura dinâmica para mobile */
+  height: -webkit-fill-available;
+  /* para iOS */
   background: #fff;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  position: relative;
 }
-
+/* Adicione no seu styles2.css */
 .app-header {
   display: flex;
   justify-content: flex-end;
   background: #075e54;
   border-bottom: 1px solid #e0e0e0;
   position: relative;
-  flex-shrink: 0; /* Garante que o header não encolha */
 }
 
 .user-profile {
@@ -132,7 +120,6 @@ body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   position: relative;
   padding-left: 0;
-  flex-shrink: 0; /* Garante que o menu não encolha */
 }
 
 .menu-item {
@@ -340,6 +327,7 @@ body {
 }
 /* Sidebar chats */
 .sidebar {
+  width: 100%;
   width: 320px;
   background: #f0f2f5;
   border-right: 1px solid #e0e0e0;
@@ -347,7 +335,6 @@ body {
   flex-direction: column;
   overflow: hidden;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  flex-shrink: 0; /* Garante que a sidebar não encolha */
 }
 
 .sidebar-header {
@@ -355,7 +342,6 @@ body {
   color: white;
   padding: 10px 16px;
   max-height: 60px;
-  flex-shrink: 0;
 }
 
 .sidebar-header h2 {
@@ -373,7 +359,6 @@ body {
   padding: 12px;
   background: #f0f2f5;
   border-bottom: 1px solid #e0e0e0;
-  flex-shrink: 0;
 }
 
 .search-box input {
@@ -394,7 +379,6 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-shrink: 0;
 }
 
 .switch {
@@ -630,6 +614,7 @@ input:checked + .slider-footer:before {
   transition: all 0.2s ease;
   border-bottom: 1px solid #e9ecef;
   position: relative;
+  border-radius: 10px;
 }
 
 .ticket-item:hover {
@@ -880,14 +865,13 @@ input:checked + .slider-footer:before {
   justify-content: space-between;
   align-items: center;
   min-height: 60px;
-  flex-shrink: 0; /* Garante que o header não encolha */
 }
 
 .messages-area {
   flex: 1;
   overflow-y: auto;
   padding: 20px;
-  background-image: url(\'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" opacity="0.05"><path d="M0,0 L1000,0 L1000,1000 L0,1000 Z" fill="none"/><circle cx="100" cy="100" r="50" fill="%23000"/><circle cx="300" cy="200" r="30" fill="%23000"/><circle cx="500" cy="150" r="40" fill="%23000"/><circle cx="700" cy="250" r="35" fill="%23000"/><circle cx="850" cy="100" r="25" fill="%23000"/><circle cx="150" cy="400" r="45" fill="%23000"/><circle cx="400" cy="500" r="55" fill="%23000"/><circle cx="650" cy="450" r="50" fill="%23000"/><circle cx="900" cy="600" r="40" fill="%23000"/><circle cx="200" cy="700" r="60" fill="%23000"/><circle cx="500" cy="800" r="70" fill="%23000"/><circle cx="800" cy="750" r="55" fill="%23000"/></svg>\');
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" opacity="0.05"><path d="M0,0 L1000,0 L1000,1000 L0,1000 Z" fill="none"/><circle cx="100" cy="100" r="50" fill="%23000"/><circle cx="300" cy="200" r="30" fill="%23000"/><circle cx="500" cy="150" r="40" fill="%23000"/><circle cx="700" cy="250" r="35" fill="%23000"/><circle cx="850" cy="100" r="25" fill="%23000"/><circle cx="150" cy="400" r="45" fill="%23000"/><circle cx="400" cy="500" r="55" fill="%23000"/><circle cx="650" cy="450" r="50" fill="%23000"/><circle cx="900" cy="600" r="40" fill="%23000"/><circle cx="200" cy="700" r="60" fill="%23000"/><circle cx="500" cy="800" r="70" fill="%23000"/><circle cx="800" cy="750" r="55" fill="%23000"/></svg>');
   background-repeat: repeat;
   background-size: 50px;
 }
@@ -988,7 +972,28 @@ input:checked + .slider-footer:before {
   opacity: 0.5;
   cursor: not-allowed;
 }
+/* Scrollbar */
+.messages-area::-webkit-scrollbar,
+.tickets-list::-webkit-scrollbar,
+.tab-conexoes::-webkit-scrollbar,
+.file-preview::-webkit-scrollbar {
+  width: 6px;
+}
 
+.messages-area::-webkit-scrollbar-track,
+.tickets-list::-webkit-scrollbar-track,
+.tab-conexoes::-webkit-scrollbar-track,
+.file-preview::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.messages-area::-webkit-scrollbar-thumb,
+.tickets-list::-webkit-scrollbar-thumb,
+.tab-conexoes::-webkit-scrollbar-thumb,
+.file-preview::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
 /* Modal de mensagem avulsa */
 .broadcast-modal {
   display: none;
@@ -1556,16 +1561,15 @@ input:checked + .slider-footer:before {
   .chat-footer {
     margin-top: auto;
     display: flex;
-    position: relative; /* Mudado de absolute para relative */
-    bottom: auto;
-    left: auto;
-    right: auto;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
     background: #f0f0f0;
-    padding: 10px 16px;
+    padding: 7px 16px;
     z-index: 100;
     gap: 10px;
     border-top: 1px solid #d3cbcb;
-    flex-shrink: 0; /* Garante que não encolha */
   }
   .config-sidebar {
     width: auto;
@@ -1644,9 +1648,10 @@ input:checked + .slider-footer:before {
   .chat-container {
     display: flex !important;
     flex-direction: column;
-    height: 100%; /* Mudado de 100vh para 100% */
-    min-height: 0; /* Importante para flexbox */
-    overflow: hidden;
+    height: 100vh;
+    height: -moz-available; /* Firefox */
+    height: -webkit-fill-available; /* WebKit/Blink (Chrome, Safari, Edge) */
+    height: stretch; /* Padrão oficial (moderno) */
   }
 
   /* Ajustes de layout */
@@ -1662,7 +1667,6 @@ input:checked + .slider-footer:before {
 
   .chat-header {
     padding: 10px 16px;
-    flex-shrink: 0;
   }
 
   .chat-header h2 {
@@ -1683,7 +1687,8 @@ input:checked + .slider-footer:before {
     flex: 1;
     padding: 10px;
     overflow-y: auto;
-    padding-bottom: 20px;
+    padding-bottom: env(safe-area-inset-bottom, 150px); /* depois o env */
+    padding-bottom: 80px; /* fallback primeiro */
   }
 
   .message-footer {
