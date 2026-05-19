@@ -62,8 +62,8 @@
                 placeholder="🔍 Buscar ticket..." @input="updateSearchTerm"></div>
 
             <div class="filter-switch">
-              <label class="switch-label">
-                <label>Mostrar apenas fechados</label>
+              <span class="switch-label">Mostrar apenas fechados</span>
+              <label>
                 <div class="switch">
                   <input type="checkbox" v-model="showOnlyClosed">
                   <span class="slider"></span>
@@ -91,6 +91,7 @@
                       <span class="ticket-time">{{ formatTime(ticket.lastMessageAt) }}</span>
                     </div>
                     <div class="ticket-preview">{{ (ticket.lastMessage || 'Nenhuma mensagem').substring(0,50) }}</div>
+                    {{ticket.status}}
                     <span class="status-badge" :class="ticket.status">{{ getStatusText(ticket.status) }}</span>
                   </div>
                   <div class="ticket-actions">
@@ -144,7 +145,7 @@
                     </template>
 
                     <!-- VÍDEO -->
-                    <template v-else-if="['video', 'videoMessage'].includes(msg.mediaType)">
+                    <template v-else-if="['video', 'videoMessage','video/mp4'].includes(msg.mediaType)">
                       <video controls style="max-width: 250px; border-radius: 6px;" crossorigin="anonymous">
                         <source :src="getMediaUrl(msg.mediaUrl)">
                       </video>
@@ -230,6 +231,15 @@
 
             <!-- Footer Input -->
             <div class="chat-footer">
+              <div>
+                <span style="font-size: 12px;">Assinar</span>
+                <label class="switch-label">
+                  <div class="switch-footer">
+                    <input type="checkbox" v-model="assinarMensagem">
+                    <span class="slider-footer"></span>
+                  </div>
+                </label>
+              </div>
               <button class="attach-btn" :disabled="!currentTicket" @click="triggerFileInput">📎</button>
               <input type="file" ref="fileInput" style="display:none" multiple @change="handleFileSelect">
               <textarea id="message-input" class="message-input" v-model="newMessageText"

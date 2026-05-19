@@ -62,6 +62,7 @@ createApp({
     const userMenuOpen = ref(false);
     const socketConnected = ref(false);
     const showAlerta = ref(false);
+    const assinarMensagem = ref(false);
 
     // Alerta
     const alertaMessage = ref("");
@@ -172,6 +173,7 @@ createApp({
         })
         .sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0));
     });
+
     /**
      * Mensagens do ticket atual ordenadas por data de criação (crescente).
      */
@@ -657,7 +659,9 @@ createApp({
     const sendMessage = async () => {
       if (!currentTicket.value || !newMessageText.value.trim()) return;
 
-      const text = `*${currentUser.value.name}*:\n ${newMessageText.value.trim()}`;
+      const text = assinarMensagem.value
+        ? `*${currentUser.value.name}*:\n ${newMessageText.value.trim()}`
+        : newMessageText.value.trim();
       newMessageText.value = "";
 
       const tempId = "temp_" + Date.now() + "_" + Math.random();
@@ -700,7 +704,9 @@ createApp({
       if (newMessageText.value.trim()) {
         formData.append(
           "body",
-          `*${currentUser.value.name}*:\n ${newMessageText.value.trim()}`,
+          assinarMensagem.value
+            ? `*${currentUser.value.name}*:\n ${newMessageText.value.trim()}`
+            : newMessageText.value.trim(),
         );
       }
 
@@ -1436,6 +1442,7 @@ createApp({
       selectedBroadcastFiles,
       sendingBroadcast,
       showAlerta,
+      assinarMensagem,
 
       // Alerta
       alertaMessage,
