@@ -422,7 +422,7 @@
           </div>
           <div class="modal-body">
             <div class="form-group">
-              <span>Tipo - {{selectedChannelType}}</span>
+
               <div class="channel-options">
 
                 <div class="channel-option" data-channel-type="whatsapp" @click="selectChannelType('whatsapp')"
@@ -457,7 +457,7 @@
             <div id="telegramFields" class="dynamic-fields"
               :class="['dynamic-fields', { active: selectedChannelType === 'telegram' }]">
               <div class="form-group">
-                <span>Token do Bot *</span>
+                <span>Token do Bot</span>
                 <input type="text" id="botToken" placeholder="Ex: 1234567890:ABCdefGHIjklmNOPqrstUvWXyz"
                   autocomplete="off" v-model="newChannelToken">
                 <small style="color: #667781; font-size: 11px;">Crie um bot no @BotFather do Telegram</small>
@@ -466,8 +466,8 @@
             <div id="wppWebFields" class="dynamic-fields"
               :class="['dynamic-fields', { active: selectedChannelType === 'whatsapp' }]">
               <div class="form-group">
-                <span>Número do WhatsApp *</span>
-                <input v-model="newChannelNumber" type="text" id="whatsappNumber" placeholder="Ex: 31999999999"
+                <span>Número do WhatsApp</span>
+                <input v-model="newChannelNumber" type="text" id="whatsappNumber" placeholder="Ex: 5531999999999"
                   autocomplete="off">
                 <small style="color: #667781; font-size: 11px;">Digite o número com DDD e país</small>
               </div>
