@@ -1,6 +1,6 @@
-/* 
+/*
    CSS Corrigido v2 - Foco em visibilidade total do footer no mobile.
-   
+
    Principais mudanças:
    1. Garantia de que o container pai (.app-container) ocupe 100% da altura visível.
    2. Uso de flexbox simplificado para evitar que o footer seja empurrado para fora.
@@ -14,7 +14,8 @@
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
   padding: 0;
@@ -22,7 +23,9 @@ html, body {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
   background: #e5ddd5;
 }
 
@@ -887,7 +890,7 @@ input:checked + .slider-footer:before {
   flex: 1;
   overflow-y: auto;
   padding: 20px;
-  background-image: url(\'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" opacity="0.05"><path d="M0,0 L1000,0 L1000,1000 L0,1000 Z" fill="none"/><circle cx="100" cy="100" r="50" fill="%23000"/><circle cx="300" cy="200" r="30" fill="%23000"/><circle cx="500" cy="150" r="40" fill="%23000"/><circle cx="700" cy="250" r="35" fill="%23000"/><circle cx="850" cy="100" r="25" fill="%23000"/><circle cx="150" cy="400" r="45" fill="%23000"/><circle cx="400" cy="500" r="55" fill="%23000"/><circle cx="650" cy="450" r="50" fill="%23000"/><circle cx="900" cy="600" r="40" fill="%23000"/><circle cx="200" cy="700" r="60" fill="%23000"/><circle cx="500" cy="800" r="70" fill="%23000"/><circle cx="800" cy="750" r="55" fill="%23000"/></svg>\');
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" opacity="0.05"><path d="M0,0 L1000,0 L1000,1000 L0,1000 Z" fill="none"/><circle cx="100" cy="100" r="50" fill="%23000"/><circle cx="300" cy="200" r="30" fill="%23000"/><circle cx="500" cy="150" r="40" fill="%23000"/><circle cx="700" cy="250" r="35" fill="%23000"/><circle cx="850" cy="100" r="25" fill="%23000"/><circle cx="150" cy="400" r="45" fill="%23000"/><circle cx="400" cy="500" r="55" fill="%23000"/><circle cx="650" cy="450" r="50" fill="%23000"/><circle cx="900" cy="600" r="40" fill="%23000"/><circle cx="200" cy="700" r="60" fill="%23000"/><circle cx="500" cy="800" r="70" fill="%23000"/><circle cx="800" cy="750" r="55" fill="%23000"/></svg>');
   background-repeat: repeat;
   background-size: 50px;
 }
