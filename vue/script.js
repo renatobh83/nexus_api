@@ -677,6 +677,7 @@ createApp({
         isTemp: true, // Marcar como temporária
       };
       tempMessages.value.push(tempMessage);
+      await nextTick();
       scrollToBottom();
 
       const formData = new FormData();
@@ -696,19 +697,38 @@ createApp({
 
       const formData = new FormData();
 
-      selectedFiles.value.forEach((item, idx) => {
+      selectedFiles.value.forEach(async (item, idx) => {
+        if (item.caption) {
+          formData.append(
+            "body",
+            assinarMensagem.value
+              ? `*${currentUser.value.name}*:\n ${item.caption.trim()}`
+              : item.caption.trim(),
+          );
+        }
         formData.append("files", item.file);
-        if (item.caption) formData.append(`caption_${idx}`, item.caption);
+        const temp = {
+          id: "temp_" + Date.now() + "_" + Math.random(),
+          body: item.caption || item.name,
+          fromMe: true,
+          createdAt: new Date().toISOString(),
+          ack: 0,
+          mediaType: item.type.startsWith("image/")
+            ? "image"
+            : item.type.startsWith("video/")
+              ? "video"
+              : item.type.startsWith("audio/")
+                ? "audio"
+                : "document",
+          mediaUrl: item.preview,
+          isDeleted: false,
+        };
+        tempMessages.value.push(temp);
+        selectedFiles.value = [];
+        newMessageText.value = "";
+        await nextTick();
+        scrollToBottom();
       });
-
-      if (newMessageText.value.trim()) {
-        formData.append(
-          "body",
-          assinarMensagem.value
-            ? `*${currentUser.value.name}*:\n ${newMessageText.value.trim()}`
-            : newMessageText.value.trim(),
-        );
-      }
 
       try {
         const res = await fetch(
@@ -718,14 +738,12 @@ createApp({
             body: formData,
           },
         );
-
         if (res.ok) {
           // Libera URLs de preview e limpa fila
           selectedFiles.value.forEach(
             (f) => f.preview && URL.revokeObjectURL(f.preview),
           );
-          selectedFiles.value = [];
-          newMessageText.value = "";
+
           await loadMessages(currentTicket.value.id);
         } else {
           alert("Erro ao enviar arquivos. Tente novamente.");

@@ -83,6 +83,7 @@
                   :class="{ active: currentTicket?.id === ticket.id , updated: updatedTickets[ticket.id] }"
                   @click="selectTicket(ticket.id)">
                   <div class="ticket-avatar">{{ getTicketAvatar(ticket) }}
+
                     <span class="channel-badge">{{ getChannelIconByTicket(ticket) }}</span>
                   </div>
                   <div class="ticket-info">
@@ -160,7 +161,8 @@
                     </template>
 
                     <!-- DOCUMENTO -->
-                    <template v-else-if="['document', 'txt', 'documentMessage'].includes(msg.mediaType)">
+                    <template
+                      v-else-if="['document', 'txt', 'documentMessage','application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(msg.mediaType)">
                       <div
                         style="display: flex; align-items: center; gap: 10px; background: #f0f2f5; padding: 10px; border-radius: 8px;">
                         <div style="font-size: 30px;">📄</div>
@@ -200,9 +202,9 @@
                 <div class="message-wrapper sent" :data-temp="message.id">
                   <div class="message-bubble" style="opacity: 0.7;">
                     <div class="message-body">
-                      <div v-html="formatMessage(message.body)"></div>
-                      <!-- ${message.mediaUrl ? `<div style="margin-top: 5px;"><img src="${message.mediaUrl}"
-                          style="max-width: 150px; border-radius: 4px;"></div>` : ''} -->
+                      <img :src="message.mediaUrl" crossorigin="anonymous" alt="Imagem"
+                        style="max-width: 250px; max-height: 250px; border-radius: 6px; cursor: pointer;" />
+                      <div v-if="message.body" style="margin-top: 6px;" v-html="formatMessage(message.body)"></div>
                     </div>
                     <div class="message-footer">
                       <span>⏳ Enviando...</span>
@@ -215,6 +217,7 @@
             <!-- PRÉ-VISUALIZAÇÃO DE ARQUIVOS -->
             <div v-if="selectedFiles.length" class="file-preview">
               <div v-for="(fileItem, idx) in selectedFiles" :key="idx" class="file-preview-item">
+
                 <img v-if="fileItem.preview" :src="fileItem.preview" class="preview-thumb">
                 <div v-else class="file-icon">{{ getFileIcon(fileItem.type) }}</div>
                 <div class="file-info">
@@ -230,13 +233,13 @@
 
             <!-- Footer Input -->
             <div class="chat-footer">
-              <div>
-                <span style="font-size: 12px;">Assinar</span>
-                <label class="switch-label">
-                  <div class="switch-footer">
-                    <input type="checkbox" v-model="assinarMensagem">
-                    <span class="slider-footer"></span>
-                  </div>
+              <div class="switch-footer">
+
+                <label>
+
+                  <input type="checkbox" v-model="assinarMensagem">
+                  <span class="slider-footer"></span>
+
                 </label>
               </div>
               <button class="attach-btn" :disabled="!currentTicket" @click="triggerFileInput">📎</button>
@@ -443,11 +446,7 @@
                   <div class="channel-option-desc">Bot API</div>
                 </div>
               </div>
-              <!-- <select v-model="selectedChannelType">
-              <option value="">Selecione</option>
-              <option value="whatsapp">WhatsApp Web</option>
-              <option value="telegram">Telegram</option>
-            </select> -->
+
             </div>
             <div class="form-group">
               <span>Nome</span>
@@ -489,15 +488,6 @@
                   v-model="businessAccountId" autocomplete="off">
               </div>
             </div>
-            <!-- <div v-if="selectedChannelType === 'telegram'" class="form-group">
-            <span>Token Bot</span>
-            <input v-model="newChannelToken" placeholder="Token do BotFather">
-          </div>
-          <div v-if="selectedChannelType === 'whatsapp'" class="form-group">
-            <span>Número</span>
-            <input v-model="newChannelNumber" placeholder="5511999999999">
-          </div> -->
-
 
             <div class="modal-buttons">
               <button class="btn-secondary" @click="closeChannelModal">Cancelar</button>
