@@ -182,8 +182,6 @@
           {{ loading ? 'Entrando...' : 'Entrar' }}
         </button>
       </form>
-
-
     </div>
   </div>
 
@@ -191,7 +189,6 @@
     const { createApp, ref, reactive, onMounted } = Vue;
 
     // Configuração do axios
-    // axios.defaults.baseURL = 'http://localhost:3000/api/v1/auth';
     axios.defaults.baseURL = 'https://fast.panelapps.site/api/v1/auth';
     axios.defaults.timeout = 10000;
 
@@ -205,18 +202,16 @@
         const loading = ref(false);
         const errorMessage = ref('');
         const infoMessage = ref('');
-        const validating = ref(true); // Começa validando
+        const validating = ref(true);
+        let validationCompleted = false; // Flag para evitar validação duplicada
 
         // ==================== FUNÇÕES DE VALIDAÇÃO ====================
 
-        // Verificar se o token é válido (estrutura básica)
         const isTokenStructureValid = (token) => {
           try {
             if (!token || typeof token !== 'string') return false;
             const parts = token.split('.');
             if (parts.length !== 3) return false;
-
-            // Tenta decodificar o payload
             const payload = JSON.parse(atob(parts[1]));
             return payload && typeof payload === 'object';
           } catch (error) {
@@ -224,48 +219,58 @@
           }
         };
 
-        // Verificar se o token expirou
         const isTokenExpired = (token) => {
           try {
             const payload = JSON.parse(atob(token.split('.')[1]));
             if (payload.exp) {
-              return payload.exp < Date.now() / 1000;
+              // Adiciona margem de 5 segundos para evitar falsos positivos
+              return payload.exp < (Date.now() / 1000) - 5;
             }
             return false;
           } catch {
-            return true; // Se não conseguir decodificar, considera expirado
+            return true;
           }
         };
 
-        // Validar token com o backend
         const validateTokenWithBackend = async (token) => {
           try {
             const response = await axios.post('/validate-token', { token });
+            console.log(response)
             return response.data.valid === true;
           } catch (error) {
-            console.error('Erro ao validar token:', error);
-            return false;
+            console.error('Erro ao validar token com backend:', error.message);
+            // Se o backend estiver offline, considera o token válido baseado na estrutura
+            return null; // Retorna null para indicar que não foi possível validar
           }
         };
 
-        // Função principal de validação
+        const clearSession = () => {
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('user_data');
+        };
+
         const validateExistingSession = async () => {
+          // Evita múltiplas execuções
+          if (validationCompleted) return;
+
           const token = localStorage.getItem('auth_token');
           const userData = localStorage.getItem('user_data');
 
           // Caso 1: Não tem token ou dados do usuário
           if (!token || !userData) {
             console.log('Nenhuma sessão encontrada');
+            validationCompleted = true;
             validating.value = false;
-            return false;
+            return;
           }
 
           // Caso 2: Token com estrutura inválida
           if (!isTokenStructureValid(token)) {
             console.log('Token com estrutura inválida');
             clearSession();
+            validationCompleted = true;
             validating.value = false;
-            return false;
+            return;
           }
 
           // Caso 3: Token expirado
@@ -274,40 +279,50 @@
             clearSession();
             infoMessage.value = 'Sua sessão expirou. Faça login novamente.';
             setTimeout(() => { infoMessage.value = ''; }, 3000);
+            validationCompleted = true;
             validating.value = false;
-            return false;
+            return;
           }
 
-          // Caso 4: Validar token com o backend (opcional, mas recomendado)
+          // Caso 4: Validar token com o backend (com timeout)
           try {
-            const isValid = await validateTokenWithBackend(token);
-            if (!isValid) {
+            // Adiciona timeout específico para validação
+            const timeoutPromise = new Promise((_, reject) => {
+              setTimeout(() => reject(new Error('Timeout na validação')), 5000);
+            });
+
+            const validatePromise = validateTokenWithBackend(token);
+            const isValid = await Promise.race([validatePromise, timeoutPromise]);
+
+            if (isValid === false) {
               console.log('Token inválido no backend');
               clearSession();
+              validationCompleted = true;
               validating.value = false;
-              return false;
+              return;
             }
+
+            // isValid === true ou null (backend offline)
+            console.log('Sessão válida, redirecionando...');
+            infoMessage.value = 'Sessão válida encontrada. Redirecionando...';
+
+            setTimeout(() => {
+              window.location.href = 'index.html';
+            }, 1000);
+
+            return; // Não muda validating para false pois vai redirecionar
+
           } catch (error) {
-            // Se o backend estiver offline, podemos optar por considerar válido
-            // baseado apenas na estrutura e expiração (modo offline)
-            console.warn('Backend offline, validando apenas estrutura local');
+            console.warn('Erro na validação com backend:', error.message);
+            // Em caso de erro de rede, considera o token válido (modo offline)
+            console.log('Modo offline: considerando token válido');
+            infoMessage.value = 'Sessão válida encontrada. Redirecionando...';
+
+            setTimeout(() => {
+              window.location.href = 'index.html';
+            }, 1000);
+            return;
           }
-
-          // Token válido! Redirecionar para o index
-          console.log('Sessão válida encontrada, redirecionando...');
-          infoMessage.value = 'Sessão válida encontrada. Redirecionando...';
-
-          setTimeout(() => {
-            window.location.href = 'index.html';
-          }, 1000);
-
-          return true;
-        };
-
-        // Limpar sessão
-        const clearSession = () => {
-          localStorage.removeItem('auth_token');
-          localStorage.removeItem('user_data');
         };
 
         // ==================== FUNÇÃO DE LOGIN ====================
@@ -323,7 +338,6 @@
           infoMessage.value = '';
 
           try {
-            // Chamada para sua API
             const response = await axios.post('/login', {
               email: credentials.email,
               password: credentials.password
@@ -331,26 +345,19 @@
 
             const { token, user } = response.data;
 
-            // Salvar no localStorage
             localStorage.setItem('auth_token', token);
             localStorage.setItem('user_data', JSON.stringify(user));
 
-            // Mensagem de sucesso
             infoMessage.value = 'Login realizado com sucesso! Redirecionando...';
 
-            // Redirecionar
             setTimeout(() => {
               window.location.href = 'index.html';
             }, 1000);
 
           } catch (error) {
-
             if (error.response) {
-
               switch (error.response.status) {
                 case 401:
-                  errorMessage.value = 'Email ou senha incorretos';
-                  break;
                 case 403:
                   errorMessage.value = 'Email ou senha incorretos';
                   break;
@@ -370,11 +377,9 @@
 
         // ==================== LIFECYCLE ====================
         onMounted(() => {
-          // Validar sessão existente ao carregar a página
           validateExistingSession();
         });
 
-        // ==================== RETORNO ====================
         return {
           credentials,
           loading,
