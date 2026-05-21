@@ -45,8 +45,8 @@ createApp({
     // =========================================================================
 
     /** URL base da API e servidor Socket.IO */
-    const URL_BASE = "https://fast.panelapps.site/";
-    // const URL_BASE = "http://localhost:3000";
+    // const URL_BASE = "https://fast.panelapps.site/";
+    const URL_BASE = "http://localhost:3000";
 
     /** Referência ao socket Socket.IO (inicializado em initSocket) */
     let socket = null;
@@ -1532,6 +1532,31 @@ createApp({
     const totalTickets = computed(() => statsDataChannel.value.totalTickets);
     const topChannel = computed(() => statsDataChannel.value.topChannel);
 
+    // Função para limpar todos os recursos da aba gráficos
+    const limparRecursosGraficos = () => {
+      // Limpar dados reativos
+      statsDataChannel.value = {
+        totalTickets: 0,
+        topChannel: "Nenhum",
+      };
+
+      // Array com todos os charts para limpar facilmente
+      const charts = [chartHandler, chartHandler2, chartHandler3];
+
+      charts.forEach((chart, index) => {
+        if (chart && typeof chart.dispose === "function") {
+          try {
+            chart.dispose();
+            console.log(`Chart ${index + 1} destruído`);
+          } catch (error) {
+            console.error(`Erro ao destruir chart ${index + 1}:`, error);
+          }
+        }
+      });
+      chartHandler = null;
+      chartHandler2 = null;
+      chartHandler3 = null;
+    };
     // =========================================================================
     // 14. INICIALIZAÇÃO
     // =========================================================================
@@ -1559,11 +1584,17 @@ createApp({
     onUnmounted(() => {
       navigator.serviceWorker.removeEventListener("message", handleSWMessage);
       socket.disconnect();
-      if (chartHandler || chartHandler2 || chartHandler3) {
+      if (chartHandler && typeof chartHandler.dispose === "function") {
         chartHandler.dispose();
         chartHandler = null;
+      }
+
+      if (chartHandler2 && typeof chartHandler2.dispose === "function") {
         chartHandler2.dispose();
         chartHandler2 = null;
+      }
+
+      if (chartHandler3 && typeof chartHandler3.dispose === "function") {
         chartHandler3.dispose();
         chartHandler3 = null;
       }
@@ -1596,7 +1627,11 @@ createApp({
       },
       { deep: true, immediate: true },
     );
-
+    watch(activeTab, (tabNovo, tabAntigo) => {
+      if (tabAntigo === "graficos") {
+        limparRecursosGraficos();
+      }
+    });
     // =========================================================================
     // EXPOSIÇÃO DO SETUP (retorno para o template Vue)
     // =========================================================================
