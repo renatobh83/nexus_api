@@ -13,8 +13,15 @@ export const initSocket = (server: Server): SocketIOServer => {
   });
 
   io.on("connection", (socket) => {
-    console.log("cliente conectado:", socket.id);
+    const { token } = socket.handshake.auth;
+    const payload = JSON.parse(atob(token.split(".")[1]));
 
+    const type = "type" in payload ? payload.type.toString() : "";
+    if (type === "chat-client") {
+      console.log(socket);
+      return;
+    }
+    console.log("cliente conectado:", socket.id);
     socket.on("join-ticket", (ticketId) => {
       socket.join(`ticket-${ticketId}`);
       console.log(`Cliente entrou na sala ticket-${ticketId}`);

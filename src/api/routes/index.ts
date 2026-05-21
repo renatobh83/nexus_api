@@ -6,19 +6,28 @@ import { ticketController } from "../../modules/tickets/tickets.controller.js";
 import { integrationController } from "../../modules/externals/integrationConfig.controller.js";
 import { usersController } from "../../modules/users/users.controller.js";
 import { authController } from "../../modules/auth/auth.controller.js";
-
+import { chatWebController } from "../../modules/chatWeb/chatWeb.controller.js";
+declare module "fastify" {
+  interface FastifyInstance {
+    authenticate: any;
+  }
+}
 /**
  * Plugin principal que agrupa todas as rotas da API sob um prefixo comum.
  * @param {FastifyInstance} fastify - A instância do Fastify.
  */
 async function apiV1Routes(fastify: FastifyInstance) {
+  fastify.register(chatWebController, { prefix: "/" });
+
   fastify.register(authController, { prefix: "/auth" });
-  fastify.addHook("onRequest", verifyApiKey);
-  fastify.register(channelController, { prefix: "/channel" });
-  fastify.register(messagesController, { prefix: "/messages" });
-  fastify.register(ticketController, { prefix: "/tickets" });
-  fastify.register(integrationController, { prefix: "/external" });
-  fastify.register(usersController, { prefix: "/users" });
+  fastify.register(async (privateScope) => {
+    // privateScope.addHook("preHandler", fastify.authenticate);
+    privateScope.register(channelController, { prefix: "/channel" });
+    privateScope.register(messagesController, { prefix: "/messages" });
+    privateScope.register(ticketController, { prefix: "/tickets" });
+    privateScope.register(integrationController, { prefix: "/external" });
+    privateScope.register(usersController, { prefix: "/users" });
+  });
 }
 
 /**

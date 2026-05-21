@@ -45,8 +45,8 @@ createApp({
     // =========================================================================
 
     /** URL base da API e servidor Socket.IO */
-    const URL_BASE = "https://fast.panelapps.site/";
-    // const URL_BASE = "http://localhost:3000";
+    // const URL_BASE = "https://fast.panelapps.site/";
+    const URL_BASE = "http://localhost:3000";
 
     /** Referência ao socket Socket.IO (inicializado em initSocket) */
     let socket = null;
@@ -298,12 +298,15 @@ createApp({
         console.log("Socket já conectado, ignorando nova inicialização.");
         return;
       }
-
+      const token = localStorage.getItem("auth_token");
       socket = io(URL_BASE, {
         transports: ["websocket", "polling"],
         reconnection: true,
         reconnectionAttempts: 5,
         reconnectionDelay: 1000,
+        auth: {
+          token,
+        },
       });
 
       // Conexão estabelecida
