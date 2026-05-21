@@ -1386,7 +1386,7 @@ input:checked + .slider-footer:before {
 }
 
 .config-sidebar {
-  width: 260px;
+  width: 180px;
   background: #141414;
   border-right: 1px solid #2a2a2a;
   padding: 20px 0;
@@ -1504,7 +1504,7 @@ input:checked + .slider-footer:before {
 /* ── Channel Options ── */
 .channel-options {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
   margin-bottom: 20px;
 }
@@ -1643,6 +1643,7 @@ input:checked + .slider-footer:before {
   border: 1px solid #2a2a2a;
   background: #0d0d0d;
   color: #b5c6e6;
+  color-scheme: dark;
   font-size: 12px;
   transition:
     border-color 0.2s,

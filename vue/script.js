@@ -350,7 +350,7 @@ createApp({
           //   `msg-${message.id}`,
           // );
           sonnerAlert(`Nova mensagem de ${ticketName}`);
-          scrollToBottom();
+          scrollToBottom(ticket.id);
         }
 
         // Atualiza o ticket localmente para evitar reload completo
@@ -557,7 +557,7 @@ createApp({
         currentMessages.value = [];
       }
       await nextTick();
-      scrollToBottom();
+      scrollToBottom(ticketId);
     };
 
     // Atualiza o termo de busca a partir de um evento de input
@@ -570,7 +570,13 @@ createApp({
     // =========================================================================
 
     /** Rola a área de mensagens para o final. */
-    const scrollToBottom = () => {
+    const scrollToBottom = (ticketId = null) => {
+      if (
+        ticketId &&
+        currentTicket?.value?.id &&
+        ticketId !== currentTicket.value.id
+      )
+        return;
       const area = document.querySelector(".messages-area");
       if (!area) return;
 
@@ -974,6 +980,7 @@ createApp({
         data.accessToken = accessToken.value;
         data.phoneNumberId = phoneNumberId.value;
       }
+
       const isEditing = editingChannel.value && editingChannel.value.id;
       const url = isEditing
         ? `${URL_BASE}/api/v1/channel/${editingChannel.value.id}`
@@ -1003,13 +1010,13 @@ createApp({
         console.error("Erro:", error);
         sonnerAlert("Erro ao salvar canal", false);
       }
-      // await fetch(`${URL_BASE}/api/v1/channel`, {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify(data),
-      // });
-      // channelModalVisible.value = false;
-      // await loadChannels();
+      await fetch(`${URL_BASE}/api/v1/channel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      channelModalVisible.value = false;
+      await loadChannels();
     };
     // Função para fechar o modal e limpar
     const closeChannelModal = () => {
@@ -1729,7 +1736,7 @@ createApp({
       updateSearchTerm,
 
       // Mensagens e arquivos
-      scrollToBottom,
+
       triggerFileInput,
       handleFileSelect,
       removeFile,

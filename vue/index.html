@@ -42,11 +42,11 @@
 
         <div class="top-menu">
           <div class="menu-item" :class="{ active: activeTab === 'chats' }" @click="activeTab = 'chats'">💬 Chats</div>
+          <div class="menu-item" :class="{ active: activeTab === 'graficos' }" @click="activeTab = 'graficos'">
+            📈 Gráficos</div>
           <div class="menu-item" :class="{ active: activeTab === 'configuracoes' }"
             @click="activeTab = 'configuracoes'">
             ⚙️ Configurações</div>
-          <div class="menu-item" :class="{ active: activeTab === 'graficos' }" @click="activeTab = 'graficos'">
-            📈 Gráficos</div>
           <button class="broadcast-btn" @click="openBroadcastModal">📢</button>
         </div>
       </div>
@@ -317,15 +317,18 @@
                 <div class="channels-grid">
                   <div v-for="ch in channels" :key="ch.id" class="channel-card">
                     <div class="channel-header">
-                      <span class="channel-icon">{{ ch.type === 'whatsapp' ? '📱' : '✈️' }}</span>
-                      <span class="status-badge" :class="ch.status === 'CONNECTED' ? 'open' : 'pending'">
+
+                      <span class="channel-icon"> {{ ch.type === 'whatsapp' ? '📱' : ch.type === 'telegram' ? '✈️' :
+                        '🕸️'}}</span>
+                      <span v-show="ch.type !== 'web'" class="status-badge"
+                        :class="ch.status === 'CONNECTED' ? 'open' : 'pending'">
                         {{ ch.status === 'CONNECTED' ? 'Conectado' : 'Desconectado' }}
                       </span>
                     </div>
                     <div class="channel-name">{{ ch.name }}
                       <button @click="editChannel(ch)" v-if="isAdmin">✏️</button>
                     </div>
-                    <div class="channel-actions" v-if="isAdmin">
+                    <div class="channel-actions" v-if="isAdmin" v-show="ch.type !== 'web'">
                       <button v-if="ch.status === 'CONNECTED'" class="channel-btn disconnect"
                         @click="disconnectChannel(ch.id)">Desconectar</button>
                       <!-- <button v-if="ch.status === 'qrcode'" class="channel-btn" @click="openQRCodeModal">QrCode</button> -->
@@ -342,12 +345,13 @@
         <div class="tab-graficos" :class="{ hidden: activeTab !== 'graficos' }">
           <div class="filter-bar">
             <div class="filter-group">
-              <label class="filter-label">De</label>
-              <input type="date" name="" id="input-data-inicio" v-model="dataInicio" class="filter-input">
+              <label for="input-data-inicio" class="filter-label">De</label>
+              <input type="date" name="input-data-inicio" id="input-data-inicio" v-model="dataInicio"
+                class="filter-input">
             </div>
             <div class="filter-group">
-              <label class="filter-label">Até</label>
-              <input type="date" name="" v-model="dataFim" id="input-data-fim" class="filter-input">
+              <label for="input-data-fim" class="filter-label">Até</label>
+              <input type="date" name="input-data-fim" v-model="dataFim" id="input-data-fim" class="filter-input">
             </div>
             <span class="status-msg" v-html="statusMsg"></span>
             <button class="btn-primary" @click="consultar">Consultar</button>
@@ -511,6 +515,12 @@
                   <div class="channel-option-icon">✈️</div>
                   <div class="channel-option-title">Telegram</div>
                   <div class="channel-option-desc">Bot API</div>
+                </div>
+                <div class="channel-option" data-channel-type="web" @click="selectChannelType('web')"
+                  :class="['channel-option', { selected: selectedChannelType === 'web' }]">
+                  <div class="channel-option-icon">🕸️</div>
+                  <div class="channel-option-title">Web</div>
+                  <div class="channel-option-desc">Chat Web</div>
                 </div>
               </div>
 
