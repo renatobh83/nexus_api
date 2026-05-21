@@ -1628,6 +1628,10 @@ createApp({
       { deep: true, immediate: true },
     );
     watch(activeTab, (tabNovo, tabAntigo) => {
+      if (tabAntigo === "chats") {
+        currentTicket.value = null;
+        currentMessages.value = [];
+      }
       if (tabAntigo === "graficos") {
         limparRecursosGraficos();
       }
