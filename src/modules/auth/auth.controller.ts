@@ -19,7 +19,7 @@ export async function authController(fastify: FastifyInstance) {
           profile: user.role,
         },
         SECRET,
-        { expiresIn: "24h" },
+        { expiresIn: "7d" },
       );
 
       reply.status(200).send({

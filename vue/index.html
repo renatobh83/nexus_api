@@ -8,9 +8,10 @@
   <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
   <title>Ticket Manager Vue - Chat e Configurações</title>
   <!--  Css-->
-  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./styles-dark.css" />
 </head>
 
 <body>
@@ -44,6 +45,8 @@
           <div class="menu-item" :class="{ active: activeTab === 'configuracoes' }"
             @click="activeTab = 'configuracoes'">
             ⚙️ Configurações</div>
+          <div class="menu-item" :class="{ active: activeTab === 'graficos' }" @click="activeTab = 'graficos'">
+            📈 Gráficos</div>
           <button class="broadcast-btn" @click="openBroadcastModal">📢</button>
         </div>
       </div>
@@ -164,7 +167,7 @@
                     <template
                       v-else-if="['document', 'txt', 'documentMessage','application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(msg.mediaType)">
                       <div
-                        style="display: flex; align-items: center; gap: 10px; background: #f0f2f5; padding: 10px; border-radius: 8px;">
+                        style="display: flex; align-items: center; gap: 10px; background: #1e1e1e ; padding: 10px; border-radius: 8px;">
                         <div style="font-size: 30px;">📄</div>
                         <div style="flex: 1;">
                           <div style="font-weight: 500; font-size: 13px;">
@@ -202,7 +205,7 @@
                 <div class="message-wrapper sent" :data-temp="message.id">
                   <div class="message-bubble" style="opacity: 0.7;">
                     <div class="message-body">
-                      <img :src="message.mediaUrl" crossorigin="anonymous" alt="Imagem"
+                      <img v-if="message.mediaUrl" :src="message.mediaUrl" crossorigin="anonymous" alt="Imagem"
                         style="max-width: 250px; max-height: 250px; border-radius: 6px; cursor: pointer;" />
                       <div v-if="message.body" style="margin-top: 6px;" v-html="formatMessage(message.body)"></div>
                     </div>
@@ -333,6 +336,70 @@
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+        <div class="tab-graficos" :class="{ hidden: activeTab !== 'graficos' }">
+          <div class="filter-bar">
+            <div class="filter-group">
+              <label class="filter-label">De</label>
+              <input type="date" name="" id="input-data-inicio" v-model="dataInicio" class="filter-input">
+            </div>
+            <div class="filter-group">
+              <label class="filter-label">Até</label>
+              <input type="date" name="" v-model="dataFim" id="input-data-fim" class="filter-input">
+            </div>
+            <span class="status-msg" v-html="statusMsg"></span>
+            <button class="btn-primary" @click="consultar">Consultar</button>
+          </div>
+          <div class="card-grid">
+            <div class="card-item item1">
+              <div class="inner">
+                <div class="top-row">
+                  <div class="label">Total de Tickets</div>
+                  <!-- <div class="icon-wrap">*</div> -->
+                </div>
+                <div class="value">{{totalTickets}}</div>
+                <div class="bottom-row">
+                  <div class="sub">no período</div>
+                </div>
+              </div>
+            </div>
+            <div class="card-item">
+              <div class="inner">
+                <div class="top-row">
+                  <div class="label">Top Canal</div>
+                  <!-- <div class="icon-wrap">*</div> -->
+                </div>
+                <div class="value" style="text-transform: uppercase;">{{topChannel}}</div>
+                <div class="bottom-row">
+                  <div class="sub">no período</div>
+                </div>
+              </div>
+            </div>
+            <!-- <div class="card-item item1">
+              <div class="inner">
+                <div class="top-row">
+                  <div class="label"></div>
+                  <div class="icon-wrap">*</div>
+                </div>
+                <div class="value"></div>
+                <div class="bottom-row">
+                  <div class="sub"></div>
+                </div>
+              </div>
+            </div> -->
+          </div>
+          <div class="dashboard-grid">
+
+            <div class="chart-container">
+              <div ref="chartRefCanal" class="chart-wrapper"></div>
+            </div>
+            <div class="chart-container">
+              <div ref="chartRefUsuario" class="chart-wrapper"></div>
+            </div>
+            <div class="chart-container">
+              <div ref="chartRefData" class="chart-wrapper"></div>
             </div>
           </div>
         </div>
@@ -548,6 +615,7 @@
   <!-- fim #app -->
 
   <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+  <script src="chartHandler.js"></script>
   <script src="useFormataMessagem.js"></script>
   <script src="useNotifications.js"></script>
   <script src="./script.js"> </script>

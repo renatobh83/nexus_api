@@ -518,9 +518,6 @@ createApp({
       } else {
         allTickets.value.unshift(updatedTicket);
       }
-      if (chartHandler2) {
-        chartHandler2.render();
-      }
     }
 
     /**
@@ -1375,165 +1372,35 @@ createApp({
       return `${dateStr} às ${timeStr}`;
     }
 
-    // =========================================================================
-    // 13. Graficos
-    // =========================================================================
-
-    // ========== ESTATÍSTICAS REATIVAS ==========
-
-    const statsDataChannel = ref({
-      totalTickets: 0,
-      uniqueChannels: 0,
-      topChannel: "Nenhum",
-      averagePerChannel: 0,
-    });
-    const statusMsg = ref("");
-    const chartRefCanal = ref(null);
-    const chartRefUsuario = ref(null);
-    const chartRefData = ref(null);
-    const dataInicio = ref(
-      new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0],
-    );
-    const dataFim = ref(new Date().toISOString().split("T")[0]);
+    // -- Chart ---
+    const chartRef = ref(null);
+    const chartRef2 = ref(null);
 
     let chartHandler = null;
     let chartHandler2 = null;
-    let chartHandler3 = null;
     const chartType = ref("bar");
-    // ========== FUNÇÃO PARA CRIAR MAPA DE USUÁRIOS ==========
-    const getUserMap = () => {
-      const map = new Map();
-      users.value.forEach((user) => {
-        map.set(user.id, user.name);
-      });
-      return map;
-    };
-    // ========== FUNÇÃO PARA CRIAR MAPA DE CANAIS ==========
-    const getChannelMap = () => {
-      const map = new Map();
-      channels.value.forEach((channel) => {
-        map.set(channel.id, channel.type);
-      });
-      return map;
-    };
 
     // Converte userId para nome antes de processar
     const processTicketsByUser = (data) => {
-      const userMap = getUserMap();
       const userCount = {};
 
-      data
-        .filter((ticket) => {
-          const ticketDate = ticket.createdAt.split("T")[0];
-          return ticketDate >= dataInicio.value && ticketDate <= dataFim.value;
-        })
-        .forEach((ticket) => {
-          // Converte o userId para nome
-          const userName = userMap.get(ticket.userId) || "Ticket Pendente";
-          userCount[userName] = (userCount[userName] || 0) + 1;
-        });
+      data.forEach((ticket) => {
+        consulta.log(ticket);
+        // Converte o userId para nome
+        // const userName =
+        //   userMap.get(ticket.userId) || `Usuário ${ticket.userId}`;
+        // userCount[userName] = (userCount[userName] || 0) + 1;
+      });
+
       return {
         categories: Object.keys(userCount),
         values: Object.values(userCount),
         countMap: userCount,
       };
     };
-    // Converte channel para Type antes de processar
-    const processTicketsByChannel = (data) => {
-      const channelMap = getChannelMap();
-      const channelCount = {};
-
-      data
-        .filter((ticket) => {
-          const ticketDate = ticket.createdAt.split("T")[0];
-          return ticketDate >= dataInicio.value && ticketDate <= dataFim.value;
-        })
-        .forEach((ticket) => {
-          const channelType = channelMap.get(ticket.channelId) || "Pendente";
-          channelCount[channelType] = (channelCount[channelType] || 0) + 1;
-        });
-      return {
-        categories: Object.keys(channelCount),
-        values: Object.values(channelCount),
-        countMap: channelCount,
-      };
-    };
-    const processTicketsByDate = (data) => {
-      const ticketCount = {};
-      data
-        .filter((ticket) => {
-          const ticketDate = ticket.createdAt.split("T")[0];
-          return ticketDate >= dataInicio.value && ticketDate <= dataFim.value;
-        })
-        .forEach((ticket) => {
-          const ticketDate = ticket.createdAt.split("T")[0];
-          ticketCount[ticketDate] = (ticketCount[ticketDate] || 0) + 1;
-        });
-      // Ordena as categorias por data (do mais antigo para o mais novo)
-      const sortedCategories = Object.keys(ticketCount).sort((a, b) =>
-        a.localeCompare(b),
-      );
-      const sortedValues = sortedCategories.map((cat) => ticketCount[cat]);
-      return {
-        categories: sortedCategories,
-        values: sortedValues,
-        countMap: ticketCount,
-      };
-    };
-
-    const consultar = async () => {
-      if (!dataInicio.value || !dataFim.value) {
-        statusMsg.value = "Selecione ambas as datas!";
-        setTimeout(() => (statusMsg.value = ""), 5000);
-        return;
-      }
-      if (dataFim.value < dataInicio.value) {
-        statusMsg.value = "Data final não pode ser anterior à data inicial!";
-        setTimeout(() => (statusMsg.value = ""), 5000);
-        return;
-      }
-
-      // const dat = processTicketsByDate(allTickets.value);
-      // console.log(dat);
-      chartHandler = window.createChartHandler(chartRefCanal, allTickets);
-      chartHandler.setTitle("Tickets por Canal");
-      chartHandler.setAxisNames("Canal", "Quantidade");
-      chartHandler.setProcessFunction(processTicketsByChannel);
-
-      const stats = chartHandler.getStatistics();
-      statsDataChannel.value = {
-        totalTickets: stats.total,
-        uniqueChannels: stats.uniqueCategories,
-        topChannel: stats.topCategory,
-        averagePerChannel: stats.averagePerCategory,
-      };
-
-      chartHandler2 = window.createChartHandler(
-        chartRefUsuario,
-        allTickets,
-        "pie",
-      );
-      chartHandler2.setTitle("Tickets por Usuario");
-      chartHandler2.setAxisNames("Usuario", "Quantidade");
-      chartHandler2.setProcessFunction(processTicketsByUser);
-
-      chartHandler3 = window.createChartHandler(chartRefData, allTickets);
-      chartHandler3.setTitle("Tickets por Data");
-      chartHandler3.setAxisNames("Data", "Quantidade");
-      chartHandler3.setProcessFunction(processTicketsByDate);
-
-      await chartHandler.render();
-      await chartHandler2.render();
-      await chartHandler3.render();
-    };
-    // Computed properties baseadas nas statsData reativas
-    const totalTickets = computed(() => statsDataChannel.value.totalTickets);
-    const topChannel = computed(() => statsDataChannel.value.topChannel);
 
     // =========================================================================
-    // 14. INICIALIZAÇÃO
+    // 13. INICIALIZAÇÃO
     // =========================================================================
     onMounted(async () => {
       // 1. Verifica autenticação antes de qualquer coisa
@@ -1551,30 +1418,39 @@ createApp({
           navigator.serviceWorker.addEventListener("message", handleSWMessage);
         });
       }
+      chartHandler = window.createChartHandler(chartRef, allTickets);
+      chartHandler.setTitle("Tickets por Canal");
+      chartHandler.setAxisNames("Canal", "Quantidade");
+      chartHandler.setProcessFunction(window.ChartProcessors.ticketsByChannel);
+
+      chartHandler2 = window.createChartHandler(chartRef2, allTickets);
+      chartHandler2.setTitle("Tickets por Usuario");
+      chartHandler2.setAxisNames("Usuario", "Quantidade");
+
+      chartHandler2.setProcessFunction(window.ChartProcessors.ticketsByUser);
 
       // updateStatistics();
     });
-
+    const consulta = async () => {
+      await chartHandler.render();
+      await chartHandler2.render();
+    };
     // Lifecycle: cleanup service worker
     onUnmounted(() => {
       navigator.serviceWorker.removeEventListener("message", handleSWMessage);
       socket.disconnect();
-      if (chartHandler || chartHandler2 || chartHandler3) {
+      if (chartHandler) {
         chartHandler.dispose();
         chartHandler = null;
-        chartHandler2.dispose();
-        chartHandler2 = null;
-        chartHandler3.dispose();
-        chartHandler3 = null;
       }
     });
-    // document.addEventListener(
-    //   "click",
-    //   () => {
-    //     requestNotificationPermission();
-    //   },
-    //   { once: true },
-    // );
+    document.addEventListener(
+      "click",
+      () => {
+        requestNotificationPermission();
+      },
+      { once: true },
+    );
 
     //
     //  Watcher
@@ -1587,7 +1463,12 @@ createApp({
         chartHandler?.updateData();
       },
     );
-
+    // watch(
+    //   () => editingUser.value,
+    //   () => {
+    //     //updateStatistics();
+    //     console.log("Edicao", editingUser.value);
+    //   },
     // );
     watch(
       editingChannel,
@@ -1602,6 +1483,7 @@ createApp({
     // =========================================================================
 
     return {
+      consulta,
       // Estado
       activeTab,
       sidebarOpen,
@@ -1729,16 +1611,9 @@ createApp({
       getStatusText,
       formatTime,
 
-      // GRAFICOS
-      chartRefCanal,
-      chartRefUsuario,
-      chartRefData,
-      dataInicio,
-      dataFim,
-      consultar,
-      statusMsg,
-      totalTickets,
-      topChannel,
+      // Chart
+      chartRef,
+      chartRef2,
     };
   },
 }).mount("#app");
