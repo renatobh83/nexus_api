@@ -46,6 +46,7 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
     "undefined",
     "https://fast.panelapps.site",
     "null",
+    "https://renatobh83.github.io",
   ];
 
   await fastify.register(cors, {
