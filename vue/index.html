@@ -113,6 +113,9 @@
               <div>
                 <h2>{{ currentTicket ? `Ticket #${currentTicket.id}` : 'Ticket #' }}</h2>
               </div>
+              <!-- <div v-show="currentTicket">
+                <input type="text" placeholder="🔍 Buscar palavras..." v-model="buscarPalavras">
+              </div> -->
               <div class="connection-status" :class="{ connected: socketConnected, disconnected: !socketConnected }">
                 {{ socketConnected ? '🟢 Conectado' : '🔴 Desconectado' }}
               </div>
@@ -140,7 +143,8 @@
                   <div v-else>
                     <div v-show="msg.isGroupMsg" class="sender" v-html="msg.sender"></div>
                     <!-- IMAGEM -->
-                    <template v-if="['image', 'jpg', 'image/jpeg', 'png', 'imageMessage'].includes(msg.mediaType)">
+                    <template
+                      v-if="['image','image/png', 'jpg', 'image/jpeg', 'png', 'imageMessage'].includes(msg.mediaType)">
                       <img :src="getMediaUrl(msg.mediaUrl)" crossorigin="anonymous" alt="Imagem"
                         style="max-width: 250px; max-height: 250px; border-radius: 6px; cursor: pointer;"
                         @click="openInNewTab(getMediaUrl(msg.mediaUrl))" />

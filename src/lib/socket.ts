@@ -1,6 +1,8 @@
 // src/lib/socket.ts
 import { Server as SocketIOServer } from "socket.io";
 import { Server } from "http";
+import { HandleMessageChatWeb } from "../modules/chatWeb/helpers/HandleMessageChatWeb.js";
+
 // src/lib/socket.ts
 let io: SocketIOServer | null = null;
 let waitForInitPromise: Promise<SocketIOServer> | null = null;
@@ -18,7 +20,7 @@ export const initSocket = (server: Server): SocketIOServer => {
 
     const type = "type" in payload ? payload.type.toString() : "";
     if (type === "chat-client") {
-      console.log(socket);
+      HandleMessageChatWeb(socket, payload);
       return;
     }
     console.log("cliente conectado:", socket.id);

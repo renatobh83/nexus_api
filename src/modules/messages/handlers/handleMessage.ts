@@ -19,7 +19,7 @@ export const handleMessage = async (
   message: MessageInternal,
   session: SessionInternal,
   contato: ContactInternal,
-) => {
+): Promise<void | any> => {
   try {
     const serialized = contato.id._serialized;
     const lastMessage = formatLastMessage(message);
@@ -31,8 +31,11 @@ export const handleMessage = async (
       ticketGroup: message.isGroupMsg,
       msg: lastMessage,
       unreadMessages: 0,
+      chatClient: message.socketId ? true : false,
+      socketId: message.socketId,
     });
     if (ticket.isInteraction) return;
+
     const createdMessage = await VerifyMessage(
       message,
       contato,
@@ -46,6 +49,9 @@ export const handleMessage = async (
     if (isNew) {
       const io = await waitForSocket();
       io.emit("ticket-updated", result);
+    }
+    if (message.socketId) {
+      return { isNew, ticketId: ticket.id };
     }
   } catch (error) {
     console.error(`Erro ao processar mensagem ${message.messageId}:`, error);

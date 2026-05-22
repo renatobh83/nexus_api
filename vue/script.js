@@ -51,6 +51,8 @@ createApp({
     /** Referência ao socket Socket.IO (inicializado em initSocket) */
     let socket = null;
 
+    //* Token
+    let token = "";
     // =========================================================================
     // 2. ESTADO REATIVO
     // =========================================================================
@@ -78,7 +80,7 @@ createApp({
     const searchTerm = ref("");
     const showOnlyClosed = ref(false);
     const loadingTickets = ref(false);
-
+    const buscarPalavras = ref("");
     /**
      * Mapa de tickets em processo de atualização de status.
      * Chave: ticketId, Valor: boolean (true = aguardando resposta da API).
@@ -239,7 +241,7 @@ createApp({
      * @returns {boolean} true se autenticado com sucesso.
      */
     const checkAuthentication = () => {
-      const token = localStorage.getItem("auth_token");
+      token = localStorage.getItem("auth_token");
       const userData = localStorage.getItem("user_data");
 
       if (!token || !userData) {
@@ -298,7 +300,7 @@ createApp({
         console.log("Socket já conectado, ignorando nova inicialização.");
         return;
       }
-      const token = localStorage.getItem("auth_token");
+
       socket = io(URL_BASE, {
         transports: ["websocket", "polling"],
         reconnection: true,
@@ -481,7 +483,10 @@ createApp({
 
         const response = await fetch(`${URL_BASE}/api/v1/tickets/${id}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify(payload),
         });
 
@@ -533,7 +538,11 @@ createApp({
     const loadTickets = async () => {
       loadingTickets.value = true;
       try {
-        const res = await fetch(`${URL_BASE}/api/v1/tickets`);
+        const res = await fetch(`${URL_BASE}/api/v1/tickets`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         const data = await res.json();
         allTickets.value = (data.tickets || data || []).sort(
           (a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0),
@@ -698,6 +707,9 @@ createApp({
       await fetch(`${URL_BASE}/api/v1/messages/${currentTicket.value.id}`, {
         method: "POST",
         body: formData,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
     };
     /**
@@ -748,6 +760,9 @@ createApp({
           {
             method: "POST",
             body: formData,
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           },
         );
         if (res.ok) {
@@ -915,6 +930,9 @@ createApp({
           {
             method: "POST",
             body: formData,
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           },
         );
       } finally {
@@ -992,7 +1010,10 @@ createApp({
       try {
         const response = await fetch(url, {
           method: method,
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify(data),
         });
 
@@ -1015,7 +1036,10 @@ createApp({
       }
       await fetch(`${URL_BASE}/api/v1/channel`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(data),
       });
       channelModalVisible.value = false;
@@ -1078,7 +1102,11 @@ createApp({
     const loadChannels = async () => {
       loadingChannels.value = true;
       try {
-        const res = await fetch(`${URL_BASE}/api/v1/channel`);
+        const res = await fetch(`${URL_BASE}/api/v1/channel`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         channels.value = await res.json();
       } catch (e) {
         console.error("Erro ao carregar canais:", e);
@@ -1104,6 +1132,9 @@ createApp({
       try {
         await fetch(`${URL_BASE}/api/v1/channel/${channelId}/connect`, {
           method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
       } catch (error) {
         console.error("Erro:", error);
@@ -1128,6 +1159,9 @@ createApp({
       try {
         await fetch(`${URL_BASE}/api/v1/channel/${channelId}/disconnect`, {
           method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
         sonnerAlert("Canal desconectado");
 
@@ -1145,7 +1179,11 @@ createApp({
     const loadUsers = async () => {
       loadingUsers.value = true;
       try {
-        const res = await fetch(`${URL_BASE}/api/v1/users`);
+        const res = await fetch(`${URL_BASE}/api/v1/users`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         users.value = await res.json();
       } catch (e) {
         console.error(e);
@@ -1182,7 +1220,10 @@ createApp({
 
       await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(editingUser.value),
       });
 
@@ -1208,7 +1249,12 @@ createApp({
      */
     const deleteUser = async (id) => {
       if (confirm("Excluir?")) {
-        await fetch(`${URL_BASE}/api/v1/users/${id}`, { method: "DELETE" });
+        await fetch(`${URL_BASE}/api/v1/users/${id}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         await loadUsers();
       }
     };
@@ -1737,7 +1783,7 @@ createApp({
       loadTickets,
       loadMessages,
       updateSearchTerm,
-
+      buscarPalavras,
       // Mensagens e arquivos
 
       triggerFileInput,

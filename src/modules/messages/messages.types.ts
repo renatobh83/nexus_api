@@ -1,5 +1,3 @@
-import { Wid } from "wbotconnect";
-
 export type MessageType =
   | "notification"
   | "notification_template"
@@ -58,6 +56,7 @@ export interface MessageInternal {
   mimetype: string | null | any;
   sender: string | null;
   reactionFromMe?: string | null | undefined;
+  socketId?: string;
   sendType?:
     | "campaign"
     | "external"

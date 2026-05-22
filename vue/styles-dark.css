@@ -923,7 +923,17 @@ input:checked + .slider-footer:before {
   flex-shrink: 0;
   border-bottom: 1px solid #2a2a2a;
 }
-
+.chat-header input {
+  width: 100%;
+  padding: 10px 15px;
+  border: 1px solid #2a2a2a;
+  border-radius: 20px;
+  background: #1e1e1e;
+  color: #f0f0f0;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
 .messages-area {
   flex: 1;
   overflow-y: auto;
@@ -1653,7 +1663,12 @@ input:checked + .slider-footer:before {
 .filter-input:focus {
   border-color: #075e54;
 }
-
+a {
+  color: #f0f0f0;
+}
+a:hover {
+  color: #788383;
+}
 .status-msg {
   font-size: 11px;
   font-family: "JetBrains Mono", monospace;
@@ -1880,11 +1895,15 @@ input:checked + .slider-footer:before {
   .config-sidebar {
     width: auto;
   }
-
+  .channel-options {
+    grid-template-columns: repeat(2, 1fr);
+  }
   .message-wrapper:last-child {
     margin-bottom: 5px;
   }
-
+  .users-header h2 {
+    display: none;
+  }
   .message-input {
     display: block;
     flex: 1;

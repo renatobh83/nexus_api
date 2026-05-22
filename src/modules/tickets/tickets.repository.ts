@@ -21,7 +21,7 @@ export class TicketsRepository {
         status: true,
         channelId: true,
         contato: true,
-
+        socketId: true,
         channel: {
           select: {
             name: true,
@@ -75,5 +75,19 @@ export class TicketsRepository {
         },
       },
     });
+  }
+  async createcreateMessageAndUpdateTicket(
+    ticketId: number,
+    updateTicket: Prisma.TicketUpdateInput,
+    messageData: Prisma.MessageCreateInput,
+  ) {
+    const message = await prisma.message.create({ data: messageData });
+    const ticketUpdate = await prisma.ticket.update({
+      where: {
+        id: ticketId,
+      },
+      data: updateTicket,
+    });
+    return { ticketUpdate, message };
   }
 }

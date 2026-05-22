@@ -46,7 +46,7 @@ export class ChannelsRepository {
           // Condição 3.A: O tipo é um dos canais que não dependem de QR Code.
           {
             type: {
-              in: ["instagram", "telegram", "waba", "messenger"],
+              in: ["instagram", "telegram", "waba", "messenger", "web"],
             },
           },
           // Condição 3.B: OU o tipo é 'whatsapp' E seu status está pronto.
@@ -70,5 +70,39 @@ export class ChannelsRepository {
         id: id,
       },
     });
+  }
+
+  async findTicketForChatWeb(contato: string, scoketId: string) {
+    const ticket = await prisma.ticket.findFirst({
+      where: {
+        contato,
+        chatClient: true,
+        status: {
+          notIn: ["closed"],
+        },
+      },
+    });
+    if (!ticket) return null;
+    // Atualiza o ticket encontrado
+    const updatedTicket = await prisma.ticket.update({
+      where: {
+        id: ticket.id,
+      },
+      data: {
+        // Campos que você quer atualizar
+        updatedAt: new Date(),
+        socketId: scoketId,
+        // exemplo: lastInteraction: new Date(),
+      },
+      include: {
+        messages: {
+          orderBy: {
+            createdAt: "desc",
+          },
+        },
+      },
+    });
+
+    return updatedTicket;
   }
 }

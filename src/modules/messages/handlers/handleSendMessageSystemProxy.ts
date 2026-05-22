@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { transformFile } from "../../../utils/messsageMedia.js";
 import { SendMessageWppWeb } from "../../../providers/whatsapp-web/wpp-web/SendMessageWppWeb.js";
 import { SendMessageTeleproto } from "../../../providers/telegram/teleproto/sendMessageTeleproto.js";
+import { SendMessageChatClient } from "../../chatWeb/helpers/SendMessageChatClient.js";
 
 type TicketWithChannel = Prisma.TicketGetPayload<{
   include: {
@@ -27,10 +28,12 @@ export const SendMessageSystemProxy = async (
   switch (channel) {
     case "whatsapp":
       return SendMessageWppWeb(body, ticket, hasMedia);
-      break;
+
     case "telegram":
       return SendMessageTeleproto(body, ticket, hasMedia);
-      break;
+    case "web":
+      return SendMessageChatClient(body, ticket, hasMedia);
+
     default:
       break;
   }

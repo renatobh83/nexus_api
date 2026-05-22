@@ -1,10 +1,8 @@
-import path from "node:path";
-import fs, { promises } from "node:fs";
-import { create, CreateConfig, defaultOptions, Whatsapp } from "wbotconnect";
-
+import { create, defaultOptions, Whatsapp } from "wbotconnect";
 import { Prisma, Channel } from "@prisma/client";
 import { ChannelService } from "../../../modules/channels/channel.service.js";
 import { wbotWebListener } from "./wppWebListener.js";
+import { getIO } from "../../../lib/socket.js";
 
 function extractQrCode(url: string): string | null {
   if (!url) return null;
@@ -49,11 +47,15 @@ export const initWppWeb = async (
         const qrCode = extractQrCode(urlCode!);
 
         if (qrCode) {
-          await channelService.update(channel.id, {
-            qrcode: qrCode,
-            status: "qrcode",
-            retries: attempts,
-          });
+          await channelService.update(
+            channel.id,
+            {
+              qrcode: qrCode,
+              status: "qrcode",
+              retries: attempts,
+            },
+            getIO(),
+          );
         }
       },
 
@@ -65,13 +67,17 @@ export const initWppWeb = async (
         switch (statusSession) {
           case "autocloseCalled":
           case "desconnectedMobile":
-            await channelService.update(channel.id, {
-              status: "DISCONNECTED",
-              qrcode: "",
-              session: "",
-              pairingCode: "",
-              phone: Prisma.JsonNull,
-            });
+            await channelService.update(
+              channel.id,
+              {
+                status: "DISCONNECTED",
+                qrcode: "",
+                session: "",
+                pairingCode: "",
+                phone: Prisma.JsonNull,
+              },
+              getIO(),
+            );
             break;
 
           case "qrReadSuccess":
@@ -81,10 +87,14 @@ export const initWppWeb = async (
       },
 
       catchLinkCode: async (code: any) => {
-        await channelService.update(channel.id, {
-          pairingCode: code,
-          status: "qrcode",
-        });
+        await channelService.update(
+          channel.id,
+          {
+            pairingCode: code,
+            status: "qrcode",
+          },
+          getIO(),
+        );
       },
     });
     await sleep(200);
@@ -171,14 +181,18 @@ const start = async (
 
     const profileSession: any = await waitForApiValue(client);
 
-    await service.update(channel.id, {
-      status: "CONNECTED",
-      qrcode: "",
-      retries: 0,
-      phone: profileSession,
-      session: channel.name,
-      pairingCode: "",
-    });
+    await service.update(
+      channel.id,
+      {
+        status: "CONNECTED",
+        qrcode: "",
+        retries: 0,
+        phone: profileSession,
+        session: channel.name,
+        pairingCode: "",
+      },
+      getIO(),
+    );
 
     await wbotWebListener(client);
   } catch (error) {

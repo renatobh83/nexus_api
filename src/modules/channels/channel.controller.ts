@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { ChannelService } from "./channel.service.js";
 import { ChannelManager } from "./ChannelManager.js";
+import { handleSendMessage } from "../messages/handlers/handleSendMessage.js";
 
 const service = new ChannelService();
 const channelManager = new ChannelManager();
@@ -83,8 +84,16 @@ export async function channelController(fastify: FastifyInstance) {
       } else {
         fields = request.body as any;
       }
-
-      await service.sendMessageToChannel(fields, filesArray, id);
+      const { to, body } = fields;
+      const channel = await service.findChannelOrThrow(id);
+      const enviarPara = `+55${to}`;
+      await Promise.all(
+        (filesArray && filesArray.length ? filesArray : [null]).map(
+          async (media: string) => {
+            await handleSendMessage(channel, enviarPara, body, media);
+          },
+        ),
+      );
       reply.status(200).send("ok");
     },
   );

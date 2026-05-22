@@ -1,7 +1,7 @@
 import { Channel, Prisma } from "@prisma/client";
 import { ChannelsRepository } from "./channel.repository.js";
 import { waitForSocket } from "../../lib/socket.js";
-import { handleSendMessage } from "../messages/handlers/handleSendMessage.js";
+import { Server } from "socket.io";
 
 export class ChannelService {
   private channelsRepository: ChannelsRepository;
@@ -22,10 +22,13 @@ export class ChannelService {
   async findChannel(id: number): Promise<Channel | null> {
     return await this.channelsRepository.findById(id);
   }
-  async update(id: number, data: Prisma.ChannelUpdateInput): Promise<Channel> {
+  async update(
+    id: number,
+    data: Prisma.ChannelUpdateInput,
+    io?: Server,
+  ): Promise<Channel> {
     try {
-      const io = await waitForSocket();
-      io.emit(`channel-update`, {
+      io?.emit(`channel-update`, {
         id,
         ...data,
       });
@@ -39,28 +42,20 @@ export class ChannelService {
     return await this.channelsRepository.create(data);
   }
 
-  async sendMessageToChannel(
-    message: Record<string, any>,
-    filesArray: any[],
-    id: number,
-  ) {
+  async findChannelOrThrow(id: number) {
     try {
       const channel = await this.channelsRepository.findById(id);
-      if (!channel) {
-        throw new Error("CHANNEL_NO_FOUND");
-      }
-
-      const { to, body } = message;
-      const enviarPara = `+55${to}`;
-      await Promise.all(
-        (filesArray && filesArray.length ? filesArray : [null]).map(
-          async (media: string) => {
-            await handleSendMessage(channel, enviarPara, body, media);
-          },
-        ),
-      );
+      if (!channel) throw new Error("CHANNEL_NO_FOUND");
+      return channel;
     } catch (error) {
       throw error;
     }
+  }
+
+  async findTicketWebChat(contato: string, socketid: string) {
+    return await this.channelsRepository.findTicketForChatWeb(
+      contato,
+      socketid,
+    );
   }
 }

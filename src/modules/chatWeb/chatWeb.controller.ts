@@ -1,6 +1,8 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import { FastifyInstance } from "fastify/types/instance.js";
 import jwt from "jsonwebtoken";
+import { saveFile } from "../../utils/saveFile.js";
+import path from "node:path";
 export async function chatWebController(fastify: FastifyInstance) {
   fastify.get(
     "/chat-widget.js",
@@ -26,6 +28,24 @@ export async function chatWebController(fastify: FastifyInstance) {
         expiresIn: "360m",
       });
       return reply.code(200).send({ token });
+    },
+  );
+  fastify.post(
+    "/chatClient/upload",
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const files = request.files();
+      const publicFolder = path.join(process.cwd(), "public");
+      let filename: string = "";
+      for await (const file of files) {
+        try {
+          filename = await saveFile(file, publicFolder);
+        } catch (error) {
+          console.log(error);
+        }
+      }
+      const fileUrl = `${process.env.MEDIA_URL}/public/${filename}`;
+
+      return reply.code(200).send({ url: fileUrl });
     },
   );
 }

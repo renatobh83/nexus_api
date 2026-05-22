@@ -60,6 +60,5 @@ export const VerifyMessage = async (
   messageData.ticket = {
     connect: { id: ticketId },
   };
-
   return await messageService.createMessage(messageData);
 };

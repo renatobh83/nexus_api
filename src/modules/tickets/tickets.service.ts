@@ -33,4 +33,15 @@ export class TicketService {
     io.emit("ticket-updated", ticket);
     return ticket;
   }
+  async createMessageAndUpdateTicket(
+    ticketId: number,
+    updateTicket: Prisma.TicketUpdateInput,
+    messageData: Prisma.MessageCreateInput,
+  ) {
+    return await this.ticketRepository.createcreateMessageAndUpdateTicket(
+      ticketId,
+      updateTicket,
+      messageData,
+    );
+  }
 }
