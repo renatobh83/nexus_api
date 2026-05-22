@@ -55,12 +55,4 @@ export const SendMessageChatClient = async (
     //   payload: ticket,
     // });
   }
-
-  return {
-    // id: uuidV4(),
-    // ...messageData,
-    // messageId: uuidV4(),
-    // idFront: uuidV4(),
-    // mediaUrl: null,
-  };
 };

@@ -7,7 +7,6 @@ import { v4 as uuidV4 } from "uuid";
 import { ChannelService } from "../../channels/channel.service.js";
 import { ContactInternal } from "../../../providers/session.types.js";
 import { handleMessage } from "../../messages/handlers/handleMessage.js";
-import { TicketService } from "../../tickets/tickets.service.js";
 
 const channelService = new ChannelService();
 
@@ -35,7 +34,6 @@ export const HandleMessageChatWeb = async (
 
   if (ticket) {
     const messageForTicket = ticket.messages;
-
     socket.emit("chat:previousMessages", messageForTicket);
   }
   socket.on("chat:message", async (data) => {

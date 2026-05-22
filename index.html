@@ -193,15 +193,9 @@
                                     const nome = extrairNome(msg.body);
                                     const mensagemSemNome = msg.body.replace(/\*(.*?)\*:\s*/, "");
                                     el = createImageElement(`${URL_SOCKET}/public/${msg.mediaUrl}`, timestamp, nome, msg.id);
-
                                 } else {
-
-
                                     el = createImageElement(`${URL_SOCKET}/public/${msg.mediaUrl}`, timestamp, "Você", msg.id);
-
                                 }
-
-
                             } else {
                                 if (msg.fromMe) {
                                     const nome = extrairNome(msg.body);
