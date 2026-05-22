@@ -45,8 +45,8 @@ createApp({
     // =========================================================================
 
     /** URL base da API e servidor Socket.IO */
-    // const URL_BASE = "https://fast.panelapps.site/";
-    const URL_BASE = "http://localhost:3000";
+    const URL_BASE = "https://fast.panelapps.site/";
+    // const URL_BASE = "http://localhost:3000";
 
     /** Referência ao socket Socket.IO (inicializado em initSocket) */
     let socket = null;
@@ -1380,7 +1380,11 @@ createApp({
     const getChannelIconByTicket = (ticket) => {
       const channel = channels.value.find((c) => c.id === ticket.channelId);
       if (!channel) return "💬";
-      return channel.type === "whatsapp" ? "📱" : "✈️";
+      return channel.type === "whatsapp"
+        ? "📱"
+        : channel.type === "telegram"
+          ? "✈️"
+          : "🕸️";
     };
     /**
      * Traduz o status interno para texto legível em português.
