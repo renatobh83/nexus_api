@@ -29,7 +29,7 @@ export class MessageService {
     // console.log(`📊 Sala: ${roomName}`);
     // console.log(`👥 Sockets conectados nesta sala: ${connectedSockets.length}`);
 
-    clientNamespace.to(roomName).emit("new-message", {
+    clientNamespace.emit("new-message", {
       ...message,
       ack: 2,
     });
