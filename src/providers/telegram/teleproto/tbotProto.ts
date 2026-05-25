@@ -1,11 +1,8 @@
-import { Api, client, TelegramClient } from "teleproto";
+import { TelegramClient } from "teleproto";
 import { StringSession } from "teleproto/sessions/StringSession.js";
-import { Album, EditedMessage, NewMessage } from "teleproto/events/index.js";
-import { EventBuilder } from "teleproto/events/common.js";
 import { Channel } from "@prisma/client";
 import { ChannelService } from "../../../modules/channels/channel.service.js";
 import { teleprotoListener } from "./teleprotoListener.js";
-import { getIO } from "../../../lib/socket.js";
 
 export interface SessionTbot extends TelegramClient {
   id: number;
@@ -49,18 +46,14 @@ export const initTeleproto = async (
     sessions[index] = client;
   }
 
-  await channelService.update(
-    channel.id,
-    {
-      status: "CONNECTED",
-      qrcode: "",
-      retries: 0,
-      phone: me,
-      session: channel.name,
-      pairingCode: "",
-    },
-    getIO(),
-  );
+  await channelService.update(channel.id, {
+    status: "CONNECTED",
+    qrcode: "",
+    retries: 0,
+    phone: me,
+    session: channel.name,
+    pairingCode: "",
+  });
   teleprotoListener(client);
 
   return client;

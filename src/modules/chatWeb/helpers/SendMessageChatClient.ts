@@ -1,5 +1,9 @@
 import { Ticket } from "@prisma/client";
-import { getIO } from "../../../lib/socket.js";
+import {
+  getChatWebNamespace,
+  getClientIONamespace,
+  getIO,
+} from "../../../lib/socket.js";
 import { TicketService } from "../../tickets/tickets.service.js";
 import { v4 as uuidV4 } from "uuid";
 import * as mime from "mime-types";
@@ -16,8 +20,8 @@ export const SendMessageChatClient = async (
   hasMedia: any,
 ) => {
   let link = "";
-  const io = getIO();
-  const socket = io.sockets.sockets.get(ticket.socketId!);
+  const chatNamespace = getChatWebNamespace();
+  const socket = chatNamespace.sockets.get(ticket.socketId!);
 
   if (socket && socket.connected) {
     if (hasMedia) {
@@ -49,14 +53,10 @@ export const SendMessageChatClient = async (
     const messageInternal = await toInternalMessageChatWeb(toInternal);
     await handleMessage(messageInternal, sessionInternal, contato);
   } else {
-    io?.emit("ChatClientDesconectado", {
+    const clientNamespace = getClientIONamespace();
+    clientNamespace.emit("ChatClientDesconectado", {
       ticketId: `${ticket.id}`,
       status: "Cliente Desconectado",
     });
-    // socketEmit({
-    //   tenantId: ticket.tenantId,
-    //   type: "ChatClientDesconectado",
-    //   payload: ticket,
-    // });
   }
 };

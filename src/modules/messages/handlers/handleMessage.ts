@@ -1,9 +1,8 @@
 import { MessageInternal } from "../messages.types.js";
 import { createTicket } from "../../tickets/Helpers/CreateTicket.js";
 import { VerifyMessage } from "./verifyMessage.js";
-import { waitForSocket } from "../../../lib/socket.js";
+import { getClientIONamespace } from "../../../lib/socket.js";
 import {
-  ChatInternal,
   ContactInternal,
   SessionInternal,
 } from "../../../providers/session.types.js";
@@ -47,8 +46,8 @@ export const handleMessage = async (
       messages: [createdMessage],
     };
     if (isNew) {
-      const io = await waitForSocket();
-      io.to(`ticket-${ticket.id}`).emit("ticket-updated", result);
+      const clientNamespace = getClientIONamespace();
+      clientNamespace.to(`ticket-${ticket.id}`).emit("ticket-updated", result);
     }
     if (message.socketId) {
       return { isNew, ticketId: ticket.id };

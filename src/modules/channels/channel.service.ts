@@ -1,6 +1,6 @@
 import { Channel, Prisma } from "@prisma/client";
 import { ChannelsRepository } from "./channel.repository.js";
-import { waitForSocket } from "../../lib/socket.js";
+import { getClientIONamespace, waitForSocket } from "../../lib/socket.js";
 import { Server } from "socket.io";
 
 export class ChannelService {
@@ -22,13 +22,10 @@ export class ChannelService {
   async findChannel(id: number): Promise<Channel | null> {
     return await this.channelsRepository.findById(id);
   }
-  async update(
-    id: number,
-    data: Prisma.ChannelUpdateInput,
-    io?: Server,
-  ): Promise<Channel> {
+  async update(id: number, data: Prisma.ChannelUpdateInput): Promise<Channel> {
     try {
-      io?.emit(`channel-update`, {
+      const clientNamespace = getClientIONamespace();
+      clientNamespace.emit(`channel-update`, {
         id,
         ...data,
       });
