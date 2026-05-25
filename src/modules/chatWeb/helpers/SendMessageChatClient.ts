@@ -49,6 +49,10 @@ export const SendMessageChatClient = async (
     const messageInternal = await toInternalMessageChatWeb(toInternal);
     await handleMessage(messageInternal, sessionInternal, contato);
   } else {
+    io?.emit("ChatClientDesconectado", {
+      ticketId: `${ticket.id}`,
+      status: "Cliente Desconectado",
+    });
     // socketEmit({
     //   tenantId: ticket.tenantId,
     //   type: "ChatClientDesconectado",

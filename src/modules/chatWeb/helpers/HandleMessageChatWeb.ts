@@ -25,13 +25,20 @@ export const HandleMessageChatWeb = async (
     );
     return;
   }
-  socket.emit("chat:ready");
 
   const ticket = await channelService.findTicketWebChat(
     payload.email,
     socket.id,
   );
+  if (!ticket) {
+    socket.emit(
+      "chat:ready",
+      `Olá! 👋
 
+Estamos prontos para ajudar você.
+Conte rapidamente o que precisa para que eu possa transferir seu atendimento.`,
+    );
+  }
   if (ticket) {
     const messageForTicket = ticket.messages;
     socket.emit("chat:previousMessages", messageForTicket);

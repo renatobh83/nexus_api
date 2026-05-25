@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import { waitForSocket } from "../../lib/socket.js";
+import { getClientIONamespace, waitForSocket } from "../../lib/socket.js";
 import { buildMessageBody } from "./message.utils.js";
 import { MessageRepository } from "./messages.repository.js";
 import { SendMessageSystemProxy } from "./handlers/handleSendMessageSystemProxy.js";
@@ -21,12 +21,19 @@ export class MessageService {
       ...restDto,
     };
     const message = await this.messageRepository.create(messageData);
-    const io = await waitForSocket();
+    const clientNamespace = getClientIONamespace();
+    // DIAGNÓSTICO: Verificar quem está na sala
+    const roomName = `ticket-${message.ticketid}`;
+    // const connectedSockets = await clientNamespace.in(roomName).fetchSockets();
 
-    io.emit("new-message", {
+    // console.log(`📊 Sala: ${roomName}`);
+    // console.log(`👥 Sockets conectados nesta sala: ${connectedSockets.length}`);
+
+    clientNamespace.to(roomName).emit("new-message", {
       ...message,
       ack: 2,
     });
+
     return message;
   }
 

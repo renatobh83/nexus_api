@@ -25,7 +25,7 @@
 
             loadScript("https://cdn.socket.io/4.7.2/socket.io.min.js", () => {
                 const API_URL = "http://localhost:3000/api/v1";
-                const URL_SOCKET = "http://localhost:3000";
+                const URL_SOCKET = "http://localhost:3000/chat-web";
                 let socket;
                 let chatVisible = false;
                 let chatToken = localStorage.getItem("chat_token");
@@ -151,10 +151,13 @@
                         auth: { token: chatToken },
                         transports: ["websocket"],
                     });
-                    socket.on("chat:ready", () => {
+                    socket.on("chat:ready", (msg) => {
+                        // hideLoading();
+
                         console.log("Conexão pronta, agora posso pedir mensagens");
-                        loadMessages(); // aqui sim faz o emit
-                        hideLoading();
+                        appendMessage("Bot", msg, Date.now());
+                        // loadMessages(); // aqui sim faz o emit
+
                     });
 
                     socket.on("connect", () => {
@@ -181,7 +184,7 @@
                     socket.on("chat:previousMessages", (messages) => {
 
                         if (offset === 0) chatMessages.innerHTML = "";
-                        hideLoading();
+
                         const scrollBefore = chatMessages.scrollHeight;
 
                         messages.forEach((msg) => {
@@ -292,7 +295,7 @@
                         <button id="chat-close-btn" style="background: transparent; border: none; font-size: 16px; cursor: pointer;">✖</button>
                     </div>
                     <div id="chat-messages" style="flex: 1; padding: 10px; overflow-y: auto;">
-                        <div id="chat-loading" style="text-align: center; color: #777;    ">Carregando mensagens...</div>
+                        <div id="chat-loading" style="text-align: center; color: #777; display: None">Carregando mensagens...</div>
                     </div>
 
                  <div style="display: flex; align-items: center; gap: 8px; position: relative;">
@@ -584,14 +587,15 @@
                 function loadMessages() {
                     loadingOlder = true;
                     showLoading();
-                    socket.emit("chat:getMessages", { offset });
-                    offset += 50;
+                    // socket.emit("chat:getMessages", { offset });
+                    // offset += 50;
                 }
                 function showLoading() {
                     document.getElementById("chat-loading").style.display = "block";
                 }
 
                 function hideLoading() {
+
                     document.getElementById("chat-loading").style.display = "none";
                 }
                 function playSound() {

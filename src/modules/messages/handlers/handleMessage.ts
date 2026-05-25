@@ -48,7 +48,7 @@ export const handleMessage = async (
     };
     if (isNew) {
       const io = await waitForSocket();
-      io.emit("ticket-updated", result);
+      io.to(`ticket-${ticket.id}`).emit("ticket-updated", result);
     }
     if (message.socketId) {
       return { isNew, ticketId: ticket.id };

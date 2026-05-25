@@ -1,6 +1,6 @@
 import { Prisma, Ticket } from "@prisma/client";
 import { TicketsRepository } from "./tickets.repository.js";
-import { waitForSocket } from "../../lib/socket.js";
+import { getClientIONamespace, waitForSocket } from "../../lib/socket.js";
 
 export class TicketService {
   private ticketRepository: TicketsRepository;
@@ -29,8 +29,18 @@ export class TicketService {
 
   async updateTicket(id: number, data: Prisma.TicketUpdateInput) {
     const ticket = await this.ticketRepository.updateTicket(id, data);
-    const io = await waitForSocket();
-    io.emit("ticket-updated", ticket);
+    const clientNamespace = getClientIONamespace();
+    // DIAGNÓSTICO: Verificar quem está na sala
+    const roomName = `ticket-${id}`;
+    // const connectedSockets = await clientNamespace.in(roomName).fetchSockets();
+
+    // console.log(`📊 Sala: ${roomName}`);
+    // console.log(`👥 Sockets conectados nesta sala: ${connectedSockets.length}`);
+
+    clientNamespace.to(roomName).emit("ticket-updated", ticket);
+    // const io = await waitForSocket();
+    // console.log("UP");
+    // io.to(`ticket-${id}`).emit("ticket-updated", ticket);
     return ticket;
   }
   async createMessageAndUpdateTicket(

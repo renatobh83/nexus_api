@@ -45,8 +45,8 @@ createApp({
     // =========================================================================
 
     /** URL base da API e servidor Socket.IO */
-    const URL_BASE = "https://fast.panelapps.site/";
-    // const URL_BASE = "http://localhost:3000";
+    // const URL_BASE = "https://fast.panelapps.site/";
+    const URL_BASE = "http://localhost:3000";
 
     /** Referência ao socket Socket.IO (inicializado em initSocket) */
     let socket = null;
@@ -301,7 +301,7 @@ createApp({
         return;
       }
 
-      socket = io(URL_BASE, {
+      socket = io(`${URL_BASE}/client`, {
         transports: ["websocket", "polling"],
         reconnection: true,
         reconnectionAttempts: 5,
@@ -326,6 +326,15 @@ createApp({
       // Falha na conexão
       socket.on("connect_error", (error) => {
         console.error("Erro de conexão Socket.IO:", error);
+      });
+      socket.on("ChatClientDesconectado", (data) => {
+        if (currentTicket.value.id === parseInt(data.ticketId)) {
+          sonnerAlert(
+            "Mensagem não enviada: o cliente não está mais conectado ao chat.",
+            false,
+          );
+          tempMessages.value = [];
+        }
       });
 
       // Nova mensagem recebida
@@ -456,12 +465,13 @@ createApp({
       updatedTickets.value[id] = true;
       await updateTicketStatus(id, "closed", "✅ Ticket finalizado");
       sonnerAlert("✅ Ticket finalizado");
+      socket.emit("chat:closedTicket", "Seu ticket foi fechado. Obrigado!");
     }
     /**
      * Seleciona um ticket.
      * @param {number|string} id - ID do ticket.
      */
-    const selectTicket = async (ticketId) => {
+    const selectTicket = async (ticketId, previousTicketId) => {
       if (currentTicket.value?.id === ticketId) return;
       currentTicket.value = allTickets.value.find((t) => t.id === ticketId);
       if (!currentTicket.value) return;
@@ -480,6 +490,9 @@ createApp({
     async function updateTicketStatus(id, status, msg) {
       try {
         const payload = { ...currentUser.value, status };
+        if (socket && id) {
+          socket.emit("join-ticket", id);
+        }
 
         const response = await fetch(`${URL_BASE}/api/v1/tickets/${id}`, {
           method: "PUT",
@@ -1694,6 +1707,21 @@ createApp({
       }
       if (tabAntigo === "graficos") {
         limparRecursosGraficos();
+      }
+    });
+    watch(currentTicket, (newId, oldId) => {
+      if (socket.connected) {
+        // 1. Sai da sala do ticket antigo (se existia um)
+        if (oldId) {
+          socket.emit("leave-ticket", oldId.id);
+          console.log(`Solicitou saída da sala: ticket-${oldId.id}`);
+        }
+
+        // 2. Entra na sala do novo ticket
+        if (newId) {
+          socket.emit("join-ticket", newId.id);
+          console.log(`Solicitou entrada na sala: ticket-${newId.id}`);
+        }
       }
     });
     // =========================================================================
