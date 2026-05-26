@@ -22,6 +22,7 @@ export class TicketsRepository {
         channelId: true,
         contato: true,
         socketId: true,
+        userId: true,
         channel: {
           select: {
             name: true,

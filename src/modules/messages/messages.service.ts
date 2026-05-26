@@ -3,11 +3,14 @@ import { getClientIONamespace, waitForSocket } from "../../lib/socket.js";
 import { buildMessageBody } from "./message.utils.js";
 import { MessageRepository } from "./messages.repository.js";
 import { SendMessageSystemProxy } from "./handlers/handleSendMessageSystemProxy.js";
+import { TicketsRepository } from "../tickets/tickets.repository.js";
 
 export class MessageService {
   private messageRepository: MessageRepository;
+  private ticketsRepository: TicketsRepository;
   constructor() {
     this.messageRepository = new MessageRepository();
+    this.ticketsRepository = new TicketsRepository();
   }
 
   async createMessage(dto: Prisma.MessageCreateInput) {
@@ -22,17 +25,21 @@ export class MessageService {
     };
     const message = await this.messageRepository.create(messageData);
     const clientNamespace = getClientIONamespace();
-    // DIAGNÓSTICO: Verificar quem está na sala
-    const roomName = `ticket-${message.ticketid}`;
-    // const connectedSockets = await clientNamespace.in(roomName).fetchSockets();
-
-    // console.log(`📊 Sala: ${roomName}`);
-    // console.log(`👥 Sockets conectados nesta sala: ${connectedSockets.length}`);
-
-    clientNamespace.emit("new-message", {
-      ...message,
-      ack: 2,
+    const ticket = await this.ticketsRepository.findTicket({
+      id: dto.ticket.connect!.id,
     });
+    if (ticket && ticket.userId) {
+      clientNamespace.to(`user-${ticket.userId}`).emit("new-message", {
+        ...message,
+        ack: 2,
+      });
+    } else {
+      // Se não tem usuário atribuído, talvez enviar para todos os atendentes "livres"
+      clientNamespace.emit("new-message", {
+        ...message,
+        ack: 2,
+      });
+    }
 
     return message;
   }

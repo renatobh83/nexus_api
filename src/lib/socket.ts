@@ -28,7 +28,12 @@ export const initSocket = (server: Server): SocketIOServer => {
   const clientNamespace = io.of("/client");
   clientNamespace.on("connection", (socket) => {
     console.log("✅ Cliente conectado ao namespace /client:", socket.id);
+    const { token } = socket.handshake.auth;
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    const userId = payload.id; // Supondo que o ID do usuário está no toke
+    socket.join(`user-${userId}`);
 
+    console.log(`👤 Usuário ${userId} entrou na sua sala pessoal.`);
     // O ouvinte DEVE estar aqui dentro
     socket.on("join-ticket", (ticketId) => {
       const room = `ticket-${ticketId}`;
@@ -37,6 +42,7 @@ export const initSocket = (server: Server): SocketIOServer => {
     });
     socket.on("leave-ticket", (ticketId) => {
       socket.leave(`ticket-${ticketId}`);
+      socket.leave(`user-${userId}`);
       console.log(`🚪 Socket saiu da sala: ticket-${ticketId}`);
     });
     socket.on("disconnect", () => {
