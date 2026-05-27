@@ -80,7 +80,7 @@
     injectStyles();
 
     const API_URL = "https://fast.panelapps.site";
-    const URL_SOCKET = "http://localhost:3000/chat-web";
+    const URL_SOCKET = "https://fast.panelapps.site/chat-web";
 
     let socket;
     let chatVisible = false;
