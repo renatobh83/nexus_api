@@ -79,7 +79,7 @@
   loadScript("https://cdn.socket.io/4.7.2/socket.io.min.js", () => {
     injectStyles();
 
-    const API_URL = "https://fast.panelapps.site/chat-web";
+    const API_URL = "https://fast.panelapps.site";
     // const API_URL = "http://localhost:3000";
     let socket;
     let chatVisible = false;
