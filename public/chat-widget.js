@@ -80,7 +80,8 @@
     injectStyles();
 
     const API_URL = "https://fast.panelapps.site";
-    // const API_URL = "http://localhost:3000";
+    const URL_SOCKET = "http://localhost:3000/chat-web";
+
     let socket;
     let chatVisible = false;
     let chatToken = localStorage.getItem("chat_token");
@@ -248,7 +249,7 @@
         formContainer = null;
       }
 
-      socket = io(API_URL, {
+      socket = io(URL_SOCKET, {
         auth: { token: chatToken },
         transports: ["websocket"],
       });
