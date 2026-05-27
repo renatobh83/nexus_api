@@ -261,9 +261,6 @@
       socket.on("chat:ready", (msg) => {
         console.log("Chat pronto, carregando mensagens...");
         appendMessage("Bot", msg, Date.now());
-        // offset = 0; // garante início do zero
-        // loadMessages();
-        // hideLoading();
       });
 
       socket.on("chat:reply", (msg) => {
@@ -406,6 +403,10 @@
         .getElementById("chat-close-btn")
         .addEventListener("click", () => {
           if (!confirm("Deseja encerrar o atendimento?")) return;
+          socket.emit("ChatWebFechado", {
+            msg: "Cliente Finalizou o atendimento!",
+            socket: socket.id,
+          });
           socket.disconnect();
           localStorage.removeItem("chat_token");
           formContainer.remove();

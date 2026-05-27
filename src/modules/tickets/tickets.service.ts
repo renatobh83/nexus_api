@@ -29,18 +29,15 @@ export class TicketService {
 
   async updateTicket(id: number, data: Prisma.TicketUpdateInput) {
     const ticket = await this.ticketRepository.updateTicket(id, data);
+
     const clientNamespace = getClientIONamespace();
-    // DIAGNÓSTICO: Verificar quem está na sala
-    const roomName = `ticket-${id}`;
-    // const connectedSockets = await clientNamespace.in(roomName).fetchSockets();
+    if (ticket.userId) {
+      const roomName = `user-${ticket.userId}`;
+      clientNamespace.to(roomName).emit("ticket-updated", ticket);
+    } else {
+      clientNamespace.emit("ticket-updated", ticket);
+    }
 
-    // console.log(`📊 Sala: ${roomName}`);
-    // console.log(`👥 Sockets conectados nesta sala: ${connectedSockets.length}`);
-
-    clientNamespace.to(roomName).emit("ticket-updated", ticket);
-    // const io = await waitForSocket();
-    // console.log("UP");
-    // io.to(`ticket-${id}`).emit("ticket-updated", ticket);
     return ticket;
   }
   async createMessageAndUpdateTicket(

@@ -705,7 +705,7 @@
           method: 'POST',
           body: formData
         });
-        console.log(response)
+
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
@@ -907,9 +907,6 @@
         }
       });
       socket.on('new-message', async (message) => {
-        console.log('Nova mensagem:', message);
-
-
         const ticketId = message.ticketid;
         const ticket = allTickets.find(t => t.id === ticketId);
         const ticketName = ticket?.owner || ticket?.name || `Ticket ${ticketId}`;
@@ -956,7 +953,6 @@
         await loadTickets();
       });
       socket.on('channel-update', (data) => {
-        console.log('Channel update:', data);
         if (currentChannelId && currentChannelId === (data.channelId || data.id)) {
           if (data.status === 'qrcode' && data.qrcode) showQRCode(data.qrcode);
           if (data.pairingCode) showPairingCode(data.pairingCode);
@@ -1262,8 +1258,6 @@
         }
 
         const result = await response.json();
-        console.log('Canal criado:', result);
-
         showNotification('✅ Canal criado com sucesso!', 'success');
         closeAddChannelModal();
         await loadChannels();
@@ -1513,7 +1507,6 @@
       document.querySelectorAll('.ticket-item').forEach(item => {
         item.addEventListener('click', () => {
           if (window.innerWidth <= 768) {
-            console.log(window.innerWidth)
             sidebar.classList.remove('open');
           }
         });

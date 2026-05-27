@@ -13,15 +13,6 @@ export const initSocket = (server: Server): SocketIOServer => {
   io = new SocketIOServer(server, {
     cors: { origin: "*" },
   });
-  // --- NAMESPACE DO CHAT WEB ---
-  // Aqui só entram conexões que pedirem explicitamente por "/chat-web"
-  const chatNamespace = io.of("/chat-web");
-  chatNamespace.on("connection", (socket) => {
-    const { token } = socket.handshake.auth;
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    HandleMessageChatWeb(socket, payload);
-    console.log("✅ Chat Web conectado ao namespace /chat-web");
-  });
 
   // --- NAMESPACE DO CLIENTE ---
   // Aqui entram as conexões padrão do seu cliente
@@ -32,9 +23,8 @@ export const initSocket = (server: Server): SocketIOServer => {
     const payload = JSON.parse(atob(token.split(".")[1]));
     const userId = payload.id; // Supondo que o ID do usuário está no toke
     socket.join(`user-${userId}`);
-
     console.log(`👤 Usuário ${userId} entrou na sua sala pessoal.`);
-    // O ouvinte DEVE estar aqui dentro
+
     socket.on("join-ticket", (ticketId) => {
       const room = `ticket-${ticketId}`;
       socket.join(room);
@@ -49,7 +39,16 @@ export const initSocket = (server: Server): SocketIOServer => {
       console.log("❌ Cliente desconectado do namespace /client");
     });
   });
+  // --- NAMESPACE DO CHAT WEB ---
+  // Aqui só entram conexões que pedirem explicitamente por "/chat-web"
+  const chatNamespace = io.of("/chat-web");
+  chatNamespace.on("connection", (socket) => {
+    const { token } = socket.handshake.auth;
+    const payload = JSON.parse(atob(token.split(".")[1]));
 
+    HandleMessageChatWeb(socket, payload);
+    console.log("✅ Chat Web conectado ao namespace /chat-web");
+  });
   // io.on("connection", (socket) => {
   //   const { token } = socket.handshake.auth;
   //   const payload = JSON.parse(atob(token.split(".")[1]));

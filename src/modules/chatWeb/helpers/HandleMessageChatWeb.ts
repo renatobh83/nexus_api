@@ -7,6 +7,7 @@ import { v4 as uuidV4 } from "uuid";
 import { ChannelService } from "../../channels/channel.service.js";
 import { ContactInternal } from "../../../providers/session.types.js";
 import { handleMessage } from "../../messages/handlers/handleMessage.js";
+import { getClientIONamespace } from "../../../lib/socket.js";
 
 const channelService = new ChannelService();
 
@@ -43,6 +44,11 @@ Conte rapidamente o que precisa para que eu possa transferir seu atendimento.`,
     const messageForTicket = ticket.messages;
     socket.emit("chat:previousMessages", messageForTicket);
   }
+  socket.on("ChatWebFechado", (data) => {
+    const clientNamespace = getClientIONamespace();
+    clientNamespace.emit("ChatWebFechado", data);
+  });
+
   socket.on("chat:message", async (data) => {
     const { msg, mediaUrl } = data;
     const mediaType = getMediaTypeFromUrl(mediaUrl);

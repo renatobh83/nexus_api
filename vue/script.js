@@ -45,8 +45,8 @@ createApp({
     // =========================================================================
 
     /** URL base da API e servidor Socket.IO */
-    // const URL_BASE = "https://fast.panelapps.site";
-    const URL_BASE = "http://localhost:3000";
+    const URL_BASE = "https://fast.panelapps.site";
+    // const URL_BASE = "http://localhost:3000";
 
     /** Referência ao socket Socket.IO (inicializado em initSocket) */
     let socket = null;
@@ -401,6 +401,15 @@ createApp({
           // );
         }
         updateSingleTicket(data);
+      });
+
+      socket.on("ChatWebFechado", (data) => {
+        const ticket = allTickets.value.find((t) => t.socketId === data.socket);
+
+        if (!ticket) return;
+        if (currentTicket.value && currentTicket.value.id === ticket.id) {
+          sonnerAlert(data.msg, false);
+        }
       });
 
       // Atualização de status de canal (QR Code, pareamento, conexão)

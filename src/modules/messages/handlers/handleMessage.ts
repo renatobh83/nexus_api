@@ -45,9 +45,10 @@ export const handleMessage = async (
       ...ticket,
       messages: [createdMessage],
     };
+
     if (isNew) {
       const clientNamespace = getClientIONamespace();
-      clientNamespace.to(`ticket-${ticket.id}`).emit("ticket-updated", result);
+      clientNamespace.emit("ticket-updated", result);
     }
     if (message.socketId) {
       return { isNew, ticketId: ticket.id };
