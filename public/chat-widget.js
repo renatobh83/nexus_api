@@ -435,7 +435,7 @@
       sendCooldown = true;
       setTimeout(() => (sendCooldown = false), 300);
 
-      socket.emit("chat:message", msg);
+      socket.emit("chat:message", { msg });
       appendMessage("Você", msg, Date.now());
       input.value = "";
     }
@@ -578,8 +578,8 @@
         });
         const data = await res.json();
         if (data.url) {
-          socket.emit("chat:image", data.url);
-          appendImage(data.url, Date.now(), false);
+          socket.emit("chat:message", { msg: "image", mediaUrl: data.url });
+          appendImage(data.url, Date.now(), "Você", false);
         } else {
           showToast("Erro ao enviar imagem.", "error");
         }
@@ -593,8 +593,8 @@
     function loadMessages() {
       loadingOlder = true;
       showLoading();
-      socket.emit("chat:getMessages", { offset });
-      offset += 50;
+      // socket.emit("chat:getMessages", { offset });
+      // offset += 50;
     }
 
     function showLoading() {
