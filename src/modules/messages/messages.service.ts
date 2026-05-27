@@ -4,6 +4,7 @@ import { buildMessageBody } from "./message.utils.js";
 import { MessageRepository } from "./messages.repository.js";
 import { SendMessageSystemProxy } from "./handlers/handleSendMessageSystemProxy.js";
 import { TicketsRepository } from "../tickets/tickets.repository.js";
+import { logger } from "../tickets/Helpers/CreateTicket.js";
 
 export class MessageService {
   private messageRepository: MessageRepository;
@@ -23,7 +24,9 @@ export class MessageService {
       body: bodyToDb,
       ...restDto,
     };
+    logger.info("messageRepository.create", messageData);
     const message = await this.messageRepository.create(messageData);
+    logger.info("Fim messageRepository.create");
     const clientNamespace = getClientIONamespace();
     const ticket = await this.ticketsRepository.findTicket({
       id: dto.ticket.connect!.id,

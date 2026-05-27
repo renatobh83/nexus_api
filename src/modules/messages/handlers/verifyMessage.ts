@@ -15,6 +15,7 @@ import {
   ContactInternal,
   SessionInternal,
 } from "../../../providers/session.types.js";
+import { logger } from "../../tickets/Helpers/CreateTicket.js";
 
 const messageService = new MessageService();
 
@@ -60,5 +61,6 @@ export const VerifyMessage = async (
   messageData.ticket = {
     connect: { id: ticketId },
   };
+  logger.info("createMessage");
   return await messageService.createMessage(messageData);
 };

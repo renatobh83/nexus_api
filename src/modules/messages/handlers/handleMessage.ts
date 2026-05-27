@@ -1,5 +1,5 @@
 import { MessageInternal } from "../messages.types.js";
-import { createTicket } from "../../tickets/Helpers/CreateTicket.js";
+import { createTicket, logger } from "../../tickets/Helpers/CreateTicket.js";
 import { VerifyMessage } from "./verifyMessage.js";
 import { getClientIONamespace } from "../../../lib/socket.js";
 import {
@@ -34,13 +34,14 @@ export const handleMessage = async (
       socketId: message.socketId,
     });
     if (ticket.isInteraction) return;
-
+    logger.info("VerifyMessage");
     const createdMessage = await VerifyMessage(
       message,
       contato,
       ticket.id,
       session,
     );
+    logger.info("Fim VerifyMessage");
     const result = {
       ...ticket,
       messages: [createdMessage],

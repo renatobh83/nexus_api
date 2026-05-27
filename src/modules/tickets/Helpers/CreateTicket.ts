@@ -15,7 +15,7 @@ interface CreateTicketInput {
 }
 
 //  Logger
-const logger = {
+export const logger = {
   info: (msg: string, meta?: Record<string, unknown>) =>
     console.info(`[INFO] ${msg}`, meta ?? ""),
   warn: (msg: string, meta?: Record<string, unknown>) =>
