@@ -233,7 +233,7 @@ const start = async (
       console.log(error);
     }
 
-    // await wbotWebListener(client);
+    await wbotWebListener(client);
   } catch (error) {
     console.error("Erro no start wbot:", error);
   }
