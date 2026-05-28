@@ -34,14 +34,14 @@ export const handleMessage = async (
       socketId: message.socketId,
     });
     if (ticket.isInteraction) return;
-    logger.info("VerifyMessage");
+
     const createdMessage = await VerifyMessage(
       message,
       contato,
       ticket.id,
       session,
     );
-    logger.info("Fim VerifyMessage");
+
     const result = {
       ...ticket,
       messages: [createdMessage],

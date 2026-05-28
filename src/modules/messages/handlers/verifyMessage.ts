@@ -61,6 +61,6 @@ export const VerifyMessage = async (
   messageData.ticket = {
     connect: { id: ticketId },
   };
-  logger.info("createMessage");
+
   return await messageService.createMessage(messageData);
 };

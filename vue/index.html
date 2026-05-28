@@ -20,6 +20,15 @@
 
       <!-- Header com usuário e logout -->
       <div class="app-header">
+        <div class="connection-status">
+          <div v-for="ch in channels.filter(ch => ch.type !== 'web') " :key="ch.id" :data="ch.id" class="channel"
+            :class="{ connected: ch.status === 'CONNECTED', disconnected: ch.status === 'DISCONNECTED' }">
+            {{ ch.type}}
+          </div>
+          <div :class="{ connected: socketConnected, disconnected: !socketConnected }">
+            Socket
+          </div>
+        </div>
         <div class="user-profile" @click="toggleUserMenu">
           <div class="user-name">{{ currentUser?.name }}</div>
           <span class="dropdown-arrow">▼</span>
@@ -116,14 +125,14 @@
               <!-- <div v-show="currentTicket">
                 <input type="text" placeholder="🔍 Buscar palavras..." v-model="buscarPalavras">
               </div> -->
-              <div v-for="ch in channels.filter(ch => ch.type !== 'web') " :key="ch.id" :data="ch.id"
+              <!-- <div v-for="ch in channels.filter(ch => ch.type !== 'web') " :key="ch.id" :data="ch.id"
                 class="connection-status channel"
                 :class="{ connected: ch.status === 'CONNECTED', disconnected: ch.status === 'DISCONNECTED' }">
                 {{ ch.type}}
               </div>
               <div class="connection-status" :class="{ connected: socketConnected, disconnected: !socketConnected }">
                 Socket
-              </div>
+              </div> -->
             </div>
 
             <!-- Message area Box com mensagens -->

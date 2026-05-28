@@ -56,7 +56,9 @@ export const wbotWebListener = async (wbot: Session): Promise<void> => {
     }
     await handleMessage(messageInternal, session, contato);
   });
-
+  wbot.onBackendEvent((eventName, ...args) => {
+    console.log("Backend event:", eventName, args);
+  });
   // /**
   //  * Evento de mensagem recebida
   //  */

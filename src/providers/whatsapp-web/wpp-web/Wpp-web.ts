@@ -3,6 +3,7 @@ import { Prisma, Channel } from "@prisma/client";
 import { ChannelService } from "../../../modules/channels/channel.service.js";
 import { wbotWebListener } from "./wppWebListener.js";
 import { defaultOptions } from "@wppconnect-team/wppconnect/dist/config/create-config.js";
+import { logger } from "../../../modules/tickets/Helpers/CreateTicket.js";
 
 function extractQrCode(url: string): string | null {
   if (!url) return null;
@@ -34,6 +35,7 @@ export const initWppWeb = async (
       headless: true,
       poweredBy: "RenatoDEV",
       disableWelcome: true,
+
       browserArgs: [
         // Sandbox / segurança (necessário em VPS/Docker)
         "--no-sandbox",
@@ -87,7 +89,12 @@ export const initWppWeb = async (
 
     const instance = await create({
       ...mergedOptions,
-
+      onStreamModeChanged: (mode) => {
+        logger.info("Stream mode changed:", mode);
+      },
+      onStreamInfoChanged: (info) => {
+        logger.info("Stream info changed:", info);
+      },
       catchQR: async (_base64, _ascii, attempts, urlCode) => {
         if (sessionStarted) return; // 🔥 ignora se já conectou
         const qrCode = extractQrCode(urlCode!);
@@ -102,10 +109,6 @@ export const initWppWeb = async (
       },
 
       statusFind: async (statusSession: any) => {
-        console.log(
-          `INFO: Status da sessão '${channel.name}': ${statusSession}`,
-        );
-
         switch (statusSession) {
           case "autocloseCalled":
           case "desconnectedMobile":

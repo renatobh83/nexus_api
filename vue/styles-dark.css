@@ -56,6 +56,11 @@ body {
   position: relative;
   flex-shrink: 0;
 }
+.connection-status {
+  display: flex;
+  gap: 25px;
+  margin: auto;
+}
 
 .user-profile {
   display: flex;
