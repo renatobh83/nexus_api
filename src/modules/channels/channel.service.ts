@@ -25,11 +25,13 @@ export class ChannelService {
   async update(id: number, data: Prisma.ChannelUpdateInput): Promise<Channel> {
     try {
       const clientNamespace = getClientIONamespace();
+      const channel = await this.channelsRepository.udpateChannel(id, data);
+
       clientNamespace.emit(`channel-update`, {
         id,
         ...data,
       });
-      return await this.channelsRepository.udpateChannel(id, data);
+      return channel;
     } catch (error) {
       throw error;
     }

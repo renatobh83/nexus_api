@@ -1,7 +1,8 @@
-import { create, defaultOptions, Whatsapp } from "wbotconnect";
+import { create, Whatsapp } from "@wppconnect-team/wppconnect";
 import { Prisma, Channel } from "@prisma/client";
 import { ChannelService } from "../../../modules/channels/channel.service.js";
 import { wbotWebListener } from "./wppWebListener.js";
+import { defaultOptions } from "@wppconnect-team/wppconnect/dist/config/create-config.js";
 
 function extractQrCode(url: string): string | null {
   if (!url) return null;
@@ -24,13 +25,58 @@ export const initWppWeb = async (
 ): Promise<Session> => {
   try {
     // let wbot: Session;
-
+    let sessionStarted = false;
     const wbotRef: { current?: Session } = {};
 
     const options = {
       logQR: true,
       phoneNumber: channel.pairingCodeEnabled ? channel.wppUser! : undefined,
       headless: true,
+      poweredBy: "RenatoDEV",
+      disableWelcome: true,
+      browserArgs: [
+        // Sandbox / segurança (necessário em VPS/Docker)
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--ignore-certificate-errors",
+        "--ignore-ssl-errors",
+
+        // GPU / renderização (headless sem display)
+        "--disable-gpu",
+        "--disable-accelerated-2d-canvas",
+        "--disable-accelerated-video-decode",
+        "--disable-software-rasterizer",
+        "--disable-accelerated-d-canvas", // mantido por compatibilidade
+
+        // Memória / estabilidade
+        "--disable-dev-shm-usage",
+        "--memory-pressure-off",
+        "--disable-ipc-flooding-protection",
+
+        // Background / throttling
+        "--disable-background-timer-throttling",
+        "--disable-backgrounding-occluded-windows",
+        "--disable-renderer-backgrounding",
+
+        // Features desnecessárias
+        "--disable-extensions",
+        "--disable-background-networking",
+        "--disable-default-apps",
+        "--disable-sync",
+        "--disable-notifications",
+        "--disable-remote-fonts",
+        "--disable-breakpad",
+        "--disable-component-update",
+        "--disable-hang-monitor",
+        "--disable-features=TranslateUI", // corrigido o typo
+
+        // Inicialização
+        "--no-first-run",
+        "--metrics-recording-only",
+
+        // Janela
+        "--window-size=760,468", // corrigido separador (vírgula, não x)
+      ],
 
       puppeteerOptions: {
         userDataDir: "./userDataDir/" + channel.name,
@@ -43,15 +89,16 @@ export const initWppWeb = async (
       ...mergedOptions,
 
       catchQR: async (_base64, _ascii, attempts, urlCode) => {
+        if (sessionStarted) return; // 🔥 ignora se já conectou
         const qrCode = extractQrCode(urlCode!);
-
-        if (qrCode) {
-          await channelService.update(channel.id, {
-            qrcode: qrCode,
-            status: "qrcode",
-            retries: attempts,
-          });
-        }
+        if (!qrCode) return;
+        const session = sessions.find((s) => s.id === channel.id);
+        if (session?.started) return;
+        await channelService.update(channel.id, {
+          qrcode: qrCode,
+          status: "qrcode",
+          retries: attempts,
+        });
       },
 
       statusFind: async (statusSession: any) => {
@@ -74,10 +121,12 @@ export const initWppWeb = async (
           case "qrReadSuccess":
             // triggerStart(channel.id, channelService, channel);
             break;
+          case "isLogged":
+            break;
         }
       },
-
       catchLinkCode: async (code: any) => {
+        if (sessionStarted) return; // 🔥 opcional mas consistente
         await channelService.update(channel.id, {
           pairingCode: code,
           status: "qrcode",
@@ -93,7 +142,9 @@ export const initWppWeb = async (
     }
     wbot.id = channel.id;
     wbot.started = false;
-    triggerStart(channel.id, channelService, channel);
+    triggerStart(channel.id, channelService, channel, () => {
+      sessionStarted = true; // 🔥 seta a flag quando conectar
+    });
     // salva sessão
     const index = sessions.findIndex((s) => s.id === channel.id);
     if (index === -1) {
@@ -125,7 +176,7 @@ const waitUntilAuthenticated = async (
       if (!client) return;
 
       const isReady = await client.isAuthenticated();
-
+      console.log(isReady);
       if (isReady) {
         console.log("✅ Cliente autenticado");
         await start(client, service, channel);
@@ -150,6 +201,7 @@ const start = async (
   client: Session,
   service: ChannelService,
   channel: Channel,
+  onStarted: () => void,
 ) => {
   try {
     if (!client) {
@@ -163,21 +215,25 @@ const start = async (
     }
 
     client.started = true;
-
+    onStarted();
     console.log("🚀 Iniciando sessão...");
 
     const profileSession: any = await waitForApiValue(client);
 
-    await service.update(channel.id, {
-      status: "CONNECTED",
-      qrcode: "",
-      retries: 0,
-      phone: profileSession,
-      session: channel.name,
-      pairingCode: "",
-    });
+    try {
+      await service.update(channel.id, {
+        status: "CONNECTED",
+        qrcode: "",
+        retries: 0,
+        phone: profileSession,
+        session: channel.name,
+        pairingCode: "",
+      });
+    } catch (error) {
+      console.log(error);
+    }
 
-    await wbotWebListener(client);
+    // await wbotWebListener(client);
   } catch (error) {
     console.error("Erro no start wbot:", error);
   }
@@ -243,7 +299,6 @@ export const getWbot = (channelId: number): Session => {
   if (!session) {
     throw new Error("ERR_WAPP_NOT_INITIALIZED");
   }
-
   return session;
 };
 
@@ -251,6 +306,7 @@ const triggerStart = async (
   channelId: number,
   service: ChannelService,
   channel: Channel,
+  onStarted: () => void,
 ) => {
   let attempts = 0;
 
@@ -265,7 +321,7 @@ const triggerStart = async (
       const isReady = await client.isAuthenticated();
 
       if (isReady) {
-        await start(client, service, channel);
+        await start(client, service, channel, onStarted);
       } else if (attempts < 10) {
         attempts++;
         setTimeout(tryStart, 1000);
