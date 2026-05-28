@@ -1,6 +1,10 @@
 import { Prisma, Ticket } from "@prisma/client";
 import { TicketsRepository } from "./tickets.repository.js";
-import { getClientIONamespace, waitForSocket } from "../../lib/socket.js";
+import {
+  getChatWebNamespace,
+  getClientIONamespace,
+  waitForSocket,
+} from "../../lib/socket.js";
 
 export class TicketService {
   private ticketRepository: TicketsRepository;
@@ -28,14 +32,32 @@ export class TicketService {
   }
 
   async updateTicket(id: number, data: Prisma.TicketUpdateInput) {
-    const ticket = await this.ticketRepository.updateTicket(id, data);
+    const dataForUpdate = data;
+    if (dataForUpdate.status === "closed") {
+      dataForUpdate.closedAt = new Date().getTime();
+    }
 
-    const clientNamespace = getClientIONamespace();
+    if (dataForUpdate.status === "pending") {
+      dataForUpdate.closedAt = null;
+    }
+    if (dataForUpdate.status === "open") {
+      dataForUpdate.closedAt = null;
+      dataForUpdate.startedAttendanceAt = new Date().getTime();
+    }
+
+    const ticket = await this.ticketRepository.updateTicket(id, dataForUpdate);
+
+    if (ticket.chatClient && dataForUpdate.status === "closed") {
+      getChatWebNamespace().emit(
+        "chat:closedTicket",
+        "Seu ticket foi fechado. Obrigado!",
+      );
+    }
     if (ticket.userId) {
       const roomName = `user-${ticket.userId}`;
-      clientNamespace.to(roomName).emit("ticket-updated", ticket);
+      getClientIONamespace().to(roomName).emit("ticket-updated", ticket);
     } else {
-      clientNamespace.emit("ticket-updated", ticket);
+      getClientIONamespace().emit("ticket-updated", ticket);
     }
 
     return ticket;

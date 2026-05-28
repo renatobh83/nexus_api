@@ -32,7 +32,6 @@ export const initSocket = (server: Server): SocketIOServer => {
     });
     socket.on("leave-ticket", (ticketId) => {
       socket.leave(`ticket-${ticketId}`);
-      socket.leave(`user-${userId}`);
       console.log(`🚪 Socket saiu da sala: ticket-${ticketId}`);
     });
     socket.on("disconnect", () => {

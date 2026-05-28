@@ -45,8 +45,8 @@ createApp({
     // =========================================================================
 
     /** URL base da API e servidor Socket.IO */
-    const URL_BASE = "https://fast.panelapps.site";
-    // const URL_BASE = "http://localhost:3000";
+    // const URL_BASE = "https://fast.panelapps.site";
+    const URL_BASE = "http://localhost:3000";
 
     /** Referência ao socket Socket.IO (inicializado em initSocket) */
     let socket = null;

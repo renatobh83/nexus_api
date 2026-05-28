@@ -116,8 +116,13 @@
               <!-- <div v-show="currentTicket">
                 <input type="text" placeholder="🔍 Buscar palavras..." v-model="buscarPalavras">
               </div> -->
+              <div v-for="ch in channels.filter(ch => ch.type !== 'web') " :key="ch.id" :data="ch.id"
+                class="connection-status channel"
+                :class="{ connected: ch.status === 'CONNECTED', disconnected: ch.status === 'DISCONNECTED' }">
+                {{ ch.type}}
+              </div>
               <div class="connection-status" :class="{ connected: socketConnected, disconnected: !socketConnected }">
-                {{ socketConnected ? '🟢 Conectado' : '🔴 Desconectado' }}
+                Socket
               </div>
             </div>
 
