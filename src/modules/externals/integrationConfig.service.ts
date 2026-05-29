@@ -55,6 +55,7 @@ interface CreateOrUpdateConfigData {
   integrationName: string;
   clientId: string | null;
   settings: PrismaJsonField;
+  isActive: boolean;
 }
 
 // ─── Logger simples (substitua pelo seu logger real, ex: winston/pino) ────────
@@ -83,7 +84,7 @@ export class IntegracaoService {
     integrationName: string,
     settings: IntegrationSettings,
     clientId: string | null = null,
-    id?: string,
+    isActive = true,
   ) {
     this.validateRequiredField("integrationName", integrationName);
 
@@ -103,6 +104,7 @@ export class IntegracaoService {
       integrationName,
       clientId,
       settings: encryptedSettings as unknown as PrismaJsonField,
+      isActive,
     };
 
     const config = await this.integrationConfigRepository.createOrUpdate(data);

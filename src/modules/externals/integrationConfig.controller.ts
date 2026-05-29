@@ -24,12 +24,14 @@ export async function integrationController(fastify: FastifyInstance) {
   fastify.put(
     "/createIntegration/:integracaoId",
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const { integrationName, settings, clientId } = request.body as any;
+      const { integrationName, settings, clientId, isActive } =
+        request.body as any;
 
       const config = await integracaoService.createOrUpdateIntegrationConfig(
         integrationName,
         settings,
         clientId,
+        isActive,
       );
       reply.status(200).send(config);
     },

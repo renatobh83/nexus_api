@@ -660,6 +660,7 @@ input:checked + .slider-footer:before {
   flex: 1;
   overflow-y: auto;
   padding: 8px 0;
+  overflow-x: hidden;
 }
 
 .ticket-item {
@@ -1455,7 +1456,7 @@ input:checked + .slider-footer:before {
 .json-cell {
   max-width: 300px;
 }
-.disabled {
+.integrationName:disabled {
   background: #1a1a1a !important;
   cursor: not-allowed !important;
   color: #606060 !important;

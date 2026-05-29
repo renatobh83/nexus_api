@@ -23,7 +23,7 @@
         <td>{{ integracao.integrationName }}</td>
         <td>{{ integracao.clientId }}</td>
 
-        <td>{{ integracao.status === "ativo" ? '🟢 Ativo' : '🔴 Inativo' }}</td>
+        <td>{{ integracao.isActive === true ? '🟢 Ativo' : '🔴 Inativo' }}</td>
         <td class="action-icons">
           <button @click="editIntegracao(integracao)">✏️</button>
           <!-- <button @click="deleteUser(user.id)">🗑️</button> -->
