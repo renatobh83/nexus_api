@@ -1,0 +1,33 @@
+<div v-if="configSubtab === 'channels'">
+  <div class="users-header">
+    <h2>🔌 Canais de Conexão</h2>
+    <button class="btn-primary" v-if="isAdmin" @click="openAddChannelModal">➕ Adicionar Canal</button>
+  </div>
+  <div v-if="loadingChannels" class="loading-state">
+    <div class="spinner"></div>
+  </div>
+  <div v-else-if="channels.length === 0" class="empty-state">📭 Nenhum canal</div>
+  <div class="channels-grid">
+    <div v-for="ch in channels" :key="ch.id" class="channel-card">
+      <div class="channel-header">
+        <span class="channel-icon">
+          {{ ch.type === 'whatsapp' ? '📱' : ch.type === 'telegram' ? '✈️' : '🕸️' }}
+        </span>
+        <span v-show="ch.type !== 'web'" class="status-badge" :class="ch.status === 'CONNECTED' ? 'open' : 'pending'">
+          {{ ch.status === 'CONNECTED' ? 'Conectado' : 'Desconectado' }}
+        </span>
+      </div>
+      <div class="channel-name">
+        {{ ch.name }}
+        <button @click="editChannel(ch)" v-if="isAdmin">✏️</button>
+      </div>
+      <div class="channel-actions" v-if="isAdmin" v-show="ch.type !== 'web'">
+        <button v-if="ch.status === 'CONNECTED'" class="channel-btn disconnect"
+          @click="disconnectChannel(ch.id)">Desconectar</button>
+        <button v-if="ch.status === 'CONNECTED' || ch.status === 'qrcode'" class="channel-btn refresh"
+          @click="refreshChannel(ch.id)">Reconectar</button>
+        <button v-else class="channel-btn connect" @click="connectChannel(ch.id)">Conectar</button>
+      </div>
+    </div>
+  </div>
+</div>

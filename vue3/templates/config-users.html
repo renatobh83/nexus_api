@@ -1,0 +1,33 @@
+<div v-if="configSubtab === 'users'">
+  <div class="users-header">
+    <h2>👥 Gerenciar Usuários</h2>
+    <button class="btn-primary" v-if="isAdmin" @click="openUserModal">➕ Novo Usuário</button>
+  </div>
+  <div v-if="loadingUsers" class="loading-state">
+    <div class="spinner"></div>
+  </div>
+  <div v-else-if="users.length === 0" class="empty-state">📭 Nenhum usuário</div>
+  <table v-else class="users-table">
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Email</th>
+        <th>Perfil</th>
+        <th>Status</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr v-for="user in filteredUsers" :key="user.id">
+        <td>{{ user.name }}</td>
+        <td>{{ user.email }}</td>
+        <td>{{ user.role === 'administrador' ? 'Admin' : 'Atendente' }}</td>
+        <td>{{ user.isActive === true ? '🟢 Ativo' : '🔴 Inativo' }}</td>
+        <td class="action-icons">
+          <button @click="editUser(user)">✏️</button>
+          <button @click="deleteUser(user.id)">🗑️</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

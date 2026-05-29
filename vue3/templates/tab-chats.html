@@ -1,0 +1,194 @@
+<div class="tab-chats" :class="{ hidden: activeTab !== 'chats' }">
+
+  <!-- Sidebar -->
+  <div class="sidebar" :class="{ open: sidebarOpen }">
+    <div class="sidebar-header">
+      <h2>💬 Tickets</h2>
+      <p>Selecione uma conversa</p>
+    </div>
+    <div class="search-box">
+      <input type="text" v-model="searchTerm" name="search-box" placeholder="🔍 Buscar ticket..."
+        @input="updateSearchTerm">
+    </div>
+
+    <div class="filter-switch">
+      <span class="switch-label">Mostrar apenas fechados</span>
+      <label>
+        <div class="switch">
+          <input type="checkbox" v-model="showOnlyClosed">
+          <span class="slider"></span>
+        </div>
+      </label>
+    </div>
+
+    <!-- Lista dos tickets -->
+    <div class="tickets-list">
+      <div v-if="loadingTickets" class="loading-state">
+        <div class="spinner"></div>Carregando...
+      </div>
+      <template v-if="!loadingTickets">
+        <div v-if="filteredTickets.length === 0" class="empty-state">📭 Nenhum ticket</div>
+        <div v-for="ticket in filteredTickets" :key="ticket.id" class="ticket-item" :data-ticket="ticket.id"
+          :class="{ active: currentTicket?.id === ticket.id, updated: updatedTickets[ticket.id] }"
+          @click="selectTicket(ticket.id)">
+          <div class="ticket-avatar">
+            {{ getTicketAvatar(ticket) }}
+            <span class="channel-badge">{{ getChannelIconByTicket(ticket) }}</span>
+          </div>
+          <div class="ticket-info">
+            <div class="ticket-name">
+              <span>{{ ticket.owner || ticket.name || `Ticket ${ticket.id}` }}</span>
+              <span class="ticket-time">{{ formatTime(ticket.lastMessageAt) }}</span>
+            </div>
+            <div class="ticket-preview">{{ (ticket.lastMessage || 'Nenhuma mensagem').substring(0, 50) }}</div>
+            <span class="status-badge" :class="ticket.status">{{ getStatusText(ticket.status) }}</span>
+          </div>
+          <div class="ticket-actions">
+            <button class="action-btn attend" @click.stop="attendTicket(ticket.id)">🎧</button>
+            <button class="action-btn close" @click.stop="closeTicket(ticket.id)">✅</button>
+            <button class="action-btn reopen" @click.stop="reopenTicket(ticket.id)">🔄</button>
+          </div>
+        </div>
+      </template>
+    </div>
+  </div>
+
+  <!-- Área de chat -->
+  <div class="chat-container" id="chat-container">
+    <div class="chat-header">
+      <div>
+        <h2>{{ currentTicket ? `Ticket #${currentTicket.id}` : 'Ticket #' }}</h2>
+      </div>
+    </div>
+
+    <!-- Mensagens -->
+    <div class="messages-area" ref="messageAreaRef" id="messages-area">
+      <div v-if="loadingMessages" class="loading-state">
+        <div class="spinner"></div>Carregando...
+      </div>
+
+      <div v-else-if="currentMessages.length === 0" class="empty-state">💬 Nenhuma mensagem ainda</div>
+
+      <div v-for="msg in currentMessages" :key="msg.id" class="message-wrapper" :data-message-id="msg.id"
+        :class="msg.fromMe ? 'sent' : 'received'">
+        <div class="message-bubble">
+          <!-- Mensagem apagada -->
+          <div v-if="msg.isDeleted" style="font-style: italic; color: #667781;">
+            Mensagem apagada
+          </div>
+          <!-- Conteúdo normal -->
+          <div v-else>
+            <div v-show="msg.isGroupMsg" class="sender" v-html="msg.sender"></div>
+
+            <!-- IMAGEM -->
+            <template v-if="['image','image/png','jpg','image/jpeg','png','imageMessage'].includes(msg.mediaType)">
+              <img :src="getMediaUrl(msg.mediaUrl)" crossorigin="anonymous" alt="Imagem"
+                style="max-width: 250px; max-height: 250px; border-radius: 6px; cursor: pointer;"
+                @click="openInNewTab(getMediaUrl(msg.mediaUrl))" />
+              <div v-if="msg.body" style="margin-top: 6px;" v-html="formatMessage(msg.body)"></div>
+            </template>
+
+            <!-- VÍDEO -->
+            <template v-else-if="['video','videoMessage','video/mp4'].includes(msg.mediaType)">
+              <video controls style="max-width: 250px; border-radius: 6px;" crossorigin="anonymous">
+                <source :src="getMediaUrl(msg.mediaUrl)">
+              </video>
+              <div v-if="msg.body" style="margin-top: 6px;" v-html="formatMessage(msg.body)"></div>
+            </template>
+
+            <!-- ÁUDIO -->
+            <template v-else-if="['audio','audioMessage','audio/ogg; codecs=opus'].includes(msg.mediaType)">
+              <audio controls style="width: 250px;" crossorigin="anonymous">
+                <source :src="getMediaUrl(msg.mediaUrl)">
+              </audio>
+              <div v-if="msg.body" style="margin-top: 6px;" v-html="formatMessage(msg.body)"></div>
+            </template>
+
+            <!-- DOCUMENTO -->
+            <template
+              v-else-if="['document','txt','documentMessage','application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(msg.mediaType)">
+              <div
+                style="display: flex; align-items: center; gap: 10px; background: #1e1e1e; padding: 10px; border-radius: 8px;">
+                <div style="font-size: 30px;">📄</div>
+                <div style="flex: 1;">
+                  <div style="font-weight: 500; font-size: 13px;">{{ getFileName(msg.body) }}</div>
+                  <div style="font-size: 11px; color: #667781;">{{ getFileExtension(msg.body) }}</div>
+                </div>
+                <button @click="openInNewTab(getMediaUrl(msg.mediaUrl))"
+                  style="background: #075e54; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                  Baixar
+                </button>
+              </div>
+              <div v-if="msg.body && !isDocumentWithoutCaption(msg.mediaType)" style="margin-top: 6px;"
+                v-html="formatMessage(msg.body)"></div>
+            </template>
+
+            <!-- TEXTO (fallback) -->
+            <div v-else v-html="formatMessage(msg.body)"></div>
+          </div>
+
+          <div class="message-footer">
+            <span>{{ formatTime(msg.createdAt) }}</span>
+            <span v-if="msg.fromMe" class="msg-status">
+              <span v-if="msg.ack !== 1">✓✓</span>
+              <span v-else-if="msg.ack === 1">✓</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mensagens temporárias (enviando...) -->
+      <template v-for="message in tempMessages" :key="message.id" v-if="tempMessages.length">
+        <div class="message-wrapper sent" :data-temp="message.id">
+          <div class="message-bubble" style="opacity: 0.7;">
+            <div class="message-body">
+              <img v-if="message.mediaUrl" :src="message.mediaUrl" crossorigin="anonymous" alt="Imagem"
+                style="max-width: 250px; max-height: 250px; border-radius: 6px; cursor: pointer;" />
+              <div v-if="message.body" style="margin-top: 6px;" v-html="formatMessage(message.body)"></div>
+            </div>
+            <div class="message-footer">
+              <span>⏳ Enviando...</span>
+            </div>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <!-- Pré-visualização de arquivos -->
+    <div v-if="selectedFiles.length" class="file-preview">
+      <div v-for="(fileItem, idx) in selectedFiles" :key="idx" class="file-preview-item">
+        <img v-if="fileItem.preview" :src="fileItem.preview" class="preview-thumb">
+        <div v-else class="file-icon">{{ getFileIcon(fileItem.type) }}</div>
+        <div class="file-info">
+          <div class="file-name">{{ fileItem.name.substring(0, 30) }}</div>
+          <div class="file-size">{{ (fileItem.size / 1024).toFixed(1) }} KB</div>
+          <input type="text" class="file-caption" v-model="fileItem.caption" placeholder="Adicionar legenda...">
+        </div>
+        <button class="file-preview-remove" @click="removeFile(idx)">✕</button>
+      </div>
+      <button class="file-preview-send" @click="sendFiles">
+        Enviar {{ selectedFiles.length }} arquivo(s)
+      </button>
+    </div>
+
+    <!-- Footer / Input de mensagem -->
+    <div class="chat-footer">
+      <div class="switch-footer">
+        <label>
+          <input type="checkbox" v-model="assinarMensagem">
+          <span class="slider-footer"></span>
+        </label>
+      </div>
+      <button class="attach-btn" :disabled="!currentTicket" @click="triggerFileInput">📎</button>
+      <input type="file" ref="fileInput" style="display:none" multiple @change="handleFileSelect">
+      <textarea id="message-input" class="message-input" v-model="newMessageText"
+        :disabled="!currentTicket || selectedFiles.length" placeholder="Digite uma mensagem..."
+        @keypress.enter.prevent="sendMessage"></textarea>
+      <button class="send-btn" :disabled="!currentTicket || !newMessageText.trim()" @click="sendMessage">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>

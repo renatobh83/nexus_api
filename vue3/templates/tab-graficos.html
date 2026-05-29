@@ -1,0 +1,51 @@
+<div class="tab-graficos" :class="{ hidden: activeTab !== 'graficos' }">
+  <div class="filter-bar">
+    <div class="filter-group">
+      <label for="input-data-inicio" class="filter-label">De</label>
+      <input type="date" name="input-data-inicio" id="input-data-inicio" v-model="dataInicio" class="filter-input">
+    </div>
+    <div class="filter-group">
+      <label for="input-data-fim" class="filter-label">Até</label>
+      <input type="date" name="input-data-fim" v-model="dataFim" id="input-data-fim" class="filter-input">
+    </div>
+    <span class="status-msg" v-html="statusMsg"></span>
+    <button class="btn-primary" @click="consultar">Consultar</button>
+  </div>
+
+  <div class="card-grid">
+    <div class="card-item item1">
+      <div class="inner">
+        <div class="top-row">
+          <div class="label">Total de Tickets</div>
+        </div>
+        <div class="value">{{ totalTickets }}</div>
+        <div class="bottom-row">
+          <div class="sub">no período</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-item">
+      <div class="inner">
+        <div class="top-row">
+          <div class="label">Top Canal</div>
+        </div>
+        <div class="value" style="text-transform: uppercase;">{{ topChannel }}</div>
+        <div class="bottom-row">
+          <div class="sub">no período</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dashboard-grid">
+    <div class="chart-container">
+      <div ref="chartRefCanal" class="chart-wrapper"></div>
+    </div>
+    <div class="chart-container">
+      <div ref="chartRefUsuario" class="chart-wrapper"></div>
+    </div>
+    <div class="chart-container">
+      <div ref="chartRefData" class="chart-wrapper"></div>
+    </div>
+  </div>
+</div>

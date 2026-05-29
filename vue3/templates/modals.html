@@ -1,0 +1,190 @@
+<!-- Modal QR Code -->
+<div v-if="qrCodeModalVisible" id="qrcodeModal" class="qrcode-modal">
+  <div class="qrcode-content">
+    <div class="qrcode-header">
+      <h3>📱 Conectar WhatsApp</h3>
+      <p>Escaneie o QR Code com seu WhatsApp</p>
+    </div>
+    <div class="qrcode-body">
+      <div id="qrcodeContainer" class="qrcode-container">
+        <div id="qrcodeImage" ref="qrCodeContainerRef" v-if="!isPairingCode">
+          <div :class="['qrcode-loader', { none: isLoading }]" v-if="!qrcodeImage"></div>
+          <div v-if="isLoading && qrString" style="color:red;">❌ QR Code vazio</div>
+        </div>
+        <div id="pairingContainer" v-if="isPairingCode">
+          <div>Código de Pareamento</div>
+          <div id="pairingCode">{{ showPairingCode }}</div>
+        </div>
+      </div>
+      <div id="qrcodeStatus" :class="['qrcode-status', statusClass]">
+        <span>{{ statusMessage }}</span>
+      </div>
+    </div>
+    <div class="qrcode-close">
+      <button @click="closeQRCodeModal">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Broadcast -->
+<div id="broadcastModal" class="broadcast-modal" :class="{ active: broadcastModalVisible }">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>📢 Enviar Mensagem Avulsa</h3>
+      <button class="modal-close" @click="broadcastModalVisible = false">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <span>Canal</span>
+        <select v-model="broadcastChannelId">
+          <option value="">Selecione</option>
+          <option v-for="ch in channels.filter(ch => ch.status === 'CONNECTED')" :key="ch.id" :value="ch.id">
+            {{ ch.name }}
+          </option>
+        </select>
+      </div>
+      <div class="form-group">
+        <span>Número</span>
+        <input v-model="broadcastNumber" placeholder="31999999999"
+          @input="broadcastNumber = broadcastNumber.replace(/\D/g, '')">
+      </div>
+      <div class="form-group">
+        <span>Mensagem</span>
+        <textarea v-model="broadcastMessage" rows="3"></textarea>
+      </div>
+      <div class="form-group">
+        <span>Anexos</span>
+        <div class="broadcast-attach">
+          <input type="file" ref="broadcastFileInput" style="display:none" @change="handleBroadcastFileSelect"
+            accept="image/*,video/*,audio/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain">
+          <button @click="triggerBroadcastFile" class="insert">📎</button>
+          <span id="broadcastFileName" v-if="!broadcastFileName">Nenhum arquivo selecionado</span>
+        </div>
+        <div v-if="broadcastFileName" class="broadcast-file-preview">
+          {{ broadcastFileName }} <button @click="removeBroadcastFile">✕</button>
+        </div>
+      </div>
+      <button class="broadcast-send-btn" @click="sendBroadcastMessage" :disabled="sendingBroadcast">Enviar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Canal -->
+<div id="channelModal" class="modal" :class="{ active: channelModalVisible }">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>{{ editingChannel.id ? 'Editar Canal' : 'Adicionar Canal' }}</h3>
+      <button class="modal-close" @click="channelModalVisible = false">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <div class="channel-options">
+          <div class="channel-option" @click="selectChannelType('whatsapp')"
+            :class="['channel-option', { selected: selectedChannelType === 'whatsapp' }]">
+            <div class="channel-option-icon">📱</div>
+            <div class="channel-option-title">WhatsApp Web</div>
+            <div class="channel-option-desc">Conexão via QR Code</div>
+          </div>
+          <div class="channel-option" @click="selectChannelType('wpp-business')"
+            :class="['channel-option', { selected: selectedChannelType === 'wpp-business' }]">
+            <div class="channel-option-icon">💼</div>
+            <div class="channel-option-title">WhatsApp Business</div>
+            <div class="channel-option-desc">API Oficial</div>
+          </div>
+          <div class="channel-option" @click="selectChannelType('telegram')"
+            :class="['channel-option', { selected: selectedChannelType === 'telegram' }]">
+            <div class="channel-option-icon">✈️</div>
+            <div class="channel-option-title">Telegram</div>
+            <div class="channel-option-desc">Bot API</div>
+          </div>
+          <div class="channel-option" @click="selectChannelType('web')"
+            :class="['channel-option', { selected: selectedChannelType === 'web' }]">
+            <div class="channel-option-icon">🕸️</div>
+            <div class="channel-option-title">Web</div>
+            <div class="channel-option-desc">Chat Web</div>
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <span>Nome</span>
+        <input v-model="newChannelName" placeholder="Nome do canal">
+      </div>
+      <div class="dynamic-fields" :class="{ active: selectedChannelType === 'telegram' }">
+        <div class="form-group">
+          <span>Token do Bot</span>
+          <input type="text" placeholder="Ex: 1234567890:ABCdefGHIjklmNOPqrstUvWXyz" autocomplete="off"
+            v-model="newChannelToken">
+          <small style="color: #667781; font-size: 11px;">Crie um bot no @BotFather do Telegram</small>
+        </div>
+      </div>
+      <div class="dynamic-fields" :class="{ active: selectedChannelType === 'whatsapp' }">
+        <div class="form-group">
+          <span>Número do WhatsApp</span>
+          <input v-model="newChannelNumber" type="text" placeholder="Ex: 5531999999999" autocomplete="off">
+          <small style="color: #667781; font-size: 11px;">Digite o número com DDD e país</small>
+        </div>
+      </div>
+      <div class="dynamic-fields" :class="{ active: selectedChannelType === 'wpp-business' }">
+        <div class="form-group">
+          <span>Phone Number ID *</span>
+          <input type="text" placeholder="ID do número de telefone" autocomplete="off" v-model="phoneNumberId">
+        </div>
+        <div class="form-group">
+          <span>Access Token *</span>
+          <input type="text" placeholder="Token de acesso da API" v-model="accessToken" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <span>Business Account ID</span>
+          <input type="text" placeholder="ID da conta business (opcional)" v-model="businessAccountId"
+            autocomplete="off">
+        </div>
+      </div>
+      <div class="modal-buttons">
+        <button class="btn-secondary" @click="closeChannelModal">Cancelar</button>
+        <button class="btn-primary" @click="createChannel">Criar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Usuário -->
+<div id="userModal" class="modal" :class="{ active: userModalVisible }">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>{{ editingUser.id ? 'Editar' : 'Adicionar' }} Usuário</h3>
+      <button class="modal-close" @click="userModalVisible = false">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <span>Nome</span>
+        <input v-model="editingUser.name" placeholder="Nome" />
+      </div>
+      <div class="form-group">
+        <span>Email</span>
+        <input v-model="editingUser.email" type="email">
+      </div>
+      <div class="form-group">
+        <span>Senha</span>
+        <input v-model="editingUser.passwordHash" type="password">
+      </div>
+      <div class="form-group" v-if="isAdmin">
+        <span>Perfil</span>
+        <select v-model="editingUser.role">
+          <option value="atendente">Atendente</option>
+          <option value="administrador">Admin</option>
+        </select>
+      </div>
+      <div class="form-group" v-if="isAdmin">
+        <span>Status</span>
+        <select v-model="editingUser.isActive">
+          <option :value="true">Ativo</option>
+          <option :value="false">Inativo</option>
+        </select>
+      </div>
+      <div class="modal-buttons">
+        <button class="btn-secondary" @click="userModalVisible = false">Cancelar</button>
+        <button class="btn-primary" @click="saveUser">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
