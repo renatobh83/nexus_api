@@ -17,6 +17,23 @@ export async function integrationController(fastify: FastifyInstance) {
       reply.status(200).send(config);
     },
   );
+  fastify.get("/", async (request: FastifyRequest, reply: FastifyReply) => {
+    const integracoes = await integracaoService.loadIntegracoes();
+    reply.status(200).send(integracoes);
+  });
+  fastify.put(
+    "/createIntegration/:integracaoId",
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { integrationName, settings, clientId } = request.body as any;
+
+      const config = await integracaoService.createOrUpdateIntegrationConfig(
+        integrationName,
+        settings,
+        clientId,
+      );
+      reply.status(200).send(config);
+    },
+  );
   fastify.post(
     "/:channelId/:clientId/:integrationName",
     async (request: FastifyRequest, reply: FastifyReply) => {

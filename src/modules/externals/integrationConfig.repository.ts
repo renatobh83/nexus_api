@@ -38,7 +38,9 @@ export class IntegrationConfigRepository {
       },
     };
   }
-
+  async listaAll() {
+    return prisma.integrationConfig.findMany();
+  }
   async createOrUpdate(dto: Prisma.IntegrationConfigCreateInput) {
     return prisma.integrationConfig.upsert({
       where: { integrationName: dto.integrationName },

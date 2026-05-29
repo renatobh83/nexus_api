@@ -1,0 +1,34 @@
+<div v-if="configSubtab === 'integracao'">
+
+  <div class="users-header">
+    <h2>⛓️ Gerenciar Integrações</h2>
+    <button class="btn-primary" v-if="isAdmin" @click="openIntegracaoModal">➕ Nova Integração</button>
+  </div>
+  <div v-if="loadingIntegraoes" class="loading-state">
+    <div class="spinner"></div>
+  </div>
+  <div v-else-if="integracoes.length === 0" class="empty-state">📭 Nenhuma integração</div>
+  <table v-else class="users-table">
+    <thead>
+      <tr>
+        <th>Integração</th>
+        <th>Cliente Id</th>
+        <th>Settings</th>
+        <th>Status</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr v-for="integracao in integracoes" :key="integracao.id">
+        <td>{{ integracao.integrationName }}</td>
+        <td>{{ integracao.clientId }}</td>
+
+        <td>{{ integracao.status === "ativo" ? '🟢 Ativo' : '🔴 Inativo' }}</td>
+        <td class="action-icons">
+          <button @click="editIntegracao(integracao)">✏️</button>
+          <!-- <button @click="deleteUser(user.id)">🗑️</button> -->
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

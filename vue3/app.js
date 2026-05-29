@@ -36,14 +36,21 @@ async function loadComponent(path, setupFn) {
 const autoInject = () => inject("appContext");
 async function initApp() {
   // Carrega todos os templates em paralelo antes de montar o app
-  const [TabChats, ConfigUsers, ConfigChannels, TabGraficos, AppModals] =
-    await Promise.all([
-      loadComponent("./templates/tab-chats.html", autoInject),
-      loadComponent("./templates/config-users.html", autoInject),
-      loadComponent("./templates/config-channels.html", autoInject),
-      loadComponent("./templates/tab-graficos.html", autoInject),
-      loadComponent("./templates/modals.html", autoInject),
-    ]);
+  const [
+    TabChats,
+    ConfigUsers,
+    ConfigChannels,
+    TabGraficos,
+    AppModals,
+    ConfigIntegracao,
+  ] = await Promise.all([
+    loadComponent("./templates/tab-chats.html", autoInject),
+    loadComponent("./templates/config-users.html", autoInject),
+    loadComponent("./templates/config-channels.html", autoInject),
+    loadComponent("./templates/tab-graficos.html", autoInject),
+    loadComponent("./templates/modals.html", autoInject),
+    loadComponent("./templates/config-integracoes.html", autoInject),
+  ]);
 
   const app = createApp({
     setup() {
@@ -199,6 +206,8 @@ async function initApp() {
       const channels = useChannels({ ...shared });
 
       const users = useUsers({ ...shared });
+
+      const integracoes = useIntegracao({ ...shared });
 
       const tickets = useTickets({
         ...shared,
@@ -402,6 +411,7 @@ async function initApp() {
           tickets.loadTickets(),
           channels.loadChannels(),
           users.loadUsers(),
+          integracoes.loadIntegracao(),
         ]);
         if ("serviceWorker" in navigator) {
           navigator.serviceWorker.ready.then(() => {
@@ -431,6 +441,8 @@ async function initApp() {
         ...broadcast,
         // Gráficos
         ...graficos,
+        // Integracoes
+        ...integracoes,
         // Estado global
         ...shared,
         activeTab,
@@ -459,130 +471,20 @@ async function initApp() {
       };
 
       provide("appContext", allData);
-      return { ...allData };
       // =========================================================================
       // 12. RETURN (exposição para o template)
       // =========================================================================
-      return {
-        // Estado global
-        activeTab,
-        sidebarOpen,
-        configSubtab,
-        userMenuOpen,
-        socketConnected,
-        isAuthenticated,
-        currentUser,
-        showAlerta,
-        alertaMessage,
-        isSuccess,
-
-        // Autenticação
-        toggleUserMenu,
-        closeUserMenu,
-        handleLogout,
-
-        // Tickets
-        tickets,
-
-        // Usuários
-        ...pickFrom(users, [
-          "users",
-          "loadingUsers",
-          "userModalVisible",
-          "editingUser",
-          "filteredUsers",
-          "isAdmin",
-          "openUserModal",
-          "saveUser",
-          "deleteUser",
-          "editUser",
-        ]),
-
-        // Canais
-        ...pickFrom(channels, [
-          "channels",
-          "loadingChannels",
-          "currentChannelId",
-          "channelModalVisible",
-          "selectedChannelType",
-          "newChannelName",
-          "newChannelToken",
-          "newChannelNumber",
-          "businessAccountId",
-          "accessToken",
-          "phoneNumberId",
-          "editingChannel",
-          "disconnectChannel",
-          "refreshChannel",
-          "connectChannel",
-          "createChannel",
-          "openAddChannelModal",
-          "selectChannelType",
-          "editChannel",
-          "closeChannelModal",
-        ]),
-
-        // QR Code
-        ...pickFrom(qrCode, [
-          "qrCodeContainerRef",
-          "qrCodeModalVisible",
-          "qrcodeImage",
-          "qrString",
-          "isLoading",
-          "statusMessage",
-          "statusClass",
-          "closeQRCodeModal",
-          "showPairingCode",
-          "isPairingCode",
-        ]),
-
-        // Broadcast
-        ...pickFrom(broadcast, [
-          "broadcastModalVisible",
-          "broadcastFileInput",
-          "broadcastChannelId",
-          "broadcastNumber",
-          "broadcastMessage",
-          "broadcastFileName",
-          "selectedBroadcastFiles",
-          "sendingBroadcast",
-          "openBroadcastModal",
-          "triggerBroadcastFile",
-          "handleBroadcastFileSelect",
-          "removeBroadcastFile",
-          "sendBroadcastMessage",
-        ]),
-
-        // Gráficos
-        ...pickFrom(graficos, [
-          "chartRefCanal",
-          "chartRefUsuario",
-          "chartRefData",
-          "dataInicio",
-          "dataFim",
-          "consultar",
-          "statusMsg",
-          "totalTickets",
-          "topChannel",
-        ]),
-
-        // UI
-        toggleSidebar,
-        formatMessage,
-        getTicketAvatar,
-        getChannelIconByTicket,
-        getStatusText,
-        formatTime,
-      };
+      return { ...allData };
     },
   });
 
   // Registra os componentes globalmente antes do mount
   app.component("tab-chats", TabChats);
-  app.component("config-users", ConfigUsers);
-  app.component("config-channels", ConfigChannels);
   app.component("tab-graficos", TabGraficos);
   app.component("app-modals", AppModals);
+  app.component("config-users", ConfigUsers);
+  app.component("config-channels", ConfigChannels);
+  app.component("config-integracao", ConfigIntegracao);
 
   app.mount("#app");
 }

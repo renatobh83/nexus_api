@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { IntegrationConfigRepository } from "./integrationConfig.repository.js";
 import { decrypt, encrypt } from "../../utils/encryption.js";
+import { AppError } from "../../utils/AppError.js";
 
 // ─── Tipos base do Prisma ─────────────────────────────────────────────────────
 
@@ -82,6 +83,7 @@ export class IntegracaoService {
     integrationName: string,
     settings: IntegrationSettings,
     clientId: string | null = null,
+    id?: string,
   ) {
     this.validateRequiredField("integrationName", integrationName);
 
@@ -89,7 +91,12 @@ export class IntegracaoService {
       integrationName,
       clientId,
     });
-
+    if (typeof settings === "string") {
+      settings = JSON.parse(settings);
+    }
+    if (!settings || typeof settings !== "object") {
+      throw new AppError("JSON_INVALID", 400);
+    }
     const encryptedSettings = this.encryptSensitiveFields(settings);
 
     const data: CreateOrUpdateConfigData = {
@@ -166,7 +173,9 @@ export class IntegracaoService {
       data,
     );
   }
-
+  async loadIntegracoes() {
+    return this.integrationConfigRepository.listaAll();
+  }
   async updateTicketIntegration(ticketId: number, data: TicketUpdateData) {
     this.validateRequiredField("ticketId", String(ticketId));
 

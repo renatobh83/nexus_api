@@ -65,10 +65,14 @@
                 @click="configSubtab = 'users'">👥 Usuários</div>
               <div class="config-sidebar-item" :class="{ active: configSubtab === 'channels' }"
                 @click="configSubtab = 'channels'">🔌 Canais</div>
+              <div class="config-sidebar-item" :class="{ active: configSubtab === 'integracao' }"
+                @click="configSubtab = 'integracao'">⛓️ Integrações</div>
             </div>
+
             <div class="config-content">
               <config-users></config-users>
               <config-channels></config-channels>
+              <config-integracao></config-integracao>
             </div>
           </div>
         </div>
@@ -97,6 +101,7 @@
   <script src="useNotifications.js"></script>
   <script src="modules/useUsers.js"></script>
   <script src="modules/useChannels.js"></script>
+  <script src="modules/useIntegracao.js"></script>
   <script src="modules/useTickets.js"></script>
   <script src="modules/useBroadcast.js"></script>
   <script src="modules/useQrCode.js"></script>
