@@ -1,0 +1,316 @@
+<!-- Template do componente tab-dashboard -->
+<div class="dash-wrap" :class="{ hidden: activeTab !== 'dashboard' }" @vue:mounted="dashInitChart" @vue:unmounted="dashDisposeChart">
+
+  <!-- Header -->
+  <div class="dash-header">
+    <div>
+      <h1 class="dash-title">Dashboard de Atendimento</h1>
+      <p class="dash-date">{{ new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }) }}</p>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <!-- Config SLA -->
+      <div class="dash-sla-config">
+        ⏱ SLA:
+        <input type="number" min="1" max="48" v-model.number="DASH_SLA_HORAS" />
+        horas
+      </div>
+      <span class="dash-live">⚡ Ao vivo</span>
+    </div>
+  </div>
+
+  <!-- Alerta SLA — só aparece se houver tickets em risco -->
+  <div class="dash-sla-alert" v-if="dashStats.slaRisco > 0">
+    <span class="dash-sla-alert-icon">🚨</span>
+    <div class="dash-sla-alert-text">
+      <strong style="color:var(--dash-danger)">Atenção SLA</strong><br>
+      <span style="font-size:12px;color:var(--dash-muted)">
+        Tickets abertos ou pendentes há mais de {{ dashStats.slaHoras }}h sem resolução
+      </span>
+    </div>
+    <div class="dash-sla-alert-count">{{ dashStats.slaRisco }}</div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="dash-kpi-row">
+
+    <!-- Abertos: mostra hoje vs anteriores -->
+    <div class="dash-stat-card" style="border-top-color:#22c55e">
+      <div class="dash-stat-value" style="color:#22c55e">{{ dashStats.abertos }}</div>
+      <div class="dash-stat-label">Em aberto</div>
+      <div class="dash-stat-sub">Toda a fila atual</div>
+      <div class="dash-stat-prev" v-if="dashStats.abertosAnteriores > 0">
+        ⚠ {{ dashStats.abertosAnteriores }} de dias anteriores
+      </div>
+    </div>
+
+    <div class="dash-stat-card" style="border-top-color:#f59e0b">
+      <div class="dash-stat-value" style="color:#f59e0b">{{ dashStats.pendentes }}</div>
+      <div class="dash-stat-label">Pendentes</div>
+      <div class="dash-stat-sub">Sem agente atribuído</div>
+    </div>
+
+    <div class="dash-stat-card" style="border-top-color:#64748b">
+      <div class="dash-stat-value" style="color:#64748b">{{ dashStats.fechadosHoje }}</div>
+      <div class="dash-stat-label">Fechados hoje</div>
+      <div class="dash-stat-sub">Produtividade do dia</div>
+    </div>
+
+    <div class="dash-stat-card" style="border-top-color:#6C63FF">
+      <div class="dash-stat-value" style="color:#6C63FF">{{ dashStats.filaTotal }}</div>
+      <div class="dash-stat-label">Fila total</div>
+      <div class="dash-stat-sub">Abertos + pendentes</div>
+    </div>
+
+    <div class="dash-stat-card" style="border-top-color:#2AABEE">
+      <div class="dash-stat-value" style="color:#2AABEE">{{ dashAvgTime }}</div>
+      <div class="dash-stat-label">Tempo médio</div>
+      <div class="dash-stat-sub">Fechados hoje</div>
+    </div>
+
+  </div>
+
+  <!-- Canais + Donut -->
+  <div class="dash-grid-cd">
+
+    <div class="dash-card" style="margin-bottom:0">
+      <div class="dash-section-title">
+        Canais de Atendimento
+        <span class="dash-badge-accent">{{ dashChannelStats.length }} canais</span>
+      </div>
+      <div class="dash-channel-grid">
+        <div
+          v-for="ch in dashChannelStats"
+          :key="ch.id"
+          class="dash-channel-card"
+          :style="{ borderLeftColor: ch.color }"
+        >
+          <div class="dash-channel-name">
+            <span>{{ ch.icon }}</span>
+            <span>{{ ch.name }}</span>
+          </div>
+          <div class="dash-channel-counts">
+            <span style="color:#22c55e">● {{ ch.abertosHoje }} hoje</span>
+            <span v-if="ch.abertosAnteriores > 0" style="color:#ef4444">● {{ ch.abertosAnteriores }} ant.</span>
+            <span style="color:#f59e0b">● {{ ch.pendentes }} pd.</span>
+          </div>
+          <div class="dash-channel-total" :style="{ color: ch.color }">{{ ch.abertos + ch.pendentes }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Donut SVG puro -->
+    <div class="dash-card dash-donut-card" style="margin-bottom:0">
+      <div class="dash-section-title">Distribuição</div>
+      <svg width="130" height="130" style="display:block;margin:0 auto">
+        <template v-for="(s, i) in dashPieData" :key="i">
+          <path
+            v-if="dashPieTotal > 0 && s.value > 0"
+            :d="(() => {
+              const cx = 65, cy = 65, r = 48, ri = 30;
+              let startAngle = -Math.PI / 2;
+              for (let j = 0; j < i; j++) startAngle += (dashPieData[j].value / dashPieTotal) * 2 * Math.PI;
+              const sweep = (s.value / dashPieTotal) * 2 * Math.PI;
+              if (sweep < 0.01) return '';
+              const x1  = cx + r  * Math.cos(startAngle);
+              const y1  = cy + r  * Math.sin(startAngle);
+              const x2  = cx + r  * Math.cos(startAngle + sweep);
+              const y2  = cy + r  * Math.sin(startAngle + sweep);
+              const ix1 = cx + ri * Math.cos(startAngle + sweep);
+              const iy1 = cy + ri * Math.sin(startAngle + sweep);
+              const ix2 = cx + ri * Math.cos(startAngle);
+              const iy2 = cy + ri * Math.sin(startAngle);
+              const large = sweep > Math.PI ? 1 : 0;
+              return `M ${x1} ${y1} A 48 48 0 ${large} 1 ${x2} ${y2} L ${ix1} ${iy1} A 30 30 0 ${large} 0 ${ix2} ${iy2} Z`;
+            })()"
+            :fill="s.color"
+            opacity="0.9"
+          />
+        </template>
+        <text x="65" y="60" text-anchor="middle" fill="#e8eaf0" font-size="20" font-weight="700">{{ dashStats.filaTotal }}</text>
+        <text x="65" y="76" text-anchor="middle" fill="#8b92a8" font-size="10">na fila</text>
+      </svg>
+      <div class="dash-donut-legend">
+        <div v-for="d in dashPieData" :key="d.name" class="dash-donut-row">
+          <span><span :style="{ color: d.color }">● </span>{{ d.name }}</span>
+          <span class="dash-donut-val">{{ d.value }}</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Volume por hora (só hoje) -->
+  <div class="dash-card">
+    <div class="dash-section-title">
+      Volume de Tickets por Hora
+      <span class="dash-badge-accent">hoje</span>
+    </div>
+    <div ref="dashChartRef" style="width:100%;height:140px"></div>
+  </div>
+
+  <!-- Agentes -->
+  <div class="dash-card">
+    <div class="dash-section-title">
+      Agentes
+      <span class="dash-badge-accent">carga atual + produtividade hoje</span>
+    </div>
+    <div class="dash-agent-grid">
+      <div v-for="a in dashAgentStats" :key="a.id" class="dash-agent-card">
+        <div class="dash-agent-avatar">{{ a.initials }}</div>
+        <div class="dash-agent-info">
+          <div class="dash-agent-name">{{ a.name }}</div>
+          <div class="dash-agent-counts">
+            <span style="color:#22c55e">{{ a.emMaos }} em mãos</span>
+            <span style="color:#64748b">{{ a.fechadosHoje }} hoje</span>
+          </div>
+        </div>
+        <div class="dash-agent-total">{{ a.total }}</div>
+      </div>
+      <div class="dash-agent-card dash-agent-card--pending">
+        <div class="dash-agent-avatar dash-agent-avatar--pending">⏳</div>
+        <div class="dash-agent-info">
+          <div class="dash-agent-name" style="color:#f59e0b">Sem atendente</div>
+          <div style="font-size:11px;color:var(--dash-muted);margin-top:2px">{{ dashStats.pendentes }} pendentes</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabela de tickets -->
+  <div class="dash-card">
+    <div class="dash-tickets-header">
+      <div class="dash-section-title" style="margin-bottom:0">
+        Tickets Ativos + Fechados Hoje
+        <span class="dash-badge-danger" v-if="dashStats.abertosAnteriores > 0">
+          {{ dashStats.abertosAnteriores }} anteriores em aberto
+        </span>
+      </div>
+      <div class="dash-tab-row">
+        <button
+          v-for="[key, label] in [['all','Todos'],['whatsapp','WhatsApp'],['telegram','Telegram'],['webchat','Web']]"
+          :key="key"
+          class="dash-tab-btn"
+          :class="{ active: dashTabFiltro === key }"
+          @click="dashTabFiltro = key"
+        >{{ label }}</button>
+      </div>
+    </div>
+
+    <!-- Legenda -->
+    <div style="display:flex;gap:12px;margin-bottom:10px;flex-wrap:wrap">
+      <span style="font-size:11px;color:var(--dash-muted)">
+        <span style="color:#ef4444">●</span> Anterior em aberto
+      </span>
+      <span style="font-size:11px;color:var(--dash-muted)">
+        <span style="color:#f59e0b">●</span> SLA em risco (&gt;{{ dashStats.slaHoras }}h)
+      </span>
+    </div>
+
+    <div class="dash-table-wrap">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th>#ID</th>
+            <th>Canal</th>
+            <th>Agente</th>
+            <th>Status</th>
+            <th>Aberto há</th>
+            <th>Iniciado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="(t, i) in dashFilteredTickets"
+            :key="t.id"
+            :class="{
+              'dash-row-risco':    dashTicketEmRisco(t),
+              'dash-row-anterior': !dashTicketEmRisco(t) && dashTicketAnterior(t),
+              'dash-row-alt':      !dashTicketEmRisco(t) && !dashTicketAnterior(t) && i % 2 !== 0,
+            }"
+          >
+            <td class="dash-td-id">
+              {{ t.id }}
+              <span class="dash-sla-tag"  v-if="dashTicketEmRisco(t)">SLA</span>
+              <span class="dash-prev-tag" v-else-if="dashTicketAnterior(t)">anterior</span>
+            </td>
+            <td>
+              <span class="dash-td-ch">
+                <span>{{ dashChannelIcon(t.channelId) }}</span>
+                <span :style="{ color: dashChannelColor(t.channelId) }">{{ dashChannelName(t.channelId) }}</span>
+              </span>
+            </td>
+            <td :style="{ color: dashUserColor(t.userId) }">{{ dashUserName(t.userId) }}</td>
+            <td>
+              <span
+                class="dash-status-badge"
+                :style="{ background: dashStatusBg(t.status), color: dashStatusColor(t.status) }"
+              >{{ dashStatusLabel(t.status) }}</span>
+            </td>
+            <td style="font-size:11px" :style="{ color: dashTicketEmRisco(t) ? 'var(--dash-danger)' : 'var(--dash-muted)' }">
+              {{ t.status !== 'closed' ? dashFmtHorasAtras(t.createdAt) : '—' }}
+            </td>
+            <td class="dash-td-time">{{ dashFmtTime(t.createdAt) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Top contatos do dia -->
+  <div class="dash-card">
+    <div class="dash-section-title">
+      🔥 Contatos Mais Ativos Hoje
+      <span class="dash-badge-accent">top 5</span>
+    </div>
+    <div v-if="dashTopContatos.length === 0" style="color:var(--dash-muted);font-size:13px">
+      Nenhum ticket aberto hoje ainda.
+    </div>
+    <div v-else style="display:flex;flex-direction:column;gap:10px">
+      <div v-for="(item, i) in dashTopContatos" :key="item.contato" class="dash-top-row">
+        <div
+          class="dash-top-pos"
+          :style="{
+            background: i === 0 ? 'rgba(251,191,36,0.15)' : i === 1 ? 'rgba(148,163,184,0.15)' : 'rgba(180,120,60,0.12)',
+            color:      i === 0 ? '#fbbf24'               : i === 1 ? '#94a3b8'                 : '#b4783c',
+          }"
+        >{{ i + 1 }}</div>
+        <div style="flex:1;min-width:0;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+          {{ item.contato }}
+        </div>
+        <div class="dash-top-bar-wrap">
+          <div
+            class="dash-top-bar"
+            :style="{
+              width: (item.total / dashTopContatos[0].total * 100) + '%',
+              background: i === 0 ? '#fbbf24' : 'var(--dash-accent)',
+            }"
+          ></div>
+        </div>
+        <div class="dash-top-val" :style="{ color: i === 0 ? '#fbbf24' : 'var(--dash-accent)' }">
+          {{ item.total }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tickets de Grupo -->
+  <div class="dash-card dash-card--group">
+    <div class="dash-group-header">
+      <span class="dash-group-title">Tickets de Grupo</span>
+      <span class="dash-badge-group">Não são atendimentos</span>
+    </div>
+    <div class="dash-group-cards">
+      <div v-for="ch in dashGroupByChannel" :key="ch.id" class="dash-group-stat">
+        <div class="dash-group-label">{{ ch.icon }} {{ ch.name }}</div>
+        <div class="dash-group-value">{{ ch.count }}</div>
+        <div class="dash-group-sub">grupos ativos</div>
+      </div>
+      <div class="dash-group-stat">
+        <div class="dash-group-label">📊 Total</div>
+        <div class="dash-group-value">{{ dashGroupTickets.length }}</div>
+        <div class="dash-group-sub">tickets de grupo</div>
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -1,4 +1,4 @@
-<div v-if="configSubtab === 'integracao'">
+<div v-if="configSubtab === 'integracao1'">
 
   <div class="users-header">
     <h2>⛓️ Gerenciar Integrações</h2>
@@ -8,7 +8,9 @@
     <div class="spinner"></div>
   </div>
   <div v-else-if="integracoes.length === 0" class="empty-state">📭 Nenhuma integração</div>
+
   <table v-else class="users-table">
+
     <thead>
       <tr>
         <th>Integração</th>

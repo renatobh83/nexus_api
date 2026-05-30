@@ -43,6 +43,7 @@ async function initApp() {
     TabGraficos,
     AppModals,
     ConfigIntegracao,
+    TabDashboard
   ] = await Promise.all([
     loadComponent("./templates/tab-chats.html", autoInject),
     loadComponent("./templates/config-users.html", autoInject),
@@ -50,6 +51,7 @@ async function initApp() {
     loadComponent("./templates/tab-graficos.html", autoInject),
     loadComponent("./templates/modals.html", autoInject),
     loadComponent("./templates/config-integracoes.html", autoInject),
+    loadComponent("./templates/tab-dashboard.html", autoInject),
   ]);
 
   const app = createApp({
@@ -57,8 +59,8 @@ async function initApp() {
       // =========================================================================
       // 1. CONFIGURAÇÃO E CONSTANTES
       // =========================================================================
-      const URL_BASE = "https://fast.panelapps.site";
-      // const URL_BASE = "http://localhost:3000";
+      // const URL_BASE = "https://fast.panelapps.site";
+      const URL_BASE = "http://localhost:3000";
 
       let token = ref("");
 
@@ -205,7 +207,9 @@ async function initApp() {
 
       const channels = useChannels({ ...shared });
 
+
       const users = useUsers({ ...shared });
+
 
       const integracoes = useIntegracao({ ...shared });
 
@@ -216,7 +220,11 @@ async function initApp() {
       });
 
       const broadcast = useBroadcast({ ...shared });
-
+      const dashboard = useDashboard({
+        allTickets: tickets.allTickets,
+        users: users.users,
+        channels: channels.channels,
+      })
       const graficos = useGraficos({
         allTickets: tickets.allTickets,
         users: users.users,
@@ -456,6 +464,7 @@ async function initApp() {
         alertaMessage,
         isSuccess,
 
+        ...dashboard,
         // Autenticação
         toggleUserMenu,
         closeUserMenu,
@@ -485,6 +494,7 @@ async function initApp() {
   app.component("config-users", ConfigUsers);
   app.component("config-channels", ConfigChannels);
   app.component("config-integracao", ConfigIntegracao);
+  app.component("tab-dashboard", TabDashboard)
 
   app.mount("#app");
 }

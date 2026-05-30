@@ -3,6 +3,7 @@
  * @description Composable para gerenciamento de Integracoes Externas.
  */
 function useIntegracao({ URL_BASE, token, sonnerAlert }) {
+  
   const loadingIntegraoes = ref(false);
   const integracaoModalVisible = ref(false);
   const integracoes = ref([]);

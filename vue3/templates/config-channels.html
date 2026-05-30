@@ -17,6 +17,7 @@
           {{ ch.status === 'CONNECTED' ? 'Conectado' : 'Desconectado' }}
         </span>
       </div>
+      
       <div class="channel-name">
         {{ ch.name }}
         <button @click="editChannel(ch)" v-if="isAdmin">✏️</button>
