@@ -1,4 +1,3 @@
-import { Message, Wid } from "wbotconnect";
 import { MessageInternal } from "../../../../modules/messages/messages.types.js";
 import { Session } from "../Wpp-web.js";
 import {
@@ -15,6 +14,7 @@ import {
   getSafeExtension,
 } from "../../../../utils/messsageMedia.js";
 import { PUBLIC_DIR } from "../../../../config/env.js";
+import { Message, Wid } from "@wppconnect-team/wppconnect";
 
 // Função auxiliar para normalizar o Wid para string
 const resolveId = (id: string | Wid): string => {

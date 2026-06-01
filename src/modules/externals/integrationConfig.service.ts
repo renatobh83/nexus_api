@@ -189,6 +189,12 @@ export class IntegracaoService {
     return await this.integrationConfigRepository.updateTicket(ticketId, data);
   }
 
+  async findTicketIntegrationn(contatoId: string) {
+    return await this.integrationConfigRepository.findTicketIntegration(
+      contatoId,
+    );
+  }
+
   // ── Métodos Privados ────────────────────────────────────────────────────────
 
   /**

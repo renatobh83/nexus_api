@@ -125,7 +125,7 @@ export const schedulingApi = async (input: any, content: any) => {
     horarioTexto,
     plural,
   );
-  return;
+
   if (sendMessage) {
     return service.updateTicketIntegration(ticket.id, {
       contato,

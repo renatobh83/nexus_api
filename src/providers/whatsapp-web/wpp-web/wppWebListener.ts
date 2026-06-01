@@ -1,5 +1,3 @@
-import { Chat, Message } from "wbotconnect";
-
 import { Session } from "./Wpp-web.js";
 import { handleMessage } from "../../../modules/messages/handlers/handleMessage.js";
 import {
@@ -7,11 +5,13 @@ import {
   toInternalSession,
 } from "./mappers/sessionAdapter.js";
 import { ContactInternal } from "../../session.types.js";
+import { Contact, Message } from "@wppconnect-team/wppconnect";
+import { checkTicketIntegration } from "../../../modules/externals/Helpers/checkIntegration.js";
 
 const resolveContact = async (
   message: Message,
   session: Session,
-): Promise<ContactInternal> => {
+): Promise<Contact> => {
   if (message.isGroupMsg && !message.fromMe) {
     const grupo = await session.getContact(message.from);
     return grupo;
@@ -20,10 +20,10 @@ const resolveContact = async (
     const target = message.to.includes("g.us")
       ? message.to
       : (await session.getPnLidEntry(message.to)).phoneNumber._serialized;
-    return session.getContact(target);
+    return await session.getContact(target);
   }
   const { phoneNumber } = await session.getPnLidEntry(message.from!);
-  return session.getContact(phoneNumber._serialized);
+  return await session.getContact(phoneNumber._serialized);
 };
 let isSyncing = true;
 export const wbotWebListener = async (wbot: Session): Promise<void> => {
@@ -43,12 +43,22 @@ export const wbotWebListener = async (wbot: Session): Promise<void> => {
     }
 
     if (message.chatId === "status@broadcast") return;
-    if (message.type === "list" || message.type === "unknown") return;
+    if (message.type === "list_response" && !message.fromMe) {
+      await checkTicketIntegration(message);
+      return;
+    }
+    if (message.type === "list_response" || message.type === "unknown") return;
     const messageContent = message.body || message.caption || "";
 
     const messageInternal = toInternalMessage(message);
+
     const session = toInternalSession(wbot);
-    const contato = await resolveContact(message, wbot);
+
+    const contato = (await resolveContact(
+      message,
+      wbot,
+    )) as unknown as ContactInternal;
+
     if (message.isGroupMsg) {
       const { phoneNumber } = await session.getPnLidEntry(message.sender.id);
       const contatoSender = await session.getContact(phoneNumber._serialized);

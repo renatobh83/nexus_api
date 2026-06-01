@@ -57,6 +57,14 @@ export class IntegrationConfigRepository {
   async createTicketForIntegration(data: Prisma.TicketCreateInput) {
     return prisma.ticket.create({ data });
   }
+  async findTicketIntegration(contato: string) {
+    return prisma.ticket.findFirst({
+      where: {
+        contato: contato,
+        closedAt: null,
+      },
+    });
+  }
 
   async deteleIntegracao(id: string) {
     return prisma.integrationConfig.delete({
