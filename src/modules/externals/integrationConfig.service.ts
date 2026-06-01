@@ -117,6 +117,10 @@ export class IntegracaoService {
     return config;
   }
 
+  async deleteIntegrationService(id: string) {
+    return await this.integrationConfigRepository.deteleIntegracao(id);
+  }
+
   async getIntegrationConfig(integrationName: string, clientId: string) {
     this.validateRequiredField("integrationName", integrationName);
     this.validateRequiredField("clientId", clientId);

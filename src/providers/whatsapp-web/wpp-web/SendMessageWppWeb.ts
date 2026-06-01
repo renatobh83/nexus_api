@@ -55,6 +55,7 @@ export const SendMessageWppWeb = async (
       return messageSent;
     }
   } else {
+    console.log(ticket.contato);
     const messageSent = await wbot.sendText(ticket.contato, body);
     await ticketService.updateTicket(ticket.id, {
       lastMessage: body.length > 255 ? body.slice(0, 252) + "..." : body,

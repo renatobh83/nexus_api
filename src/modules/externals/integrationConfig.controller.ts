@@ -36,6 +36,15 @@ export async function integrationController(fastify: FastifyInstance) {
       reply.status(200).send(config);
     },
   );
+  fastify.delete(
+    "/:integracaoId",
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { integracaoId } = request.params as any;
+      const deleteData =
+        await integracaoService.deleteIntegrationService(integracaoId);
+      reply.status(200).send(deleteData);
+    },
+  );
   fastify.post(
     "/:channelId/:clientId/:integrationName",
     async (request: FastifyRequest, reply: FastifyReply) => {

@@ -58,6 +58,13 @@ export class IntegrationConfigRepository {
     return prisma.ticket.create({ data });
   }
 
+  async deteleIntegracao(id: string) {
+    return prisma.integrationConfig.delete({
+      where: {
+        id: id,
+      },
+    });
+  }
   async updateTicketIntegration(data: UpdateTicketIntegrationInput) {
     const { ticketId, currentMetadata, idexterno, procArr, atendimentoHora } =
       data;

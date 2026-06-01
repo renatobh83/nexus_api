@@ -15,11 +15,12 @@ export const checkIntegration = async (input: IcheckIntegration) => {
       input.clientId,
     );
 
-    if (!config) {
-      throw new Error("Integração não existe favor verificar a rota");
+    if (!config || !config.isActive) {
+      throw new Error("Integração não existe ou não esta ativa!");
     }
+
     if (input.integrationName === "scheduling_api") {
-      // await checkBot(input);
+      await checkBot(input);
     } else {
       return;
     }

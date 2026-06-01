@@ -1,4 +1,4 @@
-<div v-if="configSubtab === 'integracao1'">
+<div v-if="configSubtab === 'integracao'">
 
   <div class="users-header">
     <h2>⛓️ Gerenciar Integrações</h2>
@@ -15,7 +15,6 @@
       <tr>
         <th>Integração</th>
         <th>Cliente Id</th>
-        <th>Settings</th>
         <th>Status</th>
         <th>Ações</th>
       </tr>
@@ -28,7 +27,7 @@
         <td>{{ integracao.isActive === true ? '🟢 Ativo' : '🔴 Inativo' }}</td>
         <td class="action-icons">
           <button @click="editIntegracao(integracao)">✏️</button>
-          <!-- <button @click="deleteUser(user.id)">🗑️</button> -->
+          <button @click=" deleteIntegracao(integracao.id)">🗑️</button>
         </td>
       </tr>
     </tbody>

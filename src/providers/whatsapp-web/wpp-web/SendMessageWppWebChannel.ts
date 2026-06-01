@@ -1,3 +1,4 @@
+import { removeNinthDigit } from "../../../utils/removeNinthDigit.js";
 import { getWbot } from "./Wpp-web.js";
 
 type MediaFile = {
@@ -12,7 +13,8 @@ export const SendMessageWppWebChannel = async (
   hasMedia: boolean | MediaFile,
 ) => {
   const wbot = getWbot(channelId);
-  const number = to.replace("+", "");
+  const number = removeNinthDigit(to.replace("+55", ""));
+
   const checkNumber = await wbot.checkNumberStatus(number);
 
   if (!checkNumber.numberExists) {

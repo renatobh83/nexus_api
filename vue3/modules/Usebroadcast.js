@@ -105,7 +105,7 @@ function useBroadcast({ URL_BASE, token, sonnerAlert }) {
         {
           method: "POST",
           body: formData,
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${token.value}` },
         },
       );
     } finally {

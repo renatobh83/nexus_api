@@ -3,8 +3,8 @@
  * @description Composable para gerenciamento de Integracoes Externas.
  */
 function useIntegracao({ URL_BASE, token, sonnerAlert }) {
-  
   const loadingIntegraoes = ref(false);
+  const loading = ref(false);
   const integracaoModalVisible = ref(false);
   const integracoes = ref([]);
   const editingIntegracao = ref({
@@ -31,16 +31,41 @@ function useIntegracao({ URL_BASE, token, sonnerAlert }) {
     }
   };
   /**
+   * Delete integracao
+   */
+  const deleteIntegracao = async (idIntegraco) => {
+    loadingIntegraoes.value = true;
+
+    try {
+      const res = await fetch(`${URL_BASE}/api/v1/external/${idIntegraco}`, {
+        headers: { Authorization: `Bearer ${token.value}` },
+        method: "DELETE",
+      });
+
+      const integracao = integracoes.value.filter((t) => t.id !== idIntegraco);
+      integracoes.value = integracao;
+    } catch (e) {
+      // integracoes.value = [];
+      loadingIntegraoes.value = false;
+    } finally {
+      loadingIntegraoes.value = false;
+    }
+  };
+  /**
    * Cria ou atualiza uma integracao no servidor.
    */
   const saveIntegracao = async () => {
+    loading.value = true;
+    console.log(loading.value);
     // 1. Validação inicial
     if (!editingIntegracao.value) {
       console.error("Nenhuma integração para salvar");
+      loading.value = false;
       return false;
     }
     if (!editingIntegracao.value.settings) {
       console.error("Configurações não encontradas");
+      loading.value = false;
       return false;
     }
 
@@ -70,16 +95,18 @@ function useIntegracao({ URL_BASE, token, sonnerAlert }) {
       });
       const integracaCreate = await response.json();
       updateSingleIntegracao(integracaCreate);
-      integracaoModalVisible.value = false;
     } catch (error) {
       console.error("Erro ao salvar integração:", error.message);
-
+      loading.value = false;
       // Feedback detalhado do erro
       if (error.message.includes("Unexpected token")) {
         console.error("Verifique vírgulas, colchetes e chaves");
       } else if (error.message.includes("Expected property name")) {
         console.error("Verifique se as chaves estão entre aspas duplas");
       }
+    } finally {
+      integracaoModalVisible.value = false;
+      loading.value = false;
     }
   };
 
@@ -144,5 +171,7 @@ function useIntegracao({ URL_BASE, token, sonnerAlert }) {
     loadIntegracao,
     getSettingsString,
     updateSettings,
+    deleteIntegracao,
+    loading,
   };
 }

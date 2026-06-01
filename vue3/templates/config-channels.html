@@ -14,10 +14,10 @@
           {{ ch.type === 'whatsapp' ? '📱' : ch.type === 'telegram' ? '✈️' : '🕸️' }}
         </span>
         <span v-show="ch.type !== 'web'" class="status-badge" :class="ch.status === 'CONNECTED' ? 'open' : 'pending'">
-          {{ ch.status === 'CONNECTED' ? 'Conectado' : 'Desconectado' }}
+          {{ ch.status === 'CONNECTED' ? 'Conectado' : 'Desconectado' }} - {{ch.id}}
         </span>
       </div>
-      
+
       <div class="channel-name">
         {{ ch.name }}
         <button @click="editChannel(ch)" v-if="isAdmin">✏️</button>

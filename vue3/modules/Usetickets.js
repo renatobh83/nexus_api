@@ -49,8 +49,8 @@ function useTickets({
         const matchesStatus = showOnlyClosed.value
           ? ticket.status === "closed"
           : ticket.status !== "closed";
-
-        return isOwnOrPending && matchesSearch && matchesStatus;
+        const notIntercao = !ticket.isInteraction;
+        return isOwnOrPending && matchesSearch && matchesStatus && notIntercao;
       })
       .sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0));
   });

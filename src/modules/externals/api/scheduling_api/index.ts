@@ -4,6 +4,7 @@ import {
   Session,
 } from "../../../../providers/whatsapp-web/wpp-web/Wpp-web.js";
 import { IntegracaoService } from "../../integrationConfig.service.js";
+import { removeNinthDigit } from "../../../../utils/removeNinthDigit.js";
 
 const service = new IntegracaoService();
 
@@ -21,8 +22,11 @@ const resolveContato = async (
   wbot: Session,
   contato: string,
 ): Promise<string> => {
-  const check = await wbot.checkNumberStatus(contato);
-  return check.numberExists ? check.id._serialized : contato;
+  const check = await wbot.checkNumberStatus(removeNinthDigit(contato));
+
+  const LidEntry = await wbot.getPnLidEntry(check.id._serialized);
+
+  return check.numberExists ? LidEntry.lid._serialized : contato;
 };
 
 // 2. Extrair metadata dos agendamentos
@@ -121,7 +125,7 @@ export const schedulingApi = async (input: any, content: any) => {
     horarioTexto,
     plural,
   );
-
+  return;
   if (sendMessage) {
     return service.updateTicketIntegration(ticket.id, {
       contato,

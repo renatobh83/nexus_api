@@ -38,7 +38,8 @@
         <span>Canal</span>
         <select v-model="broadcastChannelId">
           <option value="">Selecione</option>
-          <option v-for="ch in channels.filter(ch => ch.status === 'CONNECTED')" :key="ch.id" :value="ch.id">
+          <option v-for="ch in channels.filter(ch => ch.status === 'CONNECTED' && ch.type !== 'web')" :key="ch.id"
+            :value="ch.id">
             {{ ch.name }}
           </option>
         </select>
@@ -209,11 +210,8 @@
       </div>
       <div class="form-group">
         <span>Settings </span>
-
-        <!-- <input v-model="editingIntegracao.settings" type="text"> -->
-        <textarea :value="getSettingsString()" @input="updateSettings($event.target.value)" rows="10" cols="50"
+        <textarea :value="getSettingsString()" @input="updateSettings($event.target.value)" rows="5" cols="50"
           name="Settings" id="Settings" placeholder='Digite JSON válido aqui...
-  Exemplo:
 {
   "nome": "exemplo",
   "valor": 123
@@ -227,9 +225,10 @@
           <option :value="false">Inativo</option>
         </select>
       </div>
+
       <div class="modal-buttons">
-        <button class="btn-secondary" @click="integracaoModalVisible = false">Cancelar</button>
-        <button class="btn-primary" @click="saveIntegracao">Salvar</button>
+        <button class="btn-secondary" @click="saveIntegracao" @click="integracaoModalVisible = false">Cancelar</button>
+        <button class="btn-primary" @click="saveIntegracao" :disabled="loading">Salvar</button>
       </div>
     </div>
   </div>

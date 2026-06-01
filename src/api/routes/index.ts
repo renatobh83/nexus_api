@@ -18,6 +18,7 @@ declare module "fastify" {
  */
 async function apiV1Routes(fastify: FastifyInstance) {
   fastify.register(chatWebController, { prefix: "/" });
+  fastify.register(integrationController, { prefix: "/apiext" });
 
   fastify.register(authController, { prefix: "/auth" });
   fastify.register(async (privateScope) => {
