@@ -9,11 +9,16 @@ import {
 } from "../../types/schedulingApi.types.js";
 import { logger } from "../../modules/tickets/Helpers/CreateTicket.js";
 import { redisConnection } from "../../config/redis.js";
-import { processarConfirmacoes } from "./scheduling_actions.js";
+import {
+  enviarPreparos,
+  processarConfirmacoes,
+  todosResultadosVazios,
+} from "./scheduling_actions.js";
 
 const integracaoService = new IntegracaoService();
 async function handleConfirmacao(job: Job<ConfirmacaoJobData>): Promise<void> {
-  const { contatoSend, response, status, ticket } = job.data;
+  const { response, status, ticket } = job.data;
+
   const wbot = getWbot(ticket.channelId);
 
   // Marca como respondido imediatamente
@@ -25,38 +30,46 @@ async function handleConfirmacao(job: Job<ConfirmacaoJobData>): Promise<void> {
   });
 
   if (status === "invalid") {
-    await wbot.sendText(contatoSend, MENSAGENS.INVALIDA);
+    await wbot.sendText(ticket.contato, MENSAGENS.INVALIDA);
+    return;
+  }
+  // const integracao = await integracaoService.getIntegrationConfig(ticket.integrationSource)
+  const resultados = await processarConfirmacoes(ticket, status);
+
+  if (todosResultadosVazios(resultados)) {
+    logger.warn(`Ticket ${ticket.id}: nenhum retorno válido da API externa.`);
     return;
   }
 
-  const resultados = await processarConfirmacoes(ticket, status);
-
-  // if (todosResultadosVazios(resultados)) {
-  //   logger.warn(`Ticket ${ticket.id}: nenhum retorno válido da API externa.`);
-  //   return;
-  // }
-
   if (status === "confirm") {
-    // await enviarPreparos(contatoSend, ticket, integracao, wbot);
-    // await iGenesisServices.updateTicketConfirmacao(ticket.id, {
-    //   status: STATUS_CONFIRMACAO.CONFIRMADO,
-    //   preparoEnviado: true,
-    //   closedAt: new Date().getTime(),
-    //   lastMessage: "Preparo de exame enviado",
-    //   lastMessageAt: new Date().getTime(),
-    // });
+    await enviarPreparos(ticket, wbot);
+    await integracaoService.updateTicketIntegration(ticket.id, {
+      status: STATUS_CONFIRMACAO.CONFIRMADO,
+      metadata: {
+        ...(ticket.metadata as Record<string, any>),
+        preparoEnviado: true, // 2. Adiciona ou atualiza este valor específi
+        config: {},
+      },
+      closedAt: new Date().getTime(),
+      lastMessage: "Preparo de exame enviado",
+      lastMessageAt: new Date().getTime(),
+    });
   } else {
-    // await wbot.sendText(contatoSend, MENSAGENS.CANCELADO);
-    // await iGenesisServices.updateTicketConfirmacao(ticket.id, {
-    //   status: STATUS_CONFIRMACAO.CANCELADO,
-    //   closedAt: new Date().getTime(),
-    //   lastMessage: "Exame cancelado",
-    //   lastMessageAt: new Date().getTime(),
-    // });
+    await wbot.sendText(ticket.contato, MENSAGENS.CANCELADO);
+    await integracaoService.updateTicketIntegration(ticket.id, {
+      status: STATUS_CONFIRMACAO.CANCELADO,
+      metadata: {
+        ...(ticket.metadata as Record<string, any>),
+        config: {},
+      },
+      closedAt: new Date().getTime(),
+      lastMessage: "Exame cancelado",
+      lastMessageAt: new Date().getTime(),
+    });
   }
 
   await delay(DELAYS.BEFORE_CLOSING);
-  // await wbot.sendText(contatoSend, MENSAGENS.ENCERRAMENTO);
+  await wbot.sendText(ticket.contato, MENSAGENS.ENCERRAMENTO);
 }
 
 export const confirmacaoWorker = new Worker<ConfirmacaoJobData>(

@@ -86,7 +86,7 @@ const sendConfirmationMessage = async (
 };
 
 // 4. schedulingApi orquestra tudo
-export const schedulingApi = async (input: any, content: any) => {
+export const schedulingApi = async (input: any, content: any, config: any) => {
   const { channelId, integrationName, ...restInput } = input;
   const wbot = getWbot(channelId);
 
@@ -115,6 +115,7 @@ export const schedulingApi = async (input: any, content: any) => {
       procedimentos,
       answered: false,
       idexterno,
+      config,
     },
   });
 

@@ -1,11 +1,11 @@
 import { schedulingApi } from "./scheduling_api/index.js";
 
-export const checkBot = async (input: any) => {
+export const checkBot = async (input: any, config: any) => {
   const { contatos } = input;
   const payload = ProcessBodyData(contatos[0].notificacao);
 
   if (payload.bot === "agenda") {
-    schedulingApi(input, payload);
+    schedulingApi(input, payload, config);
   }
 };
 

@@ -1,7 +1,6 @@
-// config/redis.ts
-import { ConnectionOptions } from "bullmq";
-console.log(process.env.IO_REDIS_SERVER);
-export const redisConnection: ConnectionOptions = {
+import { RedisOptions } from "ioredis";
+
+export const redisConnection: RedisOptions = {
   host: process.env.IO_REDIS_SERVER ?? "localhost",
   port: Number(process.env.IO_REDIS_PORT ?? 6379),
   password: process.env.IO_REDIS_PASSWORD,

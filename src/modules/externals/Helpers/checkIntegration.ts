@@ -89,7 +89,7 @@ export const checkIntegration = async (input: ICheckIntegration) => {
     }
 
     if (input.integrationName === "scheduling_api") {
-      await checkBot(input);
+      await checkBot(input, config);
     } else {
       return;
     }
@@ -97,8 +97,9 @@ export const checkIntegration = async (input: ICheckIntegration) => {
     throw new Error(`${error}`);
   }
 };
-export const checkTicketIntegration = async (input: ICheckTicketInput) => {
+export const checkTicketIntegration = async (input: any) => {
   const ticket = await integracaoService.findTicketIntegrationn(input.chatId);
+
   if (!ticket) return null;
 
   const rawResponse = extractRawResponse(input);

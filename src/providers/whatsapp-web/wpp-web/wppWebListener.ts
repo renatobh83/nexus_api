@@ -7,6 +7,7 @@ import {
 import { ContactInternal } from "../../session.types.js";
 import { Contact, Message } from "@wppconnect-team/wppconnect";
 import { checkTicketIntegration } from "../../../modules/externals/Helpers/checkIntegration.js";
+import { blockedMessages } from "../../../modules/externals/api/scheduling_api/BlockedMessages.js";
 
 const resolveContact = async (
   message: Message,
@@ -44,12 +45,19 @@ export const wbotWebListener = async (wbot: Session): Promise<void> => {
 
     if (message.chatId === "status@broadcast") return;
     if (message.type === "list_response" && !message.fromMe) {
-      await checkTicketIntegration(message);
+      const response = await checkTicketIntegration(message);
+      if (!response) {
+        wbot.sendText(message.from, "Processo de confirmação já realizado.");
+      }
       return;
     }
-    if (message.type === "list_response" || message.type === "unknown") return;
-    const messageContent = message.body || message.caption || "";
 
+    const messageContent = message.body || message.caption || "";
+    if (message.type === "list" || message.type === "unknown") return;
+    const isBlocked = blockedMessages.some((blocked) => {
+      return messageContent.includes(blocked);
+    });
+    if (isBlocked) return;
     const messageInternal = toInternalMessage(message);
 
     const session = toInternalSession(wbot);
