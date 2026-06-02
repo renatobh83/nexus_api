@@ -9,6 +9,10 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+  <!-- Drawflow -->
+  <script src="https://unpkg.com/drawflow@0.0.59/dist/drawflow.min.js"></script>
+  <!-- Drawflow CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/drawflow@0.0.59/dist/drawflow.min.css" />
   <link rel="stylesheet" href="./styles-dark.css" />
 </head>
 
@@ -44,10 +48,12 @@
         <button class="menu-hamburger" :class="{ activeHam: activeTab === 'chats' }" @click="toggleSidebar">☰</button>
         <div class="top-menu">
           <div class="menu-item" :class="{ active: activeTab === 'chats' }" @click="activeTab = 'chats'">💬 Chats</div>
-           <div class="menu-item" :class="{ active: activeTab === 'dashboard' }" @click="activeTab = 'dashboard'">📈
+          <div class="menu-item" :class="{ active: activeTab === 'dashboard' }" @click="activeTab = 'dashboard'">📈
             Dashboard</div>
           <div class="menu-item" :class="{ active: activeTab === 'graficos' }" @click="activeTab = 'graficos'">📈
             Gráficos</div>
+          <div class="menu-item" :class="{ active: activeTab === 'flow' }" @click="activeTab = 'flow'">📈
+            Flow</div>
           <div class="menu-item" :class="{ active: activeTab === 'configuracoes' }"
             @click="activeTab = 'configuracoes'">⚙️ Configurações</div>
           <button class="broadcast-btn" @click="openBroadcastModal">📢</button>
@@ -59,7 +65,7 @@
 
         <tab-chats></tab-chats>
         <tab-dashboard></tab-dashboard>
-
+        <tab-flow></tab-flow>
         <!-- ABA CONFIGURAÇÕES -->
         <div class="tab-configuracoes" :class="{ hidden: activeTab !== 'configuracoes' }">
           <div class="config-container">
@@ -76,12 +82,13 @@
               <config-users></config-users>
               <config-channels></config-channels>
               <config-integracao></config-integracao>
-              
+
             </div>
           </div>
         </div>
 
         <tab-graficos></tab-graficos>
+
       </div>
 
       <!-- MODAIS -->
@@ -111,6 +118,8 @@
   <script src="modules/Useqrcode.js"></script>
   <script src="modules/Usegraficos.js"></script>
   <script src="modules/UseDashboard.js"></script>
+  <script src="modules/UseFlow.js"></script>
+
   <script src="app.js"></script>
 </body>
 

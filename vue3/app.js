@@ -43,7 +43,8 @@ async function initApp() {
     TabGraficos,
     AppModals,
     ConfigIntegracao,
-    TabDashboard
+    TabDashboard,
+    TabFlow,
   ] = await Promise.all([
     loadComponent("./templates/tab-chats.html", autoInject),
     loadComponent("./templates/config-users.html", autoInject),
@@ -52,6 +53,7 @@ async function initApp() {
     loadComponent("./templates/modals.html", autoInject),
     loadComponent("./templates/config-integracoes.html", autoInject),
     loadComponent("./templates/tab-dashboard.html", autoInject),
+    loadComponent("./templates/tab-flow.html", autoInject),
   ]);
 
   const app = createApp({
@@ -207,11 +209,11 @@ async function initApp() {
 
       const channels = useChannels({ ...shared });
 
-
       const users = useUsers({ ...shared });
 
-
       const integracoes = useIntegracao({ ...shared });
+
+      const flow = useFlow(sonnerAlert);
 
       const tickets = useTickets({
         ...shared,
@@ -224,7 +226,7 @@ async function initApp() {
         allTickets: tickets.allTickets,
         users: users.users,
         channels: channels.channels,
-      })
+      });
       const graficos = useGraficos({
         allTickets: tickets.allTickets,
         users: users.users,
@@ -451,6 +453,8 @@ async function initApp() {
         ...graficos,
         // Integracoes
         ...integracoes,
+        // Flow
+        ...flow,
         // Estado global
         ...shared,
         activeTab,
@@ -477,6 +481,8 @@ async function initApp() {
         getChannelIconByTicket,
         getStatusText,
         formatTime,
+        // teste
+        sonnerAlert,
       };
 
       provide("appContext", allData);
@@ -494,7 +500,8 @@ async function initApp() {
   app.component("config-users", ConfigUsers);
   app.component("config-channels", ConfigChannels);
   app.component("config-integracao", ConfigIntegracao);
-  app.component("tab-dashboard", TabDashboard)
+  app.component("tab-dashboard", TabDashboard);
+  app.component("tab-flow", TabFlow);
 
   app.mount("#app");
 }

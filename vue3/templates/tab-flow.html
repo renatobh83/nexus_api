@@ -1,0 +1,60 @@
+<div class="tab-flow" style="flex-direction:column;height:100vh;width:100%;" :class="{ hidden: activeTab !== 'flow' }">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <span class="logo">⬡ FlowBR</span>
+    <span class="flow-name">/ Análise de FIIs</span>
+    <div class="spacer"></div>
+    <button class="btn btn-ghost" @click="clearFlow">Limpar</button>
+    <button class="btn btn-ghost" style="margin-left:4px" @click="zoomReset">1:1</button>
+    <button class="btn btn-run" style="margin-left:8px" @click="runFlow">▶ Executar</button>
+  </div>
+
+  <!-- Workspace -->
+  <div class="workspace">
+
+    <!-- Palette -->
+    <div class="sidebar-flow">
+      <div class="sidebar-section">Nós</div>
+      <div v-for="p in palette" :key="p.type" class="palette-item" draggable="true" @dragstart="onDragStart($event, p)">
+        <div class="p-icon" :style="{ background: p.color + '28' }">{{ p.icon }}</div>
+        <div class="p-label">{{ p.label }}</div>
+      </div>
+    </div>
+
+    <!-- Canvas -->
+    <div style="flex:1;position:relative;overflow:hidden;">
+      <div id="drawflow" @drop="onDrop" @dragover.prevent></div>
+      <!-- ← só o id aqui, sem ref, sem eventos duplicados -->
+
+      <div class="canvas-toolbar">
+        <button class="ct-btn" @click="df && df.zoom_in()">+</button>
+        <button class="ct-btn" @click="df && df.zoom_out()">−</button>
+        <button class="ct-btn" @click="zoomReset">⊡</button>
+      </div>
+    </div>
+
+  </div>
+  <!-- Modal de edição -->
+  <div v-if="showModal && selectedNode"
+    style="position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:999">
+    <!-- @click.self="showModal = false"> -->
+
+    <div style="background:#1e1e28;border:1px solid #2e2e3e;border-radius:12px;padding:24px;width:320px;">
+      <div style="font-size:14px;font-weight:600;color:#e1e1e6;margin-bottom:16px;">
+        {{ selectedNode.icon }} Editar nó
+      </div>
+
+      <div v-for="(p, i) in selectedNode.props" :key="i" style="margin-bottom:12px;">
+        <label style="font-size:11px;color:#66668a;display:block;margin-bottom:4px;">{{ p.k }}</label>
+        <input v-model="selectedNode.props[i].v" style="width:100%;background:#101014;border:1px solid #2e2e3e;border-radius:6px;
+               padding:6px 10px;color:#e1e1e6;font-size:13px;outline:none;" />
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:20px;justify-content:flex-end;">
+        <button class="btn btn-ghost" @click="showModal = false">Cancelar</button>
+        <button class="btn btn-run" @click="saveNode">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>

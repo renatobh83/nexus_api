@@ -192,6 +192,7 @@ body {
 }
 
 .tab-chats.hidden,
+.tab-flow.hidden,
 .dash-wrap.hidden,
 .tab-configuracoes.hidden {
   display: none;
@@ -2607,4 +2608,302 @@ a:hover {
 .dash-group-sub {
   font-size: 11px;
   color: var(--dash-muted2);
+}
+
+/* ─── Topbar ─── */
+.topbar {
+  height: 52px;
+  background: #18181f;
+  border-bottom: 1px solid #2a2a35;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 12px;
+  flex-shrink: 0;
+  z-index: 100;
+}
+.logo {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ff6d5a;
+  letter-spacing: -0.3px;
+}
+.flow-name {
+  font-size: 13px;
+  color: #66668a;
+}
+.spacer {
+  flex: 1;
+}
+.btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s;
+}
+.btn:hover {
+  opacity: 0.8;
+}
+.btn-ghost {
+  background: transparent;
+  border: 1px solid #3a3a4d;
+  color: #b0b0c8;
+}
+.btn-run {
+  background: #ff6d5a;
+  color: #fff;
+}
+
+/* ─── Layout ─── */
+.workspace {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+
+  height: calc(100dvh - 134px);
+}
+
+/* ─── Sidebar ─── */
+.sidebar-flow {
+  width: 200px;
+  background: #18181f;
+  border-right: 1px solid #2a2a35;
+  padding: 16px 12px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.sidebar-section {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #55557a;
+  margin-bottom: 10px;
+}
+.palette-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  cursor: grab;
+  margin-bottom: 4px;
+  transition: background 0.12s;
+  user-select: none;
+}
+.palette-item:hover {
+  background: #23232f;
+}
+.palette-item:active {
+  cursor: grabbing;
+}
+.p-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.p-label {
+  font-size: 12px;
+  color: #c0c0d8;
+  font-weight: 500;
+}
+
+/* ─── Canvas ─── */
+#drawflow {
+  flex: 1;
+  height: 100%;
+  position: relative;
+}
+
+/* ─── Drawflow overrides ─── */
+.drawflow {
+  background: #101014 !important;
+  background-image: radial-gradient(
+    circle,
+    #2a2a38 1px,
+    transparent 1px
+  ) !important;
+  background-size: 22px 22px !important;
+}
+.drawflow .drawflow-node {
+  background: #1e1e28 !important;
+  border: 1px solid #2e2e3e !important;
+  border-radius: 10px !important;
+  padding: 0 !important;
+  width: 210px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s !important;
+  overflow: hidden;
+}
+.drawflow .drawflow-node.selected,
+.drawflow .drawflow-node:hover {
+  border-color: #ff6d5a !important;
+  box-shadow:
+    0 0 0 2px rgba(255, 109, 90, 0.2),
+    0 4px 24px rgba(0, 0, 0, 0.5) !important;
+}
+.drawflow .drawflow-node .inputs,
+.drawflow .drawflow-node .outputs {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.drawflow .drawflow-node .inputs {
+  left: -6px;
+}
+.drawflow .drawflow-node .outputs {
+  right: 6px;
+}
+.drawflow .input,
+.drawflow .output {
+  width: 12px !important;
+  height: 12px !important;
+  border-radius: 50% !important;
+  border: 2px solid #101014 !important;
+  background: #ff6d5a !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  margin: 0 !important;
+}
+.drawflow .connection .main-path {
+  stroke: #ff6d5a !important;
+  stroke-width: 2px !important;
+  fill: none !important;
+}
+.drawflow .connection .main-path:hover {
+  stroke: #ffaa9a !important;
+  stroke-width: 3px !important;
+}
+
+/* ─── Node HTML interno ─── */
+.n-node {
+  display: flex;
+  flex-direction: column;
+}
+.n-header {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 12px;
+  border-bottom: 1px solid #2e2e3e;
+}
+.n-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.n-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #e1e1e6;
+}
+.n-sub {
+  font-size: 10px;
+  color: rgba(160, 160, 190, 0.7);
+  margin-top: 1px;
+}
+.n-body {
+  padding: 8px 12px 10px;
+}
+.n-prop {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: rgba(150, 150, 180, 0.65);
+  margin-bottom: 3px;
+}
+.n-prop span:last-child {
+  color: #a0a0c0;
+  font-weight: 500;
+}
+.n-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-top: 5px;
+}
+.st-idle {
+  background: rgba(130, 130, 160, 0.1);
+  color: #8888a0;
+}
+.st-success {
+  background: rgba(52, 199, 89, 0.15);
+  color: #34c759;
+}
+.st-running {
+  background: rgba(255, 159, 10, 0.15);
+  color: #ff9f0a;
+}
+.st-error {
+  background: rgba(255, 69, 58, 0.15);
+  color: #ff453a;
+}
+
+/* ─── Toast ─── */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #23232f;
+  border: 1px solid #2a2a35;
+  border-radius: 8px;
+  padding: 9px 18px;
+  font-size: 13px;
+  color: #c0c0d8;
+  z-index: 999;
+  transition: opacity 0.3s;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.toast.hide {
+  opacity: 0;
+}
+
+/* ─── Toolbar do canvas ─── */
+.canvas-toolbar {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  display: flex;
+  gap: 6px;
+  z-index: 50;
+}
+.ct-btn {
+  width: 34px;
+  height: 34px;
+  background: #18181f;
+  border: 1px solid #2a2a35;
+  border-radius: 7px;
+  color: #8888a0;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s;
+}
+.ct-btn:hover {
+  background: #23232f;
+  color: #e1e1e6;
 }
