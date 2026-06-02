@@ -401,7 +401,7 @@ function useFlow({ allTickets, URL_BASE, token, sonnerAlert }) {
 
   async function carregarFlow(id) {
     if (!editor) return;
-    const resp = await fetch(`/flows/${id}`);
+    const resp = await fetch(`${URL_BASE}/api/v1/flows/${id}`);
     const record = await resp.json();
     editor.import(record.flow_json);
     modulos.value = Object.keys(record.flow_json.drawflow);
@@ -409,7 +409,7 @@ function useFlow({ allTickets, URL_BASE, token, sonnerAlert }) {
   }
 
   async function listarFlows() {
-    const resp = await fetch("/api/flows");
+    const resp = await fetch(`${URL_BASE}/api/v1/flows`);
     return await resp.json();
   }
   /* ── Watch tickets externos ── */
