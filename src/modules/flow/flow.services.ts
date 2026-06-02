@@ -1,0 +1,23 @@
+import { Prisma } from "@prisma/client";
+import { FlowsRepository } from "./flow.repository.js";
+
+export class FlowsService {
+  private flowsRepository: FlowsRepository;
+  constructor() {
+    this.flowsRepository = new FlowsRepository();
+  }
+  async listAll() {
+    return await this.flowsRepository.listAll();
+  }
+  async findById(id: string) {
+    return await this.flowsRepository.find(id);
+  }
+
+  async createOrUpdate(data: Prisma.flowsCreateInput) {
+    return await this.flowsRepository.createOrUpdate(data);
+  }
+
+  async deleteFlows(id: string) {
+    return await this.flowsRepository.delete(id);
+  }
+}

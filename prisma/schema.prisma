@@ -46,6 +46,17 @@ model IntegrationConfig {
 
   @@map("integration_configs") // Nome da tabela no banco de dados
 }
+
+model flows {
+  id              String    @id @default(uuid())
+  nome            String    @unique
+  descricao       String
+  flow_json       Json
+  ativo           Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  @@map("flows") // Nome da tabela no banco de dados
+}
 model User {
   id             String   @id @default(uuid()) @db.Uuid
   name           String

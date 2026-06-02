@@ -2764,6 +2764,15 @@ a:hover {
 .drawflow .drawflow-node .outputs {
   right: 6px;
 }
+.drawflow-delete {
+  right: 0 !important;
+  top: 0 !important;
+  line-height: 20px !important;
+  width: 25px !important;
+  height: 25px !important;
+  border: 1px solid #fff !important;
+}
+
 .drawflow .input,
 .drawflow .output {
   width: 12px !important;

@@ -1,6 +1,7 @@
-function useFlow(sonnerAlert) {
-  const { ref, onMounted, nextTick } = Vue; // ← nextTick adicionado
+function useFlow({ allTickets, URL_BASE, token, sonnerAlert }) {
+  const { ref, onMounted, nextTick, watch } = Vue;
 
+  /* ── Node HTML ── */
   function nodeHTML(data) {
     const props = (data.props || [])
       .map(
@@ -24,6 +25,7 @@ function useFlow(sonnerAlert) {
     </div>`;
   }
 
+  /* ── Palette ── */
   const PALETTE = [
     {
       type: "trigger",
@@ -31,7 +33,7 @@ function useFlow(sonnerAlert) {
       icon: "⚡",
       color: "#ff9f0a",
       sub: "Início do fluxo",
-      props: [{ k: "Intervalo", v: "1 min" }],
+      props: [{ k: "Intervalo", v: "10 s" }],
       inputs: 0,
       outputs: 1,
     },
@@ -55,8 +57,8 @@ function useFlow(sonnerAlert) {
       color: "#bf5af2",
       sub: "Condição lógica",
       props: [
-        { k: "Campo", v: "dy" },
-        { k: "Op.", v: "> 0.08" },
+        { k: "Campo", v: "status" },
+        { k: "Op.", v: "open" },
       ],
       inputs: 1,
       outputs: 1,
@@ -99,13 +101,18 @@ function useFlow(sonnerAlert) {
     },
   ];
 
+  /* ── Estado ── */
   let _drag = null;
-  let editor = null; // ← fora do ref, evita reatividade desnecessária
+  let editor = null;
+
+  const palette = PALETTE;
+  const df = ref(null);
   const selectedNode = ref(null);
   const showModal = ref(false);
-  const palette = PALETTE;
-  const df = ref(null); // ← mantido só para o template checar se existe
+  const modulos = ref(["Home"]);
+  const moduloAtivo = ref("Home");
 
+  /* ── Helpers ── */
   function setBadge(nodeId, cls, text) {
     const el = document.querySelector(`#node-${nodeId} .n-badge`);
     if (!el) return;
@@ -113,10 +120,46 @@ function useFlow(sonnerAlert) {
     el.textContent = text;
   }
 
+  function parseInterval(interval) {
+    const match = interval.trim().match(/^(\d+)\s*(s|min|m|h|d)$/i);
+    if (!match) throw new Error(`Intervalo inválido: ${interval}`);
+    const value = Number(match[1]);
+    const unit = match[2].toLowerCase();
+    const multipliers = {
+      s: 1000,
+      m: 60000,
+      min: 60000,
+      h: 3600000,
+      d: 86400000,
+    };
+    return value * multipliers[unit];
+  }
+
+  /* ── Módulos ── */
+  function criarModulo(nome) {
+    if (!editor || modulos.value.includes(nome)) return;
+    editor.addModule(nome);
+    modulos.value.push(nome);
+    trocarModulo(nome);
+  }
+
+  function trocarModulo(nome) {
+    if (!editor) return;
+    editor.changeModule(nome);
+    moduloAtivo.value = nome;
+  }
+
+  function removerModulo(nome) {
+    if (!editor || nome === "Home") return;
+    editor.removeModule(nome);
+    modulos.value = modulos.value.filter((m) => m !== nome);
+    trocarModulo("Home");
+  }
+
+  /* ── mounted ── */
   onMounted(async () => {
     await nextTick();
 
-    // ← pega pelo id, não pelo ref no div errado
     const container = document.getElementById("drawflow");
     if (!container) {
       console.error("useFlow: #drawflow não encontrado no DOM");
@@ -128,64 +171,41 @@ function useFlow(sonnerAlert) {
     editor.reroute_fix_curvature = true;
     editor.force_first_input = false;
     editor.start();
+    df.value = editor;
+
+    /* duplo-clique abre modal */
     container.addEventListener("dblclick", (e) => {
       const nodeElement = e.target.closest(".drawflow-node");
-      if (nodeElement) {
-        // Extrai o ID (o Drawflow usa o formato "node-ID")
-        const id = nodeElement.id.slice(5);
-
-        // Agora você pode usar os métodos do editor normalmente
-        const data = editor.getNodeFromId(id);
-
-        // Sua lógica original:
-        selectedNode.value = { id, ...data.data };
-        showModal.value = true;
-      }
-    });
-
-    editor.on("nodeDblclick", (id) => {
+      if (!nodeElement) return;
+      const id = nodeElement.id.slice(5);
       const data = editor.getNodeFromId(id);
       selectedNode.value = { id, ...data.data };
       showModal.value = true;
     });
 
+    /* fechar modal só quando não há nó selecionado E modal não foi aberto por dblclick */
     editor.on("nodeUnselected", () => {
-      showModal.value = false;
-      selectedNode.value = null;
-    });
-    editor.on("connectionCreated", ({ output_id, input_id }) => {
-      console.log(`Conectou nó ${output_id} → ${input_id}`);
+      // não fecha automaticamente — o usuário fecha com Cancelar/Salvar/clique fora
     });
 
-    editor.on("connectionRemoved", ({ output_id, input_id }) => {
-      console.log(`Removeu conexão ${output_id} → ${input_id}`);
-    });
-    df.value = editor;
+    /* nós iniciais */
+    addNode(PALETTE[0], { x: 80, y: 180 });
+    addNode(PALETTE[2], { x: 360, y: 80 });
+    addNode(PALETTE[5], { x: 360, y: 280 });
 
-    // addNode(PALETTE[0], { x: 80, y: 180 });
-    // addNode(PALETTE[1], { x: 360, y: 80 });
-    // addNode(PALETTE[2], { x: 360, y: 280 });
-    // addNode(PALETTE[3], { x: 630, y: 180 });
-    // addNode(PALETTE[4], { x: 900, y: 80 });
-    // addNode(PALETTE[5], { x: 900, y: 280 });
-
-    // setTimeout(() => {
-    //   try {
-    //     editor.addConnection(1, 2, "output_1", "input_1");
-    //     editor.addConnection(1, 3, "output_1", "input_1");
-    //     editor.addConnection(2, 4, "output_1", "input_1");
-    //     editor.addConnection(3, 4, "output_1", "input_1");
-    //     editor.addConnection(4, 5, "output_1", "input_1");
-    //     editor.addConnection(4, 6, "output_1", "input_1");
-    //   } catch (e) {
-    //     console.warn("Conexão falhou:", e);
-    //   }
-    // }, 150);
+    setTimeout(() => {
+      try {
+        editor.addConnection(1, 2, "output_1", "input_1");
+        editor.addConnection(2, 3, "output_1", "input_1");
+      } catch (e) {
+        console.warn("Conexão falhou:", e);
+      }
+    }, 150);
   });
 
+  /* ── Nós ── */
   function addNode(p, pos) {
     if (!editor) return;
-    const html = nodeHTML(p);
     const id = editor.addNode(
       p.type,
       p.inputs,
@@ -194,7 +214,7 @@ function useFlow(sonnerAlert) {
       pos.y,
       "n8n-custom",
       { ...p },
-      html,
+      nodeHTML(p),
       false,
     );
     return id;
@@ -207,7 +227,6 @@ function useFlow(sonnerAlert) {
   function onDrop(e) {
     if (!_drag || !editor) return;
     const container = document.getElementById("drawflow");
-
     const rect = container.getBoundingClientRect();
     const zoom = editor.zoom;
     const x = (e.clientX - rect.left - editor.canvas_x) / zoom;
@@ -216,8 +235,10 @@ function useFlow(sonnerAlert) {
     _drag = null;
   }
 
+  /* ── Canvas controls ── */
   function clearFlow() {
-    editor && editor.clearModuleSelected();
+    if (!editor) return;
+    editor.clearModuleSelected();
   }
 
   function zoomReset() {
@@ -228,13 +249,14 @@ function useFlow(sonnerAlert) {
     editor.zoom_refresh();
   }
 
+  /* ── Execução ── */
   function runFlow() {
     if (!editor) return;
-    const data = editor.export();
-    const ids = Object.keys(data.drawflow.Home.data);
-    const nodes = data.drawflow.Home.data;
+    const exported = editor.export();
+    // usa o módulo ativo, não Home fixo
+    const nodes = exported.drawflow[moduloAtivo.value]?.data;
+    if (!nodes) return;
 
-    // ids.forEach((id) => setBadge(id, "st-running", "⟳ Rodando"));
     const entryIds = Object.keys(nodes).filter(
       (id) =>
         Object.keys(nodes[id].inputs).length === 0 ||
@@ -242,13 +264,38 @@ function useFlow(sonnerAlert) {
           (i) => i.connections.length === 0,
         ),
     );
+
     for (const id of entryIds) {
       executeNode(id, nodes, {});
     }
-    // setTimeout(() => {
-    //   ids.forEach((id) => setBadge(id, "st-success", "✓ Concluído"));
-    // }, 2200);
   }
+  async function executarModulo(nomeModulo, dadoExterno = null) {
+    if (!editor) return;
+    const exported = editor.export();
+    const nodes = exported.drawflow[nomeModulo]?.data;
+    if (!nodes) return;
+
+    const triggerId = Object.keys(nodes).find(
+      (id) => nodes[id].name === "trigger",
+    );
+    if (!triggerId) return;
+
+    await executeNode(triggerId, nodes, { data: dadoExterno });
+  }
+  async function runFlowComDados(dadoExterno) {
+    if (!editor) return;
+    const exported = editor.export();
+    const nodes = exported.drawflow[moduloAtivo.value]?.data;
+    if (!nodes) return;
+
+    const triggerId = Object.keys(nodes).find(
+      (id) => nodes[id].name === "trigger",
+    );
+    if (!triggerId) return;
+
+    await executeNode(triggerId, nodes, { data: dadoExterno });
+  }
+
   async function executeNode(id, nodes, context) {
     const node = nodes[id];
     const type = node.name;
@@ -258,47 +305,37 @@ function useFlow(sonnerAlert) {
 
     let result = null;
 
-    // ── aqui você define o que cada tipo faz ──
-    if (type === "trigger") {
-      const intervalo = data.props.find((item) => item.k === "Intervalo")?.v;
-      result = await new Promise((resolve) => {
-        setTimeout(() => {
-          resolve({
-            triggered: true,
-            timestamp: new Date().toISOString(),
-          });
-        }, parseInterval(intervalo));
-      });
-    } else if (type === "http") {
-      try {
+    try {
+      if (type === "trigger") {
+        const intervalo = data.props.find((p) => p.k === "Intervalo")?.v;
+        result = await new Promise((resolve) => {
+          setTimeout(() => resolve(context.data), parseInterval(intervalo));
+        });
+      } else if (type === "http") {
         const url = data.props.find((p) => p.k === "URL")?.v;
-
         const resp = await fetch(url);
-
         result = await resp.json();
-      } catch (e) {
-        setBadge(id, "st-error", "✕ Erro");
-        return;
+      } else if (type === "filter") {
+        result = Array.isArray(context.data)
+          ? context.data.filter((item) => item.status === "open")
+          : "Fechado";
+      } else if (type === "transform") {
+        result = context.data;
+      } else if (type === "db") {
+        console.log("Salvaria no banco:", context.data);
+        result = context.data;
+      } else if (type === "notify") {
+        console.log("Notificaria:", context.data);
+        result = null;
       }
-    } else if (type === "filter") {
-      // exemplo: filtra array pelo campo dy
-      result = Array.isArray(context.data)
-        ? context.data.filter((item) => item.dy > 0.08)
-        : "ERRO";
-    } else if (type === "transform") {
-      result = context.data; // transforme como quiser
-    } else if (type === "db") {
-      console.log("Salvaria no banco:", context.data);
-      result = context.data;
-    } else if (type === "notify") {
-      console.log("Notificaria:", context.data);
-      sonnerAlert("ALERTA CHAT");
-      result = null;
+
+      setBadge(id, "st-success", "✓ Concluído");
+    } catch (e) {
+      setBadge(id, "st-error", "✕ Erro");
+      console.error(`Erro no nó ${id} (${type}):`, e);
+      return;
     }
 
-    setBadge(id, "st-success", "✓ Concluído");
-
-    // percorre os filhos conectados
     const outputs = Object.values(node.outputs || {});
     for (const output of outputs) {
       for (const conn of output.connections) {
@@ -306,52 +343,104 @@ function useFlow(sonnerAlert) {
       }
     }
   }
-  function parseInterval(interval) {
-    const match = interval.trim().match(/^(\d+)\s*(s|min|m|h|d)$/i);
 
-    if (!match) {
-      throw new Error(`Intervalo inválido: ${interval}`);
-    }
-
-    const value = Number(match[1]);
-    const unit = match[2].toLowerCase();
-
-    const multipliers = {
-      s: 1000,
-      m: 60 * 1000,
-      min: 60 * 1000,
-      h: 60 * 60 * 1000,
-      d: 24 * 60 * 60 * 1000,
-    };
-
-    return value * multipliers[unit];
-  }
+  /* ── Modal de edição ── */
   function saveNode() {
     if (!selectedNode.value || !editor) return;
     const { id, ...data } = selectedNode.value;
+
     editor.updateNodeDataFromId(id, data);
-    // atualiza o HTML interno do nó
+
+    // atualiza HTML no drawflow interno e no DOM
     const html = nodeHTML(data);
+    const modData = editor.drawflow.drawflow[moduloAtivo.value].data;
+    if (modData[id]) modData[id].html = html;
 
-    editor.drawflow.drawflow.Home.data[id].html = html;
-
-    // re-renderiza o nó no DOM
     const nodeEl = document.querySelector(`#node-${id} .drawflow_content_node`);
     if (nodeEl) nodeEl.innerHTML = html;
 
     showModal.value = false;
     selectedNode.value = null;
   }
+
+  /* ── Persistência ── */
+  function salvarLocal() {
+    if (!editor) return;
+    localStorage.setItem("flow_salvo", JSON.stringify(editor.export()));
+  }
+
+  function carregarLocal() {
+    const raw = localStorage.getItem("flow_salvo");
+    if (!raw || !editor) return;
+    editor.import(JSON.parse(raw));
+    // sincroniza lista de módulos
+    const imported = JSON.parse(raw);
+    modulos.value = Object.keys(imported.drawflow);
+  }
+
+  async function salvarFlow(nome) {
+    if (!editor) return;
+
+    const resp = await fetch(`${URL_BASE}/api/v1/flows`, {
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token.value}`,
+      },
+      body: JSON.stringify({
+        nome,
+        modulo: moduloAtivo.value,
+        flow: editor.export(),
+      }),
+    });
+    const saved = await resp.json();
+    console.log("Flow salvo:", saved);
+    return saved;
+  }
+
+  async function carregarFlow(id) {
+    if (!editor) return;
+    const resp = await fetch(`/flows/${id}`);
+    const record = await resp.json();
+    editor.import(record.flow_json);
+    modulos.value = Object.keys(record.flow_json.drawflow);
+    moduloAtivo.value = modulos.value[0] || "Home";
+  }
+
+  async function listarFlows() {
+    const resp = await fetch("/api/flows");
+    return await resp.json();
+  }
+  /* ── Watch tickets externos ── */
+  watch(
+    allTickets,
+    (novoValor) => {
+      executarModulo("Home", novoValor);
+    },
+    { deep: true },
+  );
+
+  /* ── Return ── */
   return {
     palette,
     df,
+    selectedNode,
+    showModal,
+    modulos,
+    moduloAtivo,
     onDragStart,
     onDrop,
     clearFlow,
     zoomReset,
     runFlow,
-    selectedNode,
-    showModal,
     saveNode,
+    criarModulo,
+    trocarModulo,
+    removerModulo,
+    salvarLocal,
+    carregarLocal,
+    salvarFlow,
+    carregarFlow,
   };
 }

@@ -1,16 +1,40 @@
 <div class="tab-flow" style="flex-direction:column;height:100vh;width:100%;" :class="{ hidden: activeTab !== 'flow' }">
 
-  <!-- Topbar -->
+  <!-- ── Topbar ── -->
   <div class="topbar">
     <span class="logo">⬡ FlowBR</span>
-    <span class="flow-name">/ Análise de FIIs</span>
     <div class="spacer"></div>
+
+    <!-- abas de módulos -->
+    <div style="display:flex;align-items:center;gap:4px;margin-right:12px;">
+      <div v-for="mod in modulos" :key="mod" @click="trocarModulo(mod)" :style="{
+          display:'flex', alignItems:'center', gap:'6px',
+          padding:'4px 12px', borderRadius:'6px', cursor:'pointer',
+          fontSize:'12px', fontWeight:'600', userSelect:'none',
+          background: moduloAtivo === mod ? '#2e2e3e' : 'transparent',
+          color:       moduloAtivo === mod ? '#e1e1e6' : '#66668a',
+          border:      moduloAtivo === mod ? '1px solid #3a3a4d' : '1px solid transparent',
+        }">
+        {{ mod }}
+        <span v-if="mod !== 'Home'" @click.stop="removerModulo(mod)"
+          style="font-size:14px;color:#66668a;line-height:1;">×</span>
+      </div>
+
+      <!-- novo módulo -->
+      <button class="btn btn-ghost" style="padding:4px 10px;font-size:12px;"
+        @click="criarModulo('Módulo ' + modulos.length)">+ Módulo</button>
+    </div>
+
     <button class="btn btn-ghost" @click="clearFlow">Limpar</button>
     <button class="btn btn-ghost" style="margin-left:4px" @click="zoomReset">1:1</button>
+    <button class="btn btn-ghost" style="margin-left:4px" @click="salvarLocal" title="Salvar no navegador">💾</button>
+    <button class="btn btn-ghost" style="margin-left:4px" @click="carregarLocal"
+      title="Carregar do navegador">📂</button>
+    <button class="btn btn-ghost" style="margin-left:4px" @click="promptSalvar" title="Salvar no banco">BANCO</button>
     <button class="btn btn-run" style="margin-left:8px" @click="runFlow">▶ Executar</button>
   </div>
 
-  <!-- Workspace -->
+  <!-- ── Workspace ── -->
   <div class="workspace">
 
     <!-- Palette -->
@@ -25,30 +49,34 @@
     <!-- Canvas -->
     <div style="flex:1;position:relative;overflow:hidden;">
       <div id="drawflow" @drop="onDrop" @dragover.prevent></div>
-      <!-- ← só o id aqui, sem ref, sem eventos duplicados -->
 
       <div class="canvas-toolbar">
-        <button class="ct-btn" @click="df && df.zoom_in()">+</button>
-        <button class="ct-btn" @click="df && df.zoom_out()">−</button>
-        <button class="ct-btn" @click="zoomReset">⊡</button>
+        <button class="ct-btn" @click="df && df.zoom_in()" title="Zoom in">+</button>
+        <button class="ct-btn" @click="df && df.zoom_out()" title="Zoom out">−</button>
+        <button class="ct-btn" @click="zoomReset" title="Reset zoom">⊡</button>
       </div>
     </div>
 
   </div>
-  <!-- Modal de edição -->
-  <div v-if="showModal && selectedNode"
-    style="position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:999">
-    <!-- @click.self="showModal = false"> -->
 
-    <div style="background:#1e1e28;border:1px solid #2e2e3e;border-radius:12px;padding:24px;width:320px;">
+  <!-- ── Modal de edição ── -->
+  <div v-if="showModal && selectedNode" style="position:fixed;inset:0;background:rgba(0,0,0,.6);
+           display:flex;align-items:center;justify-content:center;z-index:999;" @click.self="showModal = false">
+    <div style="background:#1e1e28;border:1px solid #2e2e3e;border-radius:12px;
+                padding:24px;width:320px;max-height:80vh;overflow-y:auto;">
+
       <div style="font-size:14px;font-weight:600;color:#e1e1e6;margin-bottom:16px;">
-        {{ selectedNode.icon }} Editar nó
+        {{ selectedNode.icon }} Editar nó — {{ selectedNode.label }}
       </div>
 
+      <!-- campos editáveis -->
       <div v-for="(p, i) in selectedNode.props" :key="i" style="margin-bottom:12px;">
-        <label style="font-size:11px;color:#66668a;display:block;margin-bottom:4px;">{{ p.k }}</label>
-        <input v-model="selectedNode.props[i].v" style="width:100%;background:#101014;border:1px solid #2e2e3e;border-radius:6px;
-               padding:6px 10px;color:#e1e1e6;font-size:13px;outline:none;" />
+        <label style="font-size:11px;color:#66668a;display:block;margin-bottom:4px;">
+          {{ p.k }}
+        </label>
+        <input v-model="selectedNode.props[i].v" style="width:100%;background:#101014;border:1px solid #2e2e3e;
+                 border-radius:6px;padding:6px 10px;color:#e1e1e6;
+                 font-size:13px;outline:none;box-sizing:border-box;" />
       </div>
 
       <div style="display:flex;gap:8px;margin-top:20px;justify-content:flex-end;">
@@ -57,4 +85,5 @@
       </div>
     </div>
   </div>
+
 </div>

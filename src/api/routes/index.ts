@@ -7,6 +7,7 @@ import { integrationController } from "../../modules/externals/integrationConfig
 import { usersController } from "../../modules/users/users.controller.js";
 import { authController } from "../../modules/auth/auth.controller.js";
 import { chatWebController } from "../../modules/chatWeb/chatWeb.controller.js";
+import { flowController } from "../../modules/flow/flow.controller.js";
 declare module "fastify" {
   interface FastifyInstance {
     authenticate: any;
@@ -28,6 +29,7 @@ async function apiV1Routes(fastify: FastifyInstance) {
     privateScope.register(ticketController, { prefix: "/tickets" });
     privateScope.register(integrationController, { prefix: "/external" });
     privateScope.register(usersController, { prefix: "/users" });
+    privateScope.register(flowController, { prefix: "/flows" });
   });
 }
 

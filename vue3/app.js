@@ -213,12 +213,15 @@ async function initApp() {
 
       const integracoes = useIntegracao({ ...shared });
 
-      const flow = useFlow(sonnerAlert);
-
       const tickets = useTickets({
         ...shared,
         socket: socketRef,
         channels: channels.channels,
+      });
+
+      const flow = useFlow({
+        ...shared,
+        allTickets: tickets.allTickets,
       });
 
       const broadcast = useBroadcast({ ...shared });
@@ -294,6 +297,7 @@ async function initApp() {
             ticket?.owner || ticket?.name || `Ticket ${message.ticketid}`;
           const isIncoming =
             !message.fromMe &&
+            ticket &&
             ticket.status !== "pending" &&
             currentUser.value.id === ticket.userId;
 
@@ -438,6 +442,13 @@ async function initApp() {
         socketRef.value?.disconnect();
         graficos.limparRecursosGraficos();
       });
+      async function promptSalvar() {
+        const nome = window.prompt("Nome do flow:", "Meu Flow");
+        if (!nome) return;
+        const desc = window.prompt("Descrição (opcional):", "");
+
+        await flow.salvarFlow(nome, desc || "");
+      }
       const allData = {
         // Tickets
         ...tickets,
@@ -455,6 +466,7 @@ async function initApp() {
         ...integracoes,
         // Flow
         ...flow,
+        promptSalvar,
         // Estado global
         ...shared,
         activeTab,
