@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { FlowsService } from "./flow.services.js";
+import { FlowsService } from "./flow.service.js";
 const flowsService = new FlowsService();
 export async function flowController(fastify: FastifyInstance) {
   // GET — listar todos os flows ativos

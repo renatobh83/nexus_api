@@ -20,4 +20,8 @@ export class FlowsService {
   async deleteFlows(id: string) {
     return await this.flowsRepository.delete(id);
   }
+  async flowExecutionFindFirst(ticketNumber: number) {
+    const ticketId = ticketNumber.toString();
+    return await this.flowsRepository.flowExecutionFindFirst(ticketId);
+  }
 }

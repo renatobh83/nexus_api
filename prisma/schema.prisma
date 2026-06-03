@@ -52,10 +52,33 @@ model flows {
   nome            String    @unique
   descricao       String
   flow_json       Json
+  gatilho     String?
   ativo           Boolean   @default(true)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+  executions    FlowExecution[]
+  flowTriggers FlowTrigger[]
+  queueId   String?
   @@map("flows") // Nome da tabela no banco de dados
+}
+model FlowTrigger {
+  id       String @id @default(uuid())
+  flowId   String
+  evento   String
+  queueId  String?
+  flow     flows @relation(fields: [flowId], references: [id])
+}
+model FlowExecution {
+  id            String   @id @default(cuid())
+  flowId        String
+  currentNodeId String?
+  status        String
+  context       Json
+  flowSnapshot  Json
+  ticketId      String?
+  flow          flows    @relation(fields: [flowId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 model User {
   id             String   @id @default(uuid()) @db.Uuid

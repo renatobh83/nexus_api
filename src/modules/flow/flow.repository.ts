@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../lib/prisma.js";
+import { FlowExecutorService } from "./executor/flow-executor.service.js";
 
 export class FlowsRepository {
   /**
@@ -49,6 +50,15 @@ export class FlowsRepository {
     return await prisma.flows.update({
       where: { id: data },
       data: { ativo: false },
+    });
+  }
+
+  async flowExecutionFindFirst(ticketId: string) {
+    return await prisma.flowExecution.findFirst({
+      where: {
+        ticketId: ticketId,
+        status: "waiting_response",
+      },
     });
   }
 }
