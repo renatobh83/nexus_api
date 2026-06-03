@@ -145,7 +145,7 @@ export const initWppWeb = async (
     }
     wbot.id = channel.id;
     wbot.started = false;
-    triggerStart(channel.id, channelService, channel, () => {
+    triggerStart(channelService, channel, () => {
       sessionStarted = true; // 🔥 seta a flag quando conectar
     });
     // salva sessão
@@ -162,39 +162,6 @@ export const initWppWeb = async (
     await removeSession(channel.name);
     throw new Error("ERR_INICIAR_SESSAO_WPWEB");
   }
-};
-
-/**
- * Aguarda autenticação antes de iniciar
- */
-const waitUntilAuthenticated = async (
-  client: Session,
-  service: ChannelService,
-  channel: Channel,
-) => {
-  let attempts = 0;
-
-  const check = async () => {
-    try {
-      if (!client) return;
-
-      const isReady = await client.isAuthenticated();
-      console.log(isReady);
-      if (isReady) {
-        console.log("✅ Cliente autenticado");
-        await start(client, service, channel);
-      } else if (attempts < 10) {
-        attempts++;
-        setTimeout(check, 1000);
-      } else {
-        console.log("❌ Timeout aguardando autenticação");
-      }
-    } catch (err) {
-      console.error("Erro ao verificar autenticação:", err);
-    }
-  };
-
-  check();
 };
 
 /**
@@ -306,7 +273,6 @@ export const getWbot = (channelId: number): Session => {
 };
 
 const triggerStart = async (
-  channelId: number,
   service: ChannelService,
   channel: Channel,
   onStarted: () => void,
@@ -315,7 +281,7 @@ const triggerStart = async (
 
   const tryStart = async () => {
     try {
-      const client = getWbot(channelId); // 🔥 pega depois
+      const client = getWbot(channel.id); // 🔥 pega depois
 
       if (!client) {
         throw new Error("Client ainda não disponível");

@@ -9,10 +9,12 @@
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+
   <!-- Drawflow -->
   <script src="https://unpkg.com/drawflow@0.0.59/dist/drawflow.min.js"></script>
   <!-- Drawflow CSS -->
   <link rel="stylesheet" href="https://unpkg.com/drawflow@0.0.59/dist/drawflow.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles-dark.css" />
 </head>
 
@@ -25,7 +27,7 @@
         <div class="connection-status">
           <div v-for="ch in channels.filter(ch => ch.type !== 'web')" :key="ch.id" class="channel"
             :class="{ connected: ch.status === 'CONNECTED', disconnected: ch.status === 'DISCONNECTED' }">
-            {{ ch.type }}
+            {{ ch.type }} - {{webllm}}
           </div>
           <div :class="{ connected: socketConnected, disconnected: !socketConnected }">Socket</div>
         </div>

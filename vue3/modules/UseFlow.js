@@ -1,4 +1,4 @@
-function useFlow({ allTickets, URL_BASE, token, sonnerAlert }) {
+function useFlow({ ticketNovo, URL_BASE, token, initAI, aiEngine }) {
   const { ref, onMounted, nextTick, watch } = Vue;
 
   /* ── Node HTML ── */
@@ -33,9 +33,22 @@ function useFlow({ allTickets, URL_BASE, token, sonnerAlert }) {
       icon: "⚡",
       color: "#ff9f0a",
       sub: "Início do fluxo",
-      props: [{ k: "Intervalo", v: "10 s" }],
+      props: [{ k: "Intervalo", v: "5 s" }],
       inputs: 0,
       outputs: 1,
+    },
+    {
+      type: "sendMsg",
+      label: "Enviar Menssagem",
+      icon: "💬",
+      color: "#0a84ff",
+      sub: "Enviar Menssagem",
+      props: [
+        { k: "Numero", v: "" },
+        { k: "Mensagem", v: "" },
+      ],
+      inputs: 1,
+      outputs: 0,
     },
     {
       type: "http",
@@ -73,6 +86,16 @@ function useFlow({ allTickets, URL_BASE, token, sonnerAlert }) {
         { k: "Entrada", v: "JSON" },
         { k: "Saída", v: "Array" },
       ],
+      inputs: 1,
+      outputs: 1,
+    },
+    {
+      type: "processarIa",
+      label: "Processar-ia",
+      icon: "🧠",
+      color: "#32d74b",
+      sub: "Processar com IA",
+
       inputs: 1,
       outputs: 1,
     },
@@ -188,19 +211,19 @@ function useFlow({ allTickets, URL_BASE, token, sonnerAlert }) {
       // não fecha automaticamente — o usuário fecha com Cancelar/Salvar/clique fora
     });
 
-    /* nós iniciais */
-    addNode(PALETTE[0], { x: 80, y: 180 });
-    addNode(PALETTE[2], { x: 360, y: 80 });
-    addNode(PALETTE[5], { x: 360, y: 280 });
+    // /* nós iniciais */
+    // addNode(PALETTE[0], { x: 80, y: 180 });
+    // addNode(PALETTE[2], { x: 360, y: 80 });
+    // addNode(PALETTE[5], { x: 360, y: 280 });
 
-    setTimeout(() => {
-      try {
-        editor.addConnection(1, 2, "output_1", "input_1");
-        editor.addConnection(2, 3, "output_1", "input_1");
-      } catch (e) {
-        console.warn("Conexão falhou:", e);
-      }
-    }, 150);
+    // setTimeout(() => {
+    //   try {
+    //     editor.addConnection(1, 2, "output_1", "input_1");
+    //     editor.addConnection(2, 3, "output_1", "input_1");
+    //   } catch (e) {
+    //     console.warn("Conexão falhou:", e);
+    //   }
+    // }, 150);
   });
 
   /* ── Nós ── */
@@ -315,6 +338,44 @@ function useFlow({ allTickets, URL_BASE, token, sonnerAlert }) {
         const url = data.props.find((p) => p.k === "URL")?.v;
         const resp = await fetch(url);
         result = await resp.json();
+      } else if (type === "processarIa") {
+        const engine = await initAI();
+        const contato = context.data.contato;
+        const response = await engine.chat.completions.create({
+          messages: [
+            {
+              role: "system",
+              content: "Você é um assistente de atendimento.",
+            },
+            {
+              role: "user",
+              content: context.data.messages[0].body,
+            },
+          ],
+        });
+        const mensagem = response.choices[0].message.content;
+
+        result = { contato, mensagem };
+      } else if (type === "sendMsg") {
+        let numero = data.props.find((p) => p.k === "Numero")?.v;
+        let mensagem = data.props.find((p) => p.k === "Mensagem")?.v;
+        if (!!numero == false) {
+          // TODO pegar dados do Ai
+
+          numero = context.data.contato;
+          mensagem = context.data.mensagem;
+        }
+        const formData = new FormData();
+        formData.append("to", numero);
+        formData.append("body", mensagem || "");
+
+        const sendUrl = `${URL_BASE}/api/v1/channel/18/send`;
+        const message = await fetch(sendUrl, {
+          method: "POST",
+          body: formData,
+          headers: { Authorization: `Bearer ${token.value}` },
+        });
+        result = { messagem: "Enviada" };
       } else if (type === "filter") {
         result = Array.isArray(context.data)
           ? context.data.filter((item) => item.status === "open")
@@ -414,9 +475,11 @@ function useFlow({ allTickets, URL_BASE, token, sonnerAlert }) {
   }
   /* ── Watch tickets externos ── */
   watch(
-    allTickets,
+    ticketNovo,
     (novoValor) => {
-      executarModulo("Home", novoValor);
+      if (novoValor.isNew) {
+        executarModulo("Home", novoValor);
+      }
     },
     { deep: true },
   );

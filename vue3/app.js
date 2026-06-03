@@ -65,7 +65,10 @@ async function initApp() {
       const URL_BASE = "http://localhost:3000";
 
       let token = ref("");
-
+      let webllm = null;
+      let aiEngine = null;
+      const aiLoading = ref(false);
+      const webllmModule = ref(false);
       // =========================================================================
       // 2. ESTADO GLOBAL (compartilhado entre módulos)
       // =========================================================================
@@ -79,7 +82,7 @@ async function initApp() {
       const isSuccess = ref(true);
       const isAuthenticated = ref(false);
       const currentUser = ref(null);
-
+      const ticketNovo = ref("");
       // Socket exposto como ref para os módulos acessarem reativamente
       const socketRef = ref(null);
 
@@ -131,6 +134,25 @@ async function initApp() {
         });
         return `${dateStr} às ${timeStr}`;
       };
+
+      async function initAI() {
+        if (aiEngine) return aiEngine;
+
+        aiLoading.value = true;
+
+        try {
+          aiEngine = await webllmModule.value.CreateMLCEngine(
+            "Llama-3.2-1B-Instruct-q4f16_1-MLC",
+            {
+              initProgressCallback: console.log,
+            },
+          );
+
+          return aiEngine;
+        } finally {
+          aiLoading.value = false;
+        }
+      }
 
       // =========================================================================
       // 4. AUTENTICAÇÃO
@@ -221,7 +243,9 @@ async function initApp() {
 
       const flow = useFlow({
         ...shared,
-        allTickets: tickets.allTickets,
+        ticketNovo,
+        initAI,
+        aiEngine,
       });
 
       const broadcast = useBroadcast({ ...shared });
@@ -325,6 +349,7 @@ async function initApp() {
 
         socket.on("ticket-updated", async (data) => {
           if (data.status === "pending" && data.previousStatus !== "pending") {
+            ticketNovo.value = data;
             const name = data.owner || data.name || `Ticket ${data.id}`;
             notifications.show({
               body: data.lastMessage,
@@ -414,7 +439,14 @@ async function initApp() {
           if (newId) socketRef.value.emit("join-ticket", newId.id);
         }
       });
+      async function getWebLLM() {
+        if (!webllmModule.value) {
+          webllmModule.value =
+            await import("https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.84/lib/index.min.js");
+        }
 
+        return webllmModule.value;
+      }
       // =========================================================================
       // 11. LIFECYCLE
       // =========================================================================
@@ -435,6 +467,8 @@ async function initApp() {
             );
           });
         }
+
+        getWebLLM();
       });
 
       onUnmounted(() => {
@@ -495,6 +529,7 @@ async function initApp() {
         formatTime,
         // teste
         sonnerAlert,
+        webllm,
       };
 
       provide("appContext", allData);
