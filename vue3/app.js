@@ -479,9 +479,9 @@ async function initApp() {
       async function promptSalvar() {
         const nome = window.prompt("Nome do flow:", "Meu Flow");
         if (!nome) return;
-        const desc = window.prompt("Descrição (opcional):", "");
+        const gatilho = window.prompt("gatilho:", "");
 
-        await flow.salvarFlow(nome, desc || "");
+        await flow.salvarFlow(nome, gatilho);
       }
       const allData = {
         // Tickets

@@ -329,66 +329,66 @@ function useFlow({ ticketNovo, URL_BASE, token, initAI, aiEngine }) {
     let result = null;
 
     try {
-      if (type === "trigger") {
-        const intervalo = data.props.find((p) => p.k === "Intervalo")?.v;
-        result = await new Promise((resolve) => {
-          setTimeout(() => resolve(context.data), parseInterval(intervalo));
-        });
-      } else if (type === "http") {
-        const url = data.props.find((p) => p.k === "URL")?.v;
-        const resp = await fetch(url);
-        result = await resp.json();
-      } else if (type === "processarIa") {
-        const engine = await initAI();
-        const contato = context.data.contato;
-        const response = await engine.chat.completions.create({
-          messages: [
-            {
-              role: "system",
-              content: "Você é um assistente de atendimento.",
-            },
-            {
-              role: "user",
-              content: context.data.messages[0].body,
-            },
-          ],
-        });
-        const mensagem = response.choices[0].message.content;
+      // if (type === "trigger") {
+      //   const intervalo = data.props.find((p) => p.k === "Intervalo")?.v;
+      //   result = await new Promise((resolve) => {
+      //     setTimeout(() => resolve(context.data), parseInterval(intervalo));
+      //   });
+      // } else if (type === "http") {
+      //   const url = data.props.find((p) => p.k === "URL")?.v;
+      //   const resp = await fetch(url);
+      //   result = await resp.json();
+      // } else if (type === "processarIa") {
+      //   const engine = await initAI();
+      //   const contato = context.data.contato;
+      //   const response = await engine.chat.completions.create({
+      //     messages: [
+      //       {
+      //         role: "system",
+      //         content: "Você é um assistente de atendimento.",
+      //       },
+      //       {
+      //         role: "user",
+      //         content: context.data.messages[0].body,
+      //       },
+      //     ],
+      //   });
+      //   const mensagem = response.choices[0].message.content;
 
-        result = { contato, mensagem };
-      } else if (type === "sendMsg") {
-        let numero = data.props.find((p) => p.k === "Numero")?.v;
-        let mensagem = data.props.find((p) => p.k === "Mensagem")?.v;
-        if (!!numero == false) {
-          // TODO pegar dados do Ai
+      //   result = { contato, mensagem };
+      // } else if (type === "sendMsg") {
+      //   let numero = data.props.find((p) => p.k === "Numero")?.v;
+      //   let mensagem = data.props.find((p) => p.k === "Mensagem")?.v;
+      //   if (!!numero == false) {
+      //     // TODO pegar dados do Ai
 
-          numero = context.data.contato;
-          mensagem = context.data.mensagem;
-        }
-        const formData = new FormData();
-        formData.append("to", numero);
-        formData.append("body", mensagem || "");
+      //     numero = context.data.contato;
+      //     mensagem = context.data.mensagem;
+      //   }
+      //   const formData = new FormData();
+      //   formData.append("to", numero);
+      //   formData.append("body", mensagem || "");
 
-        const sendUrl = `${URL_BASE}/api/v1/channel/18/send`;
-        const message = await fetch(sendUrl, {
-          method: "POST",
-          body: formData,
-          headers: { Authorization: `Bearer ${token.value}` },
-        });
-        result = { messagem: "Enviada" };
-      } else if (type === "filter") {
-        result = Array.isArray(context.data)
-          ? context.data.filter((item) => item.status === "open")
-          : "Fechado";
-      } else if (type === "transform") {
-        result = context.data;
-      } else if (type === "db") {
-        console.log("Salvaria no banco:", context.data);
-        result = context.data;
-      } else if (type === "notify") {
-        console.log("Notificaria:", context.data);
-        result = null;
-      }
+      //   const sendUrl = `${URL_BASE}/api/v1/channel/18/send`;
+      //   const message = await fetch(sendUrl, {
+      //     method: "POST",
+      //     body: formData,
+      //     headers: { Authorization: `Bearer ${token.value}` },
+      //   });
+      //   result = { messagem: "Enviada" };
+      // } else if (type === "filter") {
+      //   result = Array.isArray(context.data)
+      //     ? context.data.filter((item) => item.status === "open")
+      //     : "Fechado";
+      // } else if (type === "transform") {
+      //   result = context.data;
+      // } else if (type === "db") {
+      //   console.log("Salvaria no banco:", context.data);
+      //   result = context.data;
+      // } else if (type === "notify") {
+      //   console.log("Notificaria:", context.data);
+      //   result = null;
+      // }
 
       setBadge(id, "st-success", "✓ Concluído");
     } catch (e) {
@@ -474,15 +474,15 @@ function useFlow({ ticketNovo, URL_BASE, token, initAI, aiEngine }) {
     return await resp.json();
   }
   /* ── Watch tickets externos ── */
-  watch(
-    ticketNovo,
-    (novoValor) => {
-      if (novoValor.isNew) {
-        executarModulo("Home", novoValor);
-      }
-    },
-    { deep: true },
-  );
+  // watch(
+  //   ticketNovo,
+  //   (novoValor) => {
+  //     if (novoValor.isNew) {
+  //       executarModulo("Home", novoValor);
+  //     }
+  //   },
+  //   { deep: true },
+  // );
 
   /* ── Return ── */
   return {

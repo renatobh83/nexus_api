@@ -32,6 +32,11 @@ export class FlowsRepository {
       where: { id: id },
     });
   }
+   async findFirst() {
+    return await prisma.flows.findFirst({
+      where: { ativo: true },
+    });
+  }
   /**
    * listar todos os flows ativos
    *
@@ -53,12 +58,14 @@ export class FlowsRepository {
     });
   }
 
-  async flowExecutionFindFirst(ticketId: string) {
+  async flowExecutionFindFirst(where: Prisma.FlowExecutionWhereInput) {
     return await prisma.flowExecution.findFirst({
-      where: {
-        ticketId: ticketId,
-        status: "waiting_response",
-      },
+      where
     });
+  }
+  async createflowExecution(data:Prisma.FlowExecutionCreateInput){
+    return prisma.flowExecution.create({data: data
+
+    })
   }
 }

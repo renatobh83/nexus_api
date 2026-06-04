@@ -16,9 +16,10 @@ export const teleprotoListener = async (tbot: SessionTbot) => {
   tbot.addEventHandler(async (event) => {
     const messageIsGroup =
       event.message.isChannel ||
-      event.message.isGroup ||
+      event.message.isGroup 
+      // ||
       // @ts-ignore - _chat.bot existe em runtime
-      event.message._chat?.bot;
+      // event.message._chat?.bot;
     if (messageIsGroup) return;
 
     await AuxiTbot(tbot, event.message);
@@ -100,9 +101,9 @@ export const resolveContact = async (
     };
   }
 };
-export const AuxiTbot = async (tbot: SessionTbot, msg: Api.Message) => {
+export const AuxiTbot = async (tbot: SessionTbot, msg: Api.Message, userId?: string) => {
   const message = await toInternalMessageTbot(msg);
   const session = toInternalSession(tbot);
   const contato = await resolveContact(msg, tbot);
-  await handleMessage(message, session, contato);
+  await handleMessage(message, session, contato, userId);
 };

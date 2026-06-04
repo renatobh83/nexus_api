@@ -1,17 +1,31 @@
 import { FlowJson, FlowNode } from "../types.js";
 
 export class FlowParser {
-  static getNodes(flow: FlowJson): FlowNode[] {
-    return Object.values(flow.drawflow.Home.data);
+  static getNodes(
+    flow: FlowJson,
+    moduleName: string
+  ): FlowNode[] {
+
+    const module =
+      flow.drawflow[moduleName];
+
+    if (!module) {
+      throw new Error(
+        `Módulo ${moduleName} não encontrado`
+      );
+    }
+
+    return Object.values(module.data);
   }
 
   static findNode(
     flow: FlowJson,
     nodeId: string | number,
-  ): FlowNode | undefined {
-    return flow.drawflow.Home.data[String(nodeId)];
+    moduleName: string,
+  ) {
+    return flow.drawflow[moduleName]
+      ?.data[String(nodeId)];
   }
-
   static getNextNodes(node: FlowNode) {
     const result: string[] = [];
 

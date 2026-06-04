@@ -12,6 +12,9 @@ interface CreateTicketInput {
   isInteraction?: boolean;
   socketId?: string;
   chatClient?: boolean;
+  status?: string
+  isFlow?: boolean
+
 }
 
 //  Logger
@@ -39,6 +42,8 @@ const buildSharedFields = (input: CreateTicketInput, now: number) => ({
   isInteraction: input.isInteraction,
   socketId: input.socketId,
   chatClient: input.chatClient,
+  status: input.status,
+  isFlow: input.isFlow
 });
 
 export const createTicket = async (
@@ -56,6 +61,7 @@ export const createTicket = async (
     contato,
     isGroup: ticketGroup,
     channel: { connect: { id: channelId } },
+    isFlow: true
   };
 
   // 5. Usando upsert do Prisma em vez de find → create/update manual

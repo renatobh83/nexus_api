@@ -118,8 +118,7 @@ model Ticket {
   lastAbsenceMessageAt DateTime?
   chatClient           Boolean?
   socketId             String?
-  stepChatFlow         String?
-  chatFlowStatus       String    @default("not_started")
+  isFlow               Boolean   @default(false)
   apiConfig            Json?
 
   contato              String

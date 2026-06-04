@@ -8,17 +8,18 @@ export class FlowExecutorService {
    */
   static async startFlow(
     flow: FlowJson,
+    moduleName: string,
     context: Record<string, any> = {},
   ): Promise<void> {
-    const nodes = FlowParser.getNodes(flow);
-
+    const nodes = FlowParser.getNodes(flow, moduleName);
+    
     const trigger = nodes.find((node) => node.data.type === "trigger");
 
     if (!trigger) {
       throw new Error("Trigger não encontrado");
     }
 
-    await this.executeNode(flow, trigger.id.toString(), context);
+    await this.executeNode(flow, trigger.id.toString(), context, moduleName);
   }
 
   /**
@@ -28,8 +29,9 @@ export class FlowExecutorService {
     flow: FlowJson,
     nodeId: string,
     context: Record<string, any> = {},
+    moduleName: string
   ): Promise<void> {
-    await this.executeNode(flow, nodeId, context);
+    await this.executeNode(flow, nodeId, context,moduleName );
   }
 
   /**
@@ -39,9 +41,10 @@ export class FlowExecutorService {
     flow: FlowJson,
     nodeId: string,
     context: Record<string, any>,
+    moduleName: string
   ): Promise<void> {
-    const node = FlowParser.findNode(flow, nodeId);
-
+    const node = FlowParser.findNode(flow, nodeId,moduleName);
+    console.log(flow)
     if (!node) {
       throw new Error(`Node ${nodeId} não encontrado`);
     }
@@ -73,7 +76,7 @@ export class FlowExecutorService {
     }
 
     for (const nextNodeId of nextNodes) {
-      await this.executeNode(flow, nextNodeId, result);
+      await this.executeNode(flow, nextNodeId, result, moduleName);
     }
   }
 }
