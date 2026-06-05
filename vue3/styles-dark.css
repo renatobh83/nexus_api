@@ -2763,6 +2763,9 @@ a:hover {
   left: -6px;
 }
 .drawflow .drawflow-node .outputs {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   right: 6px;
 }
 .drawflow-delete {

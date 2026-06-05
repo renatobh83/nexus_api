@@ -70,11 +70,12 @@ function useFlow({ ticketNovo, URL_BASE, token, initAI, aiEngine }) {
       color: "#bf5af2",
       sub: "Condição lógica",
       props: [
-        { k: "Campo", v: "status" },
-        { k: "Op.", v: "open" },
+        { k: "Campo", v: "" },
+        { k: "Operador", v: "=" },
+        { k: "Valor", v: "" }
       ],
       inputs: 1,
-      outputs: 1,
+      outputs: 2,
     },
      {
       type: "waitResponse",
@@ -82,7 +83,7 @@ function useFlow({ ticketNovo, URL_BASE, token, initAI, aiEngine }) {
       icon: "🛑",
       color: "#bf5af2",
       sub: "Condição lógica",
-    
+
       inputs: 1,
       outputs: 1,
     },
@@ -92,9 +93,9 @@ function useFlow({ ticketNovo, URL_BASE, token, initAI, aiEngine }) {
       icon: "🗓️",
       color: "#bf5af2",
       sub: "Condição lógica",
-       props: [
+      props: [
         { k: "Mensagem", v: "" },
-  
+
       ],
       inputs: 1,
       outputs: 1,

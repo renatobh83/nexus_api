@@ -87,6 +87,29 @@ export class FlowExecutorService {
     if (result === null) {
       return;
     }
+    // 3. Saídas específicas
+    if (result?.output) {
+
+      const output = node.outputs?.[result.output];
+
+      if (!output) {
+        console.warn(`Saída ${result.output} não encontrada`);
+        return;
+      }
+
+      for (const conn of output.connections) {
+        await this.executeNode(
+          flow,
+          conn.node.toString(),
+          result,
+          moduleName
+        );
+      }
+
+      return;
+    }
+
+    // 4. Fluxo padrão
 
     const nextNodes = FlowParser.getNextNodes(node);
 
