@@ -17,7 +17,8 @@ export const FilterNode = {
     const value = getNestedValue(context, field);
 
     let passed = false;
-
+    console.log(value)
+    console.log(context)
     switch (operator) {
       case "=":
         passed = value == expected;
