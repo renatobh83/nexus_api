@@ -44,7 +44,6 @@ function useFlow({ ticketNovo, URL_BASE, token, initAI, aiEngine }) {
       color: "#0a84ff",
       sub: "Enviar Menssagem",
       props: [
-         { k: "variavel", v: "" },
         { k: "Numero", v: "" },
         { k: "Mensagem", v: "" },
 
@@ -170,7 +169,7 @@ function useFlow({ ticketNovo, URL_BASE, token, initAI, aiEngine }) {
       const currentPropIndex = ref (null);
 
       const variables = [
-        { label: "Nome do Cliente", value: "{{ticket.nome}}" },
+        { label: "Nome do Cliente", value: "{{ticket.owner}}" },
         { label: "Telefone", value: "{{ticket.contato}}" },
         { label: "Status Ticket", value: "{{ticket.status}}" },
         { label: "Última Mensagem", value: "{{mensagem}}" },
