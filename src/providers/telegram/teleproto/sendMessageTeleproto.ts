@@ -14,6 +14,7 @@ export const SendMessageTeleproto = async (
   hasMedia: any,
 ) => {
   const tbot = getTbot(ticket.channelId);
+
   if (typeof hasMedia !== "boolean") {
     // Crie uma instância de CustomFile a partir do seu buffer
     const extension = mime.extension(hasMedia.mimetype);
@@ -32,20 +33,25 @@ export const SendMessageTeleproto = async (
       caption: body,
       forceDocument: true, // Opcional: para enviar como documento mesmo que seja uma imagem/vídeo
     });
-   // await AuxiTbot(tbot, result);
     await ticketService.updateTicket(ticket.id, {
       lastMessage: hasMedia.filename,
       lastMessageAt: Date.now(),
     });
+    // await AuxiTbot(tbot, result);
     return result;
   } else {
-    const result = await tbot.sendMessage(ticket.contato, { message: body });
+    try {
+      const result = await tbot.sendMessage(ticket.contato, { message: body })
+    } catch (error) {
+      console.log(error)
+    }
+    
 
-    //await AuxiTbot(tbot, result);
     await ticketService.updateTicket(ticket.id, {
       lastMessage: body.length > 255 ? body.slice(0, 252) + "..." : body,
       lastMessageAt: Date.now(),
     });
-    return result;
+    // await AuxiTbot(tbot, result);
+    // return result;
   }
 };

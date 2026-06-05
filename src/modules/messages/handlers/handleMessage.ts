@@ -31,7 +31,7 @@ export const handleMessage = async (
   try {
     const serialized = contato.id._serialized;
     const lastMessage = formatLastMessage(message);
-    console.log(message)
+    
     const { ticket, isNew } = await createTicket({
       contato: serialized,
       contactOwner: contato,

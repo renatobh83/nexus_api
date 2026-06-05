@@ -30,6 +30,7 @@ export const SendMessageSystemProxy = async (
       return SendMessageWppWeb(body, ticket, hasMedia);
 
     case "telegram":
+      
       return SendMessageTeleproto(body, ticket, hasMedia);
     case "web":
       return SendMessageChatClient(body, ticket, hasMedia);
