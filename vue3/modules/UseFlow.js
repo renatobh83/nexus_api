@@ -48,7 +48,7 @@ function useFlow({ ticketNovo, URL_BASE, token, initAI, aiEngine }) {
         { k: "Mensagem", v: "" },
       ],
       inputs: 1,
-      outputs: 0,
+      outputs: 1,
     },
     {
       type: "http",
