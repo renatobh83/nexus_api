@@ -3,15 +3,15 @@ export const FilterNode = {
   async execute(node: any, context: Record<string, any>) {
 
     const field = node.data.props.find(
-      (p: { k: string }) => p.k === "field"
+      (p: { k: string }) => p.k === "Campo"
     )?.v;
 
     const operator = node.data.props.find(
-      (p: { k: string }) => p.k === "operator"
+      (p: { k: string }) => p.k === "Operador"
     )?.v;
 
     const expected = node.data.props.find(
-      (p: { k: string }) => p.k === "value"
+      (p: { k: string }) => p.k === "Valor"
     )?.v;
 
     const value = getNestedValue(context, field);

@@ -1,0 +1,103 @@
+-- Log de Mudanças
+
+v3092.2
+🔧 Refatoração da página de resultados do médico solicitante e do paciente.
+🐞 Corrigido atualização de laudos com adendo.
+✨ Incluido opção visualizador e imagem na tela de gestão de laudos.
+
+v3092.1
+✨ Incluido funcionalidade de suspensão de laudos. Ações: [Inserir,Finalizar, Apagar] Permite editar o laudo sem finalizar. Modifica status do exame para [SUSPENSO]
+✨ Incluido campo [Suspensão] no cadastro de filas.
+✨ Incluido endpoint para atualização do cabeçalho do laudo.(/laudo/laudo/exec/atualizar/{cd_exame}).
+✨ Incluido validação de alteração do cabeçalho ao abrir, salvar e assinar laudo.
+🐞 Corrigido cadastro de médicos.
+🐞 Corrigido formatação de parágrafos no editor de laudos.
+🐞 Corrigido visualização do alerta por unidade no editor de laudos.
+🐞 Corrigido visualização de resultados no portal do médico solicitante.
+
+v3092.0
+✨ Modificado visualizador de anexos em laudos
+✨ Incluido visualização do log de questionários em laudos
+
+v3091.9
+✨ Incluido scanner no cadastro de laudos externos
+✨ Incluido botão de permissão na página padrão (somente usuario ROOT)
+
+v3091.8
+🔒 Azure AD: remoção de JWT via URL, adoção de token exchange seguro via POST
+✨ Adicionado painel de ferramentas na tela de gestão de laudos
+✨ Removido função finalizar (revisão, achado, pendência) do menu lateral.
+✨ Incluido bloqueio com aviso na tela de gestão de laudos para pesquisas com mais de 1000 registros
+🐞 Corrigido erro ao salvar arquivo no cadastro de Laudo Externo.
+🐞 Corrigido campos da página de login para resultados e questionários
+🐞 Corrigido visualização do laudo no portal do paciente
+✨ Modificado seleção de arquivos para inclusão de anexos em laudos.
+✨ Incluido formatação automática de texto ao colar no editor de laudos.
+
+v3091.7
+✨ Modificado cadastro de pendência e achado crítico com botões de exclusão e finalização
+✨ Adicionado botão de fechar no painel de histórico de laudos
+
+v3091.6
+✨ Adicionado campo [fila automática] e [bloquear grid] no cadastro de médicos
+✨ Adicionado associação do escalonador com empresa e modalidade no cadastro de médicos
+✨ Adicionado botão [Próximo] na tela de laudos para uso da fila automática
+✨ Adicionado [Questionário] no grid da tela de atendimento
+✨ Modificado filtro de data para decrementar apenas 1 dia para filtros sem intervalo
+🔧 Removido menu financeiro
+🐞 Corrigido configuração de visualização de imagens com Weasis, Ohif, Mobile, Jpeg, Radiant, Osirix/Radiant
+
+v3091.5
+🔧 Refatoração do componente de scanner para suporte a digitalização de múltiplos documentos
+✨ Adicionado ações independentes para digitalização JPEG e PDF
+✨ Modificado serviço (python) de digitalização para suporte a múltiplos documentos
+✨ Adicionado atalho para pesquisa de pacientes na tela de laudos
+✨ Adicionado opçao OUTROS no campo editor de voz no cadastro de médicos para desativar a seleção automática de modelos durante a edição de laudos
+🔧 Refatoração da tela de atendimento
+🐞 Correções no serviço (HorseEditor) de geração de PDF
+
+v3091.4
+🔒 Azure AD: remoção de JWT via URL, adoção de token exchange seguro via POST
+🐞 Correções na integração com o LeoRad
+✨ Adicionado alerta de limite de linhas no grid de laudos
+✨ Adicionado suporte a colagem de imagens com redimensionamento automático no editor de laudos
+✨ Modificado visualização de laudos do histórico dentro do editor de laudos
+✨ Removido obrigatoriedade de revisão para inserção de adendo de laudo
+
+v3091.3
+✨ Incluido atalho nos botões da coluna de status no grid de laudos
+🐞 Correção na visualização do chat integrado ao editor
+✨ Modificado botão RESET e visualização dos dados no cadastro de pendência
+✨ Modificado função de inserir pendência em laudos digitados para exibir a tela de exclusão de laudo
+🐞 Corrigido visualização dos exames com status DIGITACAO pelo médico digitador
+
+v3091.2
+🔧 Refatoração do módulo de Questionário
+✨ Incluido campo questionário no cadastro de Modalidade e Procedimento
+✨ Adicionado rota /questionario para preenchimento de questionários pelo paciente
+🔧 Refatoração dos componentes SignaturePad e PicturePad para assinatura e desenho
+
+v3091.1
+🔧 Refatoração dos módulos Gerencial e Atendimento
+🔧 Refatoração da tela de autenticação
+🔧 Refatoração da tela de Gestão de laudos
+✨ Modificado organização do menu principal
+
+v3091.0
+✨ Adicionado componente EditorWrapper para edição de laudos
+✨ Adicionado componente ImageWrapper para visualização de imagens com zoom e rotação
+
+v3090.9
+🔧 Remoção de componentes Syncfusion não utilizados
+✨ Adicionado módulo nuxt-security: proteção via headers HTTP e Content Security Policy
+
+v3090.8
+🐞 Correção no redirecionamento automático após login
+
+v3090.7
+🔧 Refatoração do componente de Modal
+🔧 Remoção do componente Spinner legado
+
+v3090.6
+✨ Atualização do sistema para suporte a Nuxt 4
+
