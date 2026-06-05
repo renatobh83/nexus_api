@@ -61,7 +61,7 @@ export const handleMessage = async (
       const clientNamespace = getClientIONamespace();
       clientNamespace.emit("ticket-updated", { ...result, isNew });
       // TODO colocar para nao pegar as mensagens que eu envio para entrar no flow
-      if (message.socketId || !ticket.isFlow || message.fromMe) {
+      if (message.socketId || !ticket.isFlow || message.fromMe || ticket.isGroup) {
         return { isNew, ticketId: ticket.id };
       }
 
@@ -98,7 +98,7 @@ export const handleMessage = async (
 
     } else {
       // TODO colocar para nao pegar as mensagens que eu envio para entrar no flow
-      if (!ticket.isFlow || message.fromMe) {
+      if (!ticket.isFlow || message.fromMe || ticket.isGroup) {
         return { isNew, ticketId: ticket.id };
       }
 
