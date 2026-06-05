@@ -63,7 +63,7 @@ export class FlowExecutorService {
     const result = await executor.execute(node, context);
 
     if (result?.__waitResponse) {
-
+      const { __waitResponse, ...contextToSave } = result;
       const nextNodes = FlowParser.getNextNodes(node);
 
 
@@ -72,7 +72,7 @@ export class FlowExecutorService {
         {
           status: "waiting_response",
           currentNodeId: nextNodes[0],
-          context: result
+          context: contextToSave
         }
       );
 
