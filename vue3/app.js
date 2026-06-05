@@ -86,6 +86,9 @@ async function initApp() {
       // Socket exposto como ref para os módulos acessarem reativamente
       const socketRef = ref(null);
 
+
+
+
       // =========================================================================
       // 3. UTILITÁRIOS (usados por múltiplos módulos)
       // =========================================================================
@@ -530,6 +533,7 @@ async function initApp() {
         // teste
         sonnerAlert,
         webllm,
+ 
       };
 
       provide("appContext", allData);

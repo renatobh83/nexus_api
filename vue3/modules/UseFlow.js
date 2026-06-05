@@ -44,8 +44,10 @@ function useFlow({ ticketNovo, URL_BASE, token, initAI, aiEngine }) {
       color: "#0a84ff",
       sub: "Enviar Menssagem",
       props: [
+         { k: "variavel", v: "" },
         { k: "Numero", v: "" },
         { k: "Mensagem", v: "" },
+
       ],
       inputs: 1,
       outputs: 1,
@@ -162,6 +164,36 @@ function useFlow({ ticketNovo, URL_BASE, token, initAI, aiEngine }) {
   const showModalCarregar = ref(false);
   const flowsDisponiveis = ref([]);
   const carregandoFlows = ref(false);
+
+
+      const showVars = ref(false);
+      const currentPropIndex = ref (null);
+
+      const variables = [
+        { label: "Nome do Cliente", value: "{{ticket.nome}}" },
+        { label: "Telefone", value: "{{ticket.contato}}" },
+        { label: "Status Ticket", value: "{{ticket.status}}" },
+        { label: "Última Mensagem", value: "{{mensagem}}" },
+      ];
+
+      function showVariables(index) {
+        currentPropIndex.value = index;
+        showVars.value = true;
+      }
+
+      function insertVariable(variable) {
+        console.log(variable)
+        if (
+          currentPropIndex.value === null ||
+          !selectedNode.value
+        ) {
+          return;
+        }
+
+        selectedNode.value.props[currentPropIndex.value].v += variable;
+
+        showVars.value = false;
+      }
 
 
   /* ── Helpers ── */
@@ -599,6 +631,11 @@ function useFlow({ ticketNovo, URL_BASE, token, initAI, aiEngine }) {
     carregandoFlows,
     abrirModalCarregar,
     carregarFlow,
-    deletarFlow
+    deletarFlow,
+      showVars,
+        variables,
+        showVariables, 
+        insertVariable,
+        currentPropIndex
   };
 }

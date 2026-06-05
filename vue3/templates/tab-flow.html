@@ -76,11 +76,51 @@
         <label style="font-size:11px;color:#66668a;display:block;margin-bottom:4px;">
           {{ p.k }}
         </label>
-        <input v-model="selectedNode.props[i].v" style="width:100%;background:#101014;border:1px solid #2e2e3e;
-                 border-radius:6px;padding:6px 10px;color:#e1e1e6;
-                 font-size:13px;outline:none;box-sizing:border-box;" />
-      </div>
 
+        <div style="display:flex;gap:6px;">
+          <input v-model="selectedNode.props[i].v" style="
+        flex:1;
+        background:#101014;
+        border:1px solid #2e2e3e;
+        border-radius:6px;
+        padding:6px 10px;
+        color:#e1e1e6;
+        font-size:13px;
+        outline:none;
+      " />
+
+          <button v-if="p.k === 'Mensagem'" type="button" @click="showVariables(i)" style="
+        background:#2e2e3e;
+        border:none;
+        border-radius:6px;
+        color:white;
+        padding:0 12px;
+        cursor:pointer;
+      ">
+            {}
+          </button>
+        </div>
+      </div>
+      <div v-if="showVars" style="
+    margin-top:12px;
+    background:#101014;
+    border:1px solid #2e2e3e;
+    border-radius:8px;
+    overflow:hidden;
+  ">
+        <div v-for="v in variables" :key="v.value" @click="insertVariable(v.value)" style="
+      padding:10px;
+      cursor:pointer;
+      border-bottom:1px solid #2e2e3e;
+      color:#e1e1e6;
+      font-size:13px;
+    ">
+          {{ v.label }}
+          <span style="color:#888;">
+            {{ v.value }}
+          </span>
+        </div>
+      </div>
       <div style="display:flex;gap:8px;margin-top:20px;justify-content:flex-end;">
         <button class="btn btn-ghost" @click="showModal = false">Cancelar</button>
         <button class="btn btn-run" @click="saveNode">Salvar</button>
