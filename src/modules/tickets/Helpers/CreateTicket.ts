@@ -49,6 +49,7 @@ const buildSharedFields = (input: CreateTicketInput, now: number) => ({
 export const createTicket = async (
   input: CreateTicketInput,
 ): Promise<{ ticket: Ticket; isNew: boolean }> => {
+  
   const { channelId, contactOwner, contato, ticketGroup } = input;
 
   // 4. Timestamp único para ambos os payloads

@@ -32,7 +32,7 @@ export const SendMessageTeleproto = async (
       caption: body,
       forceDocument: true, // Opcional: para enviar como documento mesmo que seja uma imagem/vídeo
     });
-    await AuxiTbot(tbot, result);
+   // await AuxiTbot(tbot, result);
     await ticketService.updateTicket(ticket.id, {
       lastMessage: hasMedia.filename,
       lastMessageAt: Date.now(),
@@ -41,7 +41,7 @@ export const SendMessageTeleproto = async (
   } else {
     const result = await tbot.sendMessage(ticket.contato, { message: body });
 
-    await AuxiTbot(tbot, result);
+    //await AuxiTbot(tbot, result);
     await ticketService.updateTicket(ticket.id, {
       lastMessage: body.length > 255 ? body.slice(0, 252) + "..." : body,
       lastMessageAt: Date.now(),

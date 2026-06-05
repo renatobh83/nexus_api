@@ -21,7 +21,7 @@ export const teleprotoListener = async (tbot: SessionTbot) => {
       // @ts-ignore - _chat.bot existe em runtime
       // event.message._chat?.bot;
     if (messageIsGroup) return;
-
+    
     await AuxiTbot(tbot, event.message);
   }, new NewMessage({}));
 
