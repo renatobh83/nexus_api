@@ -29,7 +29,7 @@ export class FlowsRepository {
    */
   async find(id: string) {
     return await prisma.flows.findUnique({
-      where: { id: id },
+      where: { id },
     });
   }
    async findFirst() {
@@ -66,6 +66,12 @@ export class FlowsRepository {
   async createflowExecution(data:Prisma.FlowExecutionCreateInput){
     return prisma.flowExecution.create({data: data
 
+    })
+  }
+  async updateFlowExecution(id: string, data: Prisma.FlowExecutionUpdateInput){
+    return prisma.flowExecution.update({
+      where:{id: id},
+      data :data
     })
   }
 }

@@ -2271,7 +2271,8 @@ a:hover {
   margin-bottom: 20px;
   overflow: hidden;
 }
-
+.flow-item        { padding:10px 14px; border-radius:8px; border:1px solid #2e2e3e; cursor:pointer; }
+.flow-item:hover  { background: #23232f; }
 /* Section title */
 .dash-section-title {
   display: flex;

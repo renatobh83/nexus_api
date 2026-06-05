@@ -27,11 +27,13 @@
 
     <button class="btn btn-ghost" @click="clearFlow">Limpar</button>
     <button class="btn btn-ghost" style="margin-left:4px" @click="zoomReset">1:1</button>
-    <button class="btn btn-ghost" style="margin-left:4px" @click="salvarLocal" title="Salvar no navegador">💾</button>
-    <button class="btn btn-ghost" style="margin-left:4px" @click="carregarLocal"
-      title="Carregar do navegador">📂</button>
-    <button class="btn btn-ghost" style="margin-left:4px" @click="promptSalvar" title="Salvar no banco">BANCO</button>
-    <button class="btn btn-run" style="margin-left:8px" @click="runFlow">▶ Executar</button>
+    <!-- <button class="btn btn-ghost" style="margin-left:4px" @click="salvarLocal" title="Salvar no navegador">💾</button> -->
+    <!-- <button class="btn btn-ghost" style="margin-left:4px" @click="carregarLocal"
+      title="Carregar do navegador">📂</button> -->
+    <button class="btn btn-ghost" style="margin-left:4px" @click="abrirModalCarregar"
+      title="Carregar do banco">📂</button>
+    <button class="btn btn-ghost" style="margin-left:4px" @click="promptSalvar" title="Salvar no banco">💾</button>
+    <!-- <button class="btn btn-run" style="margin-left:8px" @click="runFlow">▶ Executar</button> -->
   </div>
 
   <!-- ── Workspace ── -->
@@ -85,5 +87,51 @@
       </div>
     </div>
   </div>
+  <!-- ── Modal carregar flow ── -->
+  <div v-if="showModalCarregar" style="position:fixed;inset:0;background:rgba(0,0,0,.6);
+         display:flex;align-items:center;justify-content:center;z-index:999;" @click.self="showModalCarregar = false">
+    <div style="background:#1e1e28;border:1px solid #2e2e3e;border-radius:12px;
+              padding:24px;width:420px;max-height:70vh;display:flex;flex-direction:column;">
 
+      <!-- header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <span style="font-size:14px;font-weight:600;color:#e1e1e6;">📂 Carregar Flow</span>
+        <span @click="showModalCarregar = false"
+          style="font-size:18px;color:#66668a;cursor:pointer;line-height:1;">×</span>
+      </div>
+
+      <!-- carregando -->
+      <div v-if="carregandoFlows" style="color:#66668a;font-size:13px;text-align:center;padding:24px 0;">
+        Buscando flows...
+      </div>
+
+      <!-- vazio -->
+      <div v-else-if="flowsDisponiveis.length === 0"
+        style="color:#66668a;font-size:13px;text-align:center;padding:24px 0;">
+        Nenhum flow salvo encontrado.
+      </div>
+
+      <!-- lista -->
+      <div v-else style="overflow-y:auto;display:flex;flex-direction:column;gap:8px;">
+        <div v-for="flow in flowsDisponiveis" :key="flow.id" @click="carregarFlow(flow.id)" style="display:flex;align-items:center;justify-content:space-between;
+               padding:10px 14px;border-radius:8px;border:1px solid #2e2e3e;
+               cursor:pointer;transition:background .12s;" onmouseover="this.style.background='#23232f'"
+          onmouseout="this.style.background='transparent'">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:#e1e1e6;">{{ flow.nome }}</div>
+            <div style="font-size:11px;color:#66668a;margin-top:2px;">
+              {{ flow.descricao || 'Sem descrição' }}
+            </div>
+          </div>
+          <div style="font-size:10px;color:#55557a;white-space:nowrap;margin-left:12px;">
+            {{ new Date(flow.updatedAt).toLocaleDateString('pt-BR') }}
+          </div>
+          <span @click.stop="deletarFlow(flow.id)" title="Excluir flow" style="font-size:15px;color:#66668a;cursor:pointer;padding:2px 6px;
+           border-radius:4px;transition:color .15s;" onmouseover="this.style.color='#ff453a'"
+            onmouseout="this.style.color='#66668a'">🗑</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
 </div>

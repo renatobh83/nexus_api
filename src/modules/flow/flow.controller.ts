@@ -7,11 +7,13 @@ export async function flowController(fastify: FastifyInstance) {
     const flows = await flowsService.listAll();
     reply.status(200).send(flows);
   });
+
   fastify.get("/:id", async (request: FastifyRequest, reply: FastifyReply) => {
-    const id = request.params as any;
+    const {id }= request.params as any;
     const flow = await flowsService.findById(id);
     reply.status(200).send(flow);
   });
+
   fastify.post("/", async (request: FastifyRequest, reply: FastifyReply) => {
     const { nome, flow, descricao = "" } = request.body as any;
     const saved = await flowsService.createOrUpdate({
@@ -24,7 +26,7 @@ export async function flowController(fastify: FastifyInstance) {
   fastify.delete(
     "/:id",
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const id = request.params as any;
+      const {id} = request.params as any;
       await flowsService.deleteFlows(id);
       reply.status(200).send({ ok: true });
     },

@@ -75,6 +75,7 @@ model FlowExecution {
   status        String
   context       Json
   flowSnapshot  Json
+  moduleName    String
   ticketId      String?
   flow          flows    @relation(fields: [flowId], references: [id])
   createdAt     DateTime @default(now())

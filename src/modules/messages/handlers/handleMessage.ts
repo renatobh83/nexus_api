@@ -61,74 +61,102 @@ export const handleMessage = async (
     if (isNew) {
       const clientNamespace = getClientIONamespace();
       clientNamespace.emit("ticket-updated", { ...result, isNew });
-
+      if (message.socketId) {
+        return { isNew, ticketId: ticket.id };
+      }
+      if (!ticket.isFlow) {
+        return { isNew, ticketId: ticket.id };
+      }
       const flow = await flowService.findFirst();
+      if (!flow) {
+        return { isNew, ticketId: ticket.id };
+      }
+
+      const execution = await flowService.createflowExecution({
+        flowSnapshot: flow!.flow_json || {},
+        status: "running",
+        context: {
+          ticket,
+          mensagem: message.body,
+        } as any,
+        ticketId: ticket.id.toString(),
+        flow: {
+          connect: { id: flow!.id }
+        },
+        moduleName: "Home"
+      });
 
       await FlowExecutorService.startFlow(
         flow!.flow_json as unknown as FlowJson,
         "Home",
         {
+          executionId: execution.id,
           ticket: ticket,
           mensagem: message.body,
         },
       );
-      const dataFlowExecution: Prisma.FlowExecutionCreateInput = {
-        flowSnapshot: flow!.flow_json || {},
-        status: "waiting_response",
-        context: {
-          ticket: ticket,
-          mensagem: message.body,
-        } as unknown as {},
-        ticketId: ticket.id.toString(),
-        flow: {
-          connect: { id: flow!.id }
-        }
-      }
+      return { isNew, ticketId: ticket.id };
       //   running
       // waiting_delay
       // waiting_response
       // completed
       // failed
-      await flowService.createflowExecution(dataFlowExecution)
-      // const node = {
-      //   data: {
-      //     props: [
-      //       { k: "Numero", v: serialized },
-      //       { k: "channelId", v: session.id },
-      //     ],
-      //   }
-      // }
-      // await nodeRegistry["processAiNode"].execute(undefined, { mensagem: message.body })
-    }
-    if (message.socketId) {
-      return { isNew, ticketId: ticket.id };
-    }
-    const execution = await flowService.flowExecutionFindFirst({
-      ticketId: ticket.id.toString(),
-      status: "waiting_response"
 
-    });
-    console.log(execution)
-    if (execution) {
-      const context = {
-        ...(execution.context as any),
-        mensagem: message.body,
-      };
-      const flow = await flowService.findFirst()
+    } else {
+      if (!ticket.isFlow) {
+        return { isNew, ticketId: ticket.id };
+      }
+      const execution = await flowService.flowExecutionFindFirst({
+        ticketId: ticket.id.toString(),
+        status: "waiting_response"
 
+      });
 
+      if (execution) {
+        await flowService.updoateFlowExecution(
+          execution.id,
+          {
+            status: "running"
+          }
+        );
+        await FlowExecutorService.continueFlow(
+          execution.flowSnapshot as unknown as FlowJson,
+          execution.currentNodeId!,
+          {
+            ...(execution.context as any),
+            mensagem: message.body,
+            executionId: execution.id
+          },
+          execution.moduleName
+        );
+      } else {
 
-      await FlowExecutorService.startFlow(flow?.flow_json as unknown as FlowJson,
-        'Módulo 1', {
-        context
-      })
+        const flow = await flowService.findFirst()
+        if (!flow) {
+          return { isNew, ticketId: ticket.id };
+        }
 
+        const execution = await flowService.createflowExecution({
+          flowSnapshot: flow!.flow_json || {},
+          status: "running",
+          context: {
+            ticket,
+            mensagem: message.body,
+          } as any,
+          ticketId: ticket.id.toString(),
+          flow: {
+            connect: { id: flow!.id }
+          },
+          moduleName: "Módulo 1"
+        });
+        await FlowExecutorService.startFlow(flow?.flow_json as unknown as FlowJson,
+          'Módulo 1', {
+          executionId: execution.id,
+          ticket,
+          message: message.body
 
-      // await FlowExecutorService.continueFlow(
-      //   execution.flowSnapshot as unknown as FlowJson,
-      //   execution.currentNodeId!,
-      //   context,
-      // );
+        })
+      }
     }
     //else {
     //   const flow = await flowService.findById("1");

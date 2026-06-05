@@ -76,6 +76,29 @@ function useFlow({ ticketNovo, URL_BASE, token, initAI, aiEngine }) {
       inputs: 1,
       outputs: 1,
     },
+     {
+      type: "waitResponse",
+      label: "Aguardar resposta",
+      icon: "🛑",
+      color: "#bf5af2",
+      sub: "Condição lógica",
+    
+      inputs: 1,
+      outputs: 1,
+    },
+    {
+      type: "text",
+      label: "Mensagem",
+      icon: "🗓️",
+      color: "#bf5af2",
+      sub: "Condição lógica",
+       props: [
+        { k: "Mensagem", v: "" },
+  
+      ],
+      inputs: 1,
+      outputs: 1,
+    },
     {
       type: "transform",
       label: "Transformar",
@@ -135,6 +158,11 @@ function useFlow({ ticketNovo, URL_BASE, token, initAI, aiEngine }) {
   const modulos = ref(["Home"]);
   const moduloAtivo = ref("Home");
 
+  const showModalCarregar = ref(false);
+  const flowsDisponiveis = ref([]);
+  const carregandoFlows = ref(false);
+
+
   /* ── Helpers ── */
   function setBadge(nodeId, cls, text) {
     const el = document.querySelector(`#node-${nodeId} .n-badge`);
@@ -157,6 +185,7 @@ function useFlow({ ticketNovo, URL_BASE, token, initAI, aiEngine }) {
     };
     return value * multipliers[unit];
   }
+
 
   /* ── Módulos ── */
   function criarModulo(nome) {
@@ -459,16 +488,75 @@ function useFlow({ ticketNovo, URL_BASE, token, initAI, aiEngine }) {
     console.log("Flow salvo:", saved);
     return saved;
   }
+  async function abrirModalCarregar() {
+    showModalCarregar.value = true;
+    carregandoFlows.value = true;
+    try {
+      const resp = await fetch(`${URL_BASE}/api/v1/flows/`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token.value}`,
+        },
+      });
+      flowsDisponiveis.value = await resp.json();
+    } catch (e) {
+      console.error('Erro ao listar flows:', e);
+    } finally {
+      carregandoFlows.value = false;
+    }
+  }
 
   async function carregarFlow(id) {
     if (!editor) return;
-    const resp = await fetch(`${URL_BASE}/api/v1/flows/${id}`);
-    const record = await resp.json();
-    editor.import(record.flow_json);
-    modulos.value = Object.keys(record.flow_json.drawflow);
-    moduloAtivo.value = modulos.value[0] || "Home";
+    try {
+      const resp = await fetch(`${URL_BASE}/api/v1/flows/${id}`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token.value}`,
+        },
+      });
+      const record = await resp.json();
+      const flowJson = record.flow_json;
+
+      // re-gera o HTML de cada nó antes de importar
+      const modData = flowJson.drawflow;
+      Object.keys(modData).forEach((modulo) => {
+        const nodes = modData[modulo].data;
+        Object.keys(nodes).forEach((nodeId) => {
+          const nodeData = nodes[nodeId].data;  // o { ...p } que você salvou
+          if (nodeData) {
+            nodes[nodeId].html = nodeHTML(nodeData);  // ← re-renderiza com CSS atual
+          }
+        });
+      });
+
+      editor.import(flowJson);
+      modulos.value = Object.keys(flowJson.drawflow);
+      moduloAtivo.value = modulos.value[0] || 'Home';
+      showModalCarregar.value = false;
+
+    } catch (e) {
+      console.error('Erro ao carregar flow:', e);
+    }
   }
 
+  async function deletarFlow(id) {
+    const confirmar = window.confirm('Excluir este flow?');
+    if (!confirmar) return;
+
+    try {
+      await fetch(`${URL_BASE}/api/v1/flows/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token.value}`,
+        },
+      });
+      // remove da lista sem precisar buscar de novo
+      flowsDisponiveis.value = flowsDisponiveis.value.filter(f => f.id !== id);
+    } catch (e) {
+      console.error('Erro ao deletar flow:', e);
+    }
+  }
   async function listarFlows() {
     const resp = await fetch(`${URL_BASE}/api/v1/flows`);
     return await resp.json();
@@ -505,5 +593,11 @@ function useFlow({ ticketNovo, URL_BASE, token, initAI, aiEngine }) {
     carregarLocal,
     salvarFlow,
     carregarFlow,
+    showModalCarregar,
+    flowsDisponiveis,
+    carregandoFlows,
+    abrirModalCarregar,
+    carregarFlow,
+    deletarFlow
   };
 }

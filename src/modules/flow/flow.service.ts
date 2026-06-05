@@ -30,4 +30,8 @@ export class FlowsService {
     return await this.flowsRepository.createflowExecution(data)
 
   }
+  async updoateFlowExecution(id: string, data: Prisma.FlowExecutionUpdateInput){
+    return await this.flowsRepository.updateFlowExecution(id, data)
+    
+  }
 }

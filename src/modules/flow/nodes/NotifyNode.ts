@@ -4,6 +4,6 @@ export const NotifyNode = {
 
     console.log(`Enviando para ${canal}`);
 
-    return context;
+    return;
   },
 };
