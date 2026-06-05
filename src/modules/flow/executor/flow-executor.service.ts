@@ -89,19 +89,22 @@ export class FlowExecutorService {
     }
     // 3. Saídas específicas
     if (result?.output) {
+      const outputKey = result.output;
 
-      const output = node.outputs?.[result.output];
+      const { output, ...cleanResult } = result;
 
-      if (!output) {
-        console.warn(`Saída ${result.output} não encontrada`);
+      const nodeOutput = node.outputs?.[outputKey];
+
+      if (!nodeOutput) {
+        console.warn(`Saída ${outputKey} não encontrada`);
         return;
       }
 
-      for (const conn of output.connections) {
+      for (const conn of nodeOutput.connections) {
         await this.executeNode(
           flow,
           conn.node.toString(),
-          result,
+          cleanResult,
           moduleName
         );
       }

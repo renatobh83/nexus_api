@@ -5,6 +5,7 @@ const channelService = new ChannelService()
 
 export const SendMessage = {
     async execute(node: any, context: any) {
+        const { output, ...rest } = context;
 
         const mensagem = node.data.props.find((p: any) => p.k === "Mensagem")?.v;
         const numero = node.data.props.find((p: any) => p.k === "Numero")?.v;
@@ -16,6 +17,6 @@ export const SendMessage = {
 
         handleSendMessage(channel, contato, mensagem || context.mensagem, null)
 
-        return context;
+        return rest;
     },
 };
