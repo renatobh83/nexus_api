@@ -45,6 +45,7 @@ async function initApp() {
     ConfigIntegracao,
     TabDashboard,
     TabFlow,
+    ConfigSettings
   ] = await Promise.all([
     loadComponent("./templates/tab-chats.html", autoInject),
     loadComponent("./templates/config-users.html", autoInject),
@@ -54,6 +55,8 @@ async function initApp() {
     loadComponent("./templates/config-integracoes.html", autoInject),
     loadComponent("./templates/tab-dashboard.html", autoInject),
     loadComponent("./templates/tab-flow.html", autoInject),
+    loadComponent("./templates/config-settings.html", autoInject),
+    
   ]);
 
   const app = createApp({
@@ -61,8 +64,8 @@ async function initApp() {
       // =========================================================================
       // 1. CONFIGURAÇÃO E CONSTANTES
       // =========================================================================
-      const URL_BASE = "https://fast.panelapps.site";
-      // const URL_BASE = "http://localhost:3000";
+      // const URL_BASE = "https://fast.panelapps.site";
+      const URL_BASE = "http://localhost:3000";
 
       let token = ref("");
       let webllm = null;
@@ -250,7 +253,7 @@ async function initApp() {
         initAI,
         aiEngine,
       });
-
+      const settings = UseSettings()
       const broadcast = useBroadcast({ ...shared });
       const dashboard = useDashboard({
         allTickets: tickets.allTickets,
@@ -503,6 +506,8 @@ async function initApp() {
         ...integracoes,
         // Flow
         ...flow,
+        // Settings
+        ...settings,
         promptSalvar,
         // Estado global
         ...shared,
@@ -553,6 +558,8 @@ async function initApp() {
   app.component("config-integracao", ConfigIntegracao);
   app.component("tab-dashboard", TabDashboard);
   app.component("tab-flow", TabFlow);
+  app.component("config-settings", ConfigSettings);
+  
 
   app.mount("#app");
 }

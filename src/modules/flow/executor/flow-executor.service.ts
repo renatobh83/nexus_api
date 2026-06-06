@@ -88,10 +88,10 @@ export class FlowExecutorService {
       return;
     }
     // 3. Saídas específicas
-    if (result?.output) {
-      const outputKey = result.output;
+    if (result?.route) {
+      const outputKey = result.route;
 
-      const { output, ...cleanResult } = result;
+      const { route, ...cleanResult } = result;
 
       const nodeOutput = node.outputs?.[outputKey];
 

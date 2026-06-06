@@ -46,7 +46,7 @@ export const FilterNode = {
 
     return {
       ...context,
-      output: passed ? "output_1" : "output_2"
+      route: passed ? "output_1" : "output_2"
     };
   }
 };

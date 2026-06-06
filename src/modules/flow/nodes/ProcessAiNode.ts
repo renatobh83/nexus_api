@@ -10,7 +10,7 @@ export const ProcessAiNode = {
     const response = await fetch('https://openui.panelapps.site/api/chat/completions', {
       method: "POST",
       headers: {
-         "Host": "openui.panelapps.site",
+        "Host": "openui.panelapps.site",
         Authorization: `Bearer ${process.env.GEMINI_API_KEY}`,
         'Content-Type': 'application/json'
       },
@@ -20,14 +20,16 @@ export const ProcessAiNode = {
       })
     });
     console.log(response)
-    const data =  await response.json()
+    const data = await response.json()
     const resposta = data.choices[0].message.content;
     console.log(resposta)
 
     return {
       ...context,
-      aiResponse:
-        resposta
+      output: {
+        type: "mensagem",
+        data: resposta
+      }
     };
   }
 };

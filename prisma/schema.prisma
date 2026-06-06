@@ -35,39 +35,43 @@ model Channel {
 
   @@map("Channel")
 }
+
 model IntegrationConfig {
-  id              String    @id @default(uuid())
-  integrationName String    @unique // Ex: 'scheduling_api', 'crm_integration'
-  clientId        String?   // Opcional: para configurações por cliente/tenant
-  isActive        Boolean   @default(true)
-  settings        Json      // Armazena configurações específicas da integração (chaves, URLs, templates)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id              String   @id @default(uuid())
+  integrationName String   @unique // Ex: 'scheduling_api', 'crm_integration'
+  clientId        String? // Opcional: para configurações por cliente/tenant
+  isActive        Boolean  @default(true)
+  settings        Json // Armazena configurações específicas da integração (chaves, URLs, templates)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@map("integration_configs") // Nome da tabela no banco de dados
 }
 
 model flows {
-  id              String    @id @default(uuid())
-  nome            String    @unique
-  descricao       String
-  flow_json       Json
-  gatilho     String?
-  ativo           Boolean   @default(true)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  executions    FlowExecution[]
+  id           String          @id @default(uuid())
+  nome         String          @unique
+  descricao    String
+  flow_json    Json
+  gatilho      String?
+  ativo        Boolean         @default(true)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  executions   FlowExecution[]
   flowTriggers FlowTrigger[]
-  queueId   String?
+  queueId      String?
+
   @@map("flows") // Nome da tabela no banco de dados
 }
+
 model FlowTrigger {
-  id       String @id @default(uuid())
-  flowId   String
-  evento   String
-  queueId  String?
-  flow     flows @relation(fields: [flowId], references: [id])
+  id      String  @id @default(uuid())
+  flowId  String
+  evento  String
+  queueId String?
+  flow    flows   @relation(fields: [flowId], references: [id])
 }
+
 model FlowExecution {
   id            String   @id @default(cuid())
   flowId        String
@@ -81,21 +85,54 @@ model FlowExecution {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
-model User {
-  id             String   @id @default(uuid()) @db.Uuid
-  name           String
-  email          String   @unique
-  role           String
-  isActive       Boolean  @default(true)
-  passwordHash   String?
-  lastLogin      DateTime?
-  lastOnline     DateTime?
-  lastLogout     DateTime?
-  isOnline       Boolean  @default(false)
 
-  tickets        Ticket[] @relation("TicketToUser")
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  name         String
+  email        String    @unique
+  role         String
+  isActive     Boolean   @default(true)
+  passwordHash String?
+  lastLogin    DateTime?
+  lastOnline   DateTime?
+  lastLogout   DateTime?
+  isOnline     Boolean   @default(false)
+
+  tickets Ticket[] @relation("TicketToUser")
 
   @@map("Users")
+}
+
+model ServiceHours {
+  id        String  @id @default(uuid())
+  queueId   String?
+  queue     Queue?  @relation(fields: [queueId], references: [id])
+  dayOfWeek Int // 0=Dom ... 6=Sáb
+  startTime String // "08:00"
+  endTime   String // "18:00"
+  enabled   Boolean @default(true)
+  timezone  String  @default("America/Sao_Paulo")
+
+  @@unique([queueId, dayOfWeek]) // evita duplicata de dia por fila
+}
+
+model Holiday {
+  id        String   @id @default(uuid())
+  date      String // "2026-12-25" — formato ISO date
+  name      String
+  queueId   String? // null = vale para todas as filas
+  queue     Queue?   @relation(fields: [queueId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([date, queueId]) // mesma data não pode aparecer duas vezes na mesma fila
+}
+
+model Queue {
+  id           String         @id @default(uuid())
+  name         String
+  hasHuman     Boolean        @default(true)
+  serviceHours ServiceHours[]
+  holidays     Holiday[] // ← adicionar isso
 }
 
 model Ticket {
@@ -122,28 +159,29 @@ model Ticket {
   isFlow               Boolean   @default(false)
   apiConfig            Json?
 
-  contato              String
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  contato   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  channelId            Int
-  isInteraction        Boolean   @default(false)
-  owner                String?
+  channelId     Int
+  isInteraction Boolean @default(false)
+  owner         String?
 
-  messages             Message[]
+  messages Message[]
 
-  channel              Channel   @relation(fields: [channelId], references: [id])
+  channel Channel @relation(fields: [channelId], references: [id])
 
   // RELAÇÃO
-  user                 User?     @relation("TicketToUser", fields: [userId], references: [id])
-  userId               String?   @db.Uuid
+  user   User?   @relation("TicketToUser", fields: [userId], references: [id])
+  userId String? @db.Uuid
 
-  integrationSource    String?   @map("integration_source")
-  externalRefId        String?   @map("external_ref_id")
-  metadata             Json?     @default("{}")
+  integrationSource String? @map("integration_source")
+  externalRefId     String? @map("external_ref_id")
+  metadata          Json?   @default("{}")
 
   @@map("Tickets")
 }
+
 model Message {
   id             String                 @id @default(uuid()) @db.Uuid
   messageId      String                 @unique
@@ -172,7 +210,7 @@ model Message {
   to             String
   type           enum_MessageType       @default(chat)
   caption        String?
-  sender        String?
+  sender         String?
   chatId         String?
   content        String
   mimetype       String?

@@ -108,8 +108,8 @@ function useFlow({ ticketNovo, URL_BASE, token, initAI, aiEngine }) {
       color: "#32d74b",
       sub: "Mapear dados",
       props: [
-        { k: "Entrada", v: "JSON" },
-        { k: "Saída", v: "Array" },
+        { k: "Entrada", v: "auto" },
+        { k: "Saída", v: "JSON" },
       ],
       inputs: 1,
       outputs: 1,

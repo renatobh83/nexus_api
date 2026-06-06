@@ -4,12 +4,9 @@ import { handleSendMessage } from "../../messages/handlers/handleSendMessage.js"
 
 const channelService = new ChannelService()
 
-
-
 export const SendMessage = {
   async execute(node: any, context: any) {
-    const { output, ...rest } = context;
-
+    
     const mensagemTemplate = node.data.props.find(
       (p: any) => p.k === "Mensagem"
     )?.v;
@@ -17,18 +14,20 @@ export const SendMessage = {
     const numero = node.data.props.find(
       (p: any) => p.k === "Numero"
     )?.v;
-
+    
     const mensagem = resolveTemplate(
-      mensagemTemplate || context.mensagem,
+      mensagemTemplate || context.output?.data,
       context
     );
-
+    
     const contato = numero || context.ticket.contato;
+    
     const channelId = context.ticket.channelId;
-
+    
     const channel = await channelService.findChannelOrThrow(
       channelId
     );
+    
 
     await handleSendMessage(
       channel,
@@ -37,6 +36,6 @@ export const SendMessage = {
       null
     );
 
-    return rest;
+    return context;
   },
 };

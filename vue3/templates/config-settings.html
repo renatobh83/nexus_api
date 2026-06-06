@@ -1,0 +1,158 @@
+<div v-if="configSubtab === 'settings'">
+    <div class="users-header">
+        <h2>Horários de Atendimento</h2>
+        <!-- <button class="btn-primary" v-if="isAdmin" @click="openUserModal">➕ Novo Usuário</button> -->
+    </div>
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab" :class="{ active: tab === 'hours' }" @click="tab = 'hours'">
+            <span>🕐</span> Horários
+            <span class="tab-badge blue">{{ activeDaysCount }}</span>
+        </button>
+        <button class="tab" :class="{ active: tab === 'holidays' }" @click="tab = 'holidays'">
+            <span>🗓️</span> Feriados
+            <span v-if="holidays.length" class="tab-badge">{{ holidays.length }}</span>
+        </button>
+    </div>
+
+    <!-- ===== TAB HORÁRIOS ===== -->
+    <div v-if="tab === 'hours'">
+         <!-- Queue selector -->
+      <div class="queue-bar">
+        <div class="select-wrap">
+          <select v-model="selectedQueueId" @change="loadHours">
+            <option value="">— Padrão global —</option>
+            <option v-for="q in queues" :key="q.id" :value="q.id">
+              {{ q.name }} {{ !q.hasHuman ? '🤖' : '' }}
+            </option>
+          </select>
+        </div>
+        <button class="btn btn-ghost btn-sm" @click="resetToGlobal" v-if="selectedQueueId">
+          Usar padrão global
+        </button>
+      </div>
+        <!-- Stats -->
+        <div class="stats-bar">
+            <div class="stat-card">
+                <div class="stat-value">{{ activeDaysCount }}</div>
+                <div class="stat-label">Dias ativos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" style="color: var(--accent2)">{{ weekendCount }}</div>
+                <div class="stat-label">Com fim de semana</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" style="color: var(--accent3)">{{ avgHoursPerDay }}<small
+                        style="font-size:14px">h</small></div>
+                <div class="stat-label">Média de horas/dia</div>
+            </div>
+        </div>
+        <!-- Copy schedule from -->
+        <div class="copy-row">
+            <span>Copiar horário de:</span>
+            <select v-model="copyFromDay" style="flex:1">
+                <option value="">Selecione um dia</option>
+                <option v-for="d in schedule.filter(x => x.enabled)" :key="d.dayOfWeek" :value="d.dayOfWeek">
+                    {{ d.label }}
+                </option>
+            </select>
+            <button class="btn btn-ghost btn-sm" @click="applyToAll" :disabled="copyFromDay === ''">
+                Aplicar a todos os dias ativos
+            </button>
+        </div>
+
+        <!-- Days -->
+        <div class="section-title">Dias da semana</div>
+        <div class="days-grid">
+            <div v-for="day in schedule" :key="day.dayOfWeek" class="day-card"
+                :class="day.enabled ? 'active-day' : 'inactive-day'">
+                <!-- Toggle + label -->
+                <div class="day-toggle" @click="day.enabled = !day.enabled">
+                    <label class="toggle">
+                        <input type="checkbox" :checked="day.enabled" @change.stop />
+                        <div class="toggle-track"></div>
+                        <div class="toggle-thumb"></div>
+                    </label>
+                    <span class="day-name">{{ day.label }}</span>
+                </div>
+
+                <!-- Time range -->
+                <div class="time-range">
+                    <input type="time" class="time-input" v-model="day.startTime" :disabled="!day.enabled" />
+                    <span class="time-sep">até</span>
+                    <input type="time" class="time-input" v-model="day.endTime" :disabled="!day.enabled" />
+                </div>
+
+                <!-- Hours count -->
+                <span
+                    style="font-family:var(--mono);font-size:11px;color:var(--text-dim);min-width:40px;text-align:right">
+                    {{ day.enabled ? calcHours(day.startTime, day.endTime) : '—' }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="action-bar">
+            <button class="btn btn-ghost" @click="loadHours">Descartar</button>
+            <button class="btn btn-primary" @click="saveHours" :disabled="saving">
+                <span v-if="saving" class="spinner"></span>
+                <span v-else>💾</span>
+                Salvar horários
+            </button>
+        </div>
+    </div>
+    <!-- ===== TAB FERIADOS ===== -->
+    <div v-if="tab === 'holidays'">
+        <div class="section-title">Feriados cadastrados</div>
+
+        <!-- List -->
+        <div class="holiday-list" v-if="holidays.length">
+            <div class="holiday-item" v-for="(h, idx) in sortedHolidays" :key="h.id">
+                <span class="holiday-date">{{ formatDate(h.date) }}</span>
+                <span class="holiday-name">{{ h.name }}</span>
+                <button class="holiday-remove" @click="removeHoliday(h.id)" title="Remover">×</button>
+            </div>
+        </div>
+        <div class="empty" v-else>Nenhum feriado cadastrado</div>
+
+        <!-- Add form -->
+        <div style="margin-top:20px">
+            <div class="section-title">Adicionar feriado</div>
+            <div class="add-holiday">
+                <input type="date" v-model="newHoliday.date" />
+                <input type="text" v-model="newHoliday.name" placeholder="Nome do feriado (ex: Natal)"
+                    @keyup.enter="addHoliday" />
+                <button class="btn btn-primary" @click="addHoliday" :disabled="!newHoliday.date || !newHoliday.name">
+                    + Adicionar
+                </button>
+            </div>
+        </div>
+
+        <!-- Quick add national holidays -->
+        <div style="margin-top:24px">
+            <div class="section-title">Adicionar feriados nacionais</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">
+                <button v-for="h in nationalHolidays" :key="h.date" class="btn btn-ghost btn-sm" @click="quickAdd(h)"
+                    :disabled="holidays.some(x => x.date === h.date)"
+                    :title="holidays.some(x => x.date === h.date) ? 'Já adicionado' : ''">
+                    {{ holidays.some(x => x.date === h.date) ? '✓' : '+' }} {{ h.name }}
+                </button>
+            </div>
+        </div>
+
+        <div class="action-bar">
+            <button class="btn btn-primary" @click="saveHolidays" :disabled="saving">
+                <span v-if="saving" class="spinner"></span>
+                <span v-else>💾</span>
+                Salvar feriados
+            </button>
+        </div>
+    </div>
+    <!-- Toasts -->
+    <div class="toast-wrap">
+        <div v-for="t in toasts" :key="t.id" class="toast" :class="t.type">
+            <span>{{ t.type === 'success' ? '✅' : '❌' }}</span>
+            {{ t.message }}
+        </div>
+    </div>
+</div>

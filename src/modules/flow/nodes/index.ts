@@ -1,3 +1,4 @@
+import { ConvertNode } from "./ConvertNode.js";
 import { FilterNode } from "./FilterNode.js";
 import { NotifyNode } from "./NotifyNode.js";
 import { ProcessAiNode } from "./ProcessAiNode.js";
@@ -13,5 +14,6 @@ export const nodeRegistry = {
   sendMsg: SendMessage,
   processarIa: ProcessAiNode,
   waitResponse: WaitResponseNode,
-  text: TextNode
+  text: TextNode,
+  transform: ConvertNode
 };

@@ -28,3 +28,23 @@ export interface FlowJson {
 export interface ExecutionContext {
   [key: string]: any;
 }
+
+export interface FlowContext {
+  executionId: string;
+
+  ticket: any;
+
+  vars: Record<string, any>;
+
+  output?: {
+    type:
+      | "message"
+      | "json"
+      | "array"
+      | "number"
+      | "boolean"
+      | "file";
+
+    data: any;
+  };
+}
