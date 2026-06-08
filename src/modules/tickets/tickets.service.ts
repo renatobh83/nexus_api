@@ -43,6 +43,11 @@ export class TicketService {
     if (dataForUpdate.status === "open") {
       dataForUpdate.closedAt = null;
       dataForUpdate.startedAttendanceAt = new Date().getTime();
+      dataForUpdate.isFlow = false;
+      dataForUpdate.isBot = false;
+      dataForUpdate.queue = {
+        connect: { id: "2" },
+      };
     }
 
     const ticket = await this.ticketRepository.updateTicket(id, dataForUpdate);

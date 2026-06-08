@@ -38,57 +38,53 @@ export class ServiceHoursRepository {
       orderBy: { dayOfWeek: "asc" },
     });
   }
-
   async upsertDays(days: UpsertDayInput[]) {
     const withQueue = days.filter((d) => d.queueId);
-    const global = days.filter((d) => !d.queueId);
+    const globalDays = days.filter((d) => !d.queueId);
 
-    return prisma.$transaction([
-      // Fila específica: upsert normal pelo unique
-      ...withQueue.map((day) =>
-        prisma.serviceHours.upsert({
-          where: {
-            dayOfWeek_queueId: {
-              queueId: day.queueId!,
-              dayOfWeek: day.dayOfWeek,
-            },
+    // Fila específica: upsert um por um sem transaction
+    for (const day of withQueue) {
+      await prisma.serviceHours.upsert({
+        where: {
+          dayOfWeek_queueId: {
+            queueId: day.queueId!,
+            dayOfWeek: day.dayOfWeek,
           },
-          update: {
-            startTime: day.startTime,
-            endTime: day.endTime,
-            enabled: day.enabled,
-            timezone: day.timezone,
-          },
-          create: {
-            queueId: day.queueId,
+        },
+        update: {
+          startTime: day.startTime,
+          endTime: day.endTime,
+          enabled: day.enabled,
+          timezone: day.timezone,
+        },
+        create: {
+          queueId: day.queueId,
+          dayOfWeek: day.dayOfWeek,
+          startTime: day.startTime,
+          endTime: day.endTime,
+          enabled: day.enabled,
+          timezone: day.timezone,
+        },
+      });
+    }
+
+    // Global: apaga e recria sequencialmente
+    if (globalDays.length) {
+      await prisma.serviceHours.deleteMany({ where: { queueId: null } });
+
+      for (const day of globalDays) {
+        await prisma.serviceHours.create({
+          data: {
+            queueId: null,
             dayOfWeek: day.dayOfWeek,
             startTime: day.startTime,
             endTime: day.endTime,
             enabled: day.enabled,
             timezone: day.timezone,
           },
-        }),
-      ),
-
-      // Global (queueId null): apaga e recria — evita problema do NULL unique
-      ...(global.length
-        ? [
-            prisma.serviceHours.deleteMany({ where: { queueId: null } }),
-            ...global.map((day) =>
-              prisma.serviceHours.create({
-                data: {
-                  queueId: null,
-                  dayOfWeek: day.dayOfWeek,
-                  startTime: day.startTime,
-                  endTime: day.endTime,
-                  enabled: day.enabled,
-                  timezone: day.timezone,
-                },
-              }),
-            ),
-          ]
-        : []),
-    ]);
+        });
+      }
+    }
   }
 
   async deleteByQueue(queueId: string | null) {

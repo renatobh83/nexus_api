@@ -40,16 +40,17 @@ function useTickets({
       .filter((ticket) => {
         const isOwnOrPending =
           ticket.status === "pending" ||
-          ticket.userId === currentUser.value?.id;
+          ticket.userId === currentUser.value?.id ||
+          currentUser.value.role === "administrador";
 
         const matchesSearch = (ticket.owner || ticket.name || "")
           .toLowerCase()
           .includes(searchTerm.value.toLowerCase());
-
         const matchesStatus = showOnlyClosed.value
           ? ticket.status === "closed"
           : ticket.status !== "closed";
         const notIntercao = !ticket.isInteraction;
+
         return isOwnOrPending && matchesSearch && matchesStatus && notIntercao;
       })
       .sort((a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0));

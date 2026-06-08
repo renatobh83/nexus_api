@@ -4,7 +4,7 @@ import { SendMessageWppWeb } from "../../../providers/whatsapp-web/wpp-web/SendM
 import { SendMessageTeleproto } from "../../../providers/telegram/teleproto/sendMessageTeleproto.js";
 import { SendMessageChatClient } from "../../chatWeb/helpers/SendMessageChatClient.js";
 
-type TicketWithChannel = Prisma.TicketGetPayload<{
+export type TicketWithChannel = Prisma.TicketGetPayload<{
   include: {
     messages: true;
     channel: {
@@ -25,12 +25,12 @@ export const SendMessageSystemProxy = async (
   const hasMedia = Boolean(media) ? await transformFile(media) : false;
 
   const channel = ticket.channel?.type;
+
   switch (channel) {
     case "whatsapp":
       return SendMessageWppWeb(body, ticket, hasMedia);
 
     case "telegram":
-      
       return SendMessageTeleproto(body, ticket, hasMedia);
     case "web":
       return SendMessageChatClient(body, ticket, hasMedia);

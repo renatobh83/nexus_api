@@ -25,7 +25,8 @@ export class ServiceHoursService {
       timezone,
     }));
 
-    return this.repo.upsertDays(payload);
+    await this.repo.upsertDays(payload);
+    return this.repo.findByQueue(queueId);
   }
 
   async resetQueueToGlobal(queueId: string) {

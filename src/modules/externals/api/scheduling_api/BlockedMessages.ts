@@ -16,4 +16,5 @@ export const blockedMessages = [
   `Infelizamente não conseguimos confirmar o exame selecionado.
 Favor entrar em contato com a nossa central para confirma o seu exame, estamos à disposição.`,
   "Processo de confirmação já realizado.",
+  "Fora do horario de atendimento",
 ];

@@ -110,7 +110,6 @@ function UseSettings({ URL_BASE, token }) {
 
   async function loadQueues() {
     try {
-      console.log("/service-hours/queues");
       queues.value = await apiFetch("/service-hours/queues");
     } catch {
       // Demo: queues de exemplo se API não disponível

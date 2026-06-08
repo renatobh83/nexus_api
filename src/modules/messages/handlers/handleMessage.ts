@@ -15,6 +15,8 @@ import { FlowsService } from "../../flow/flow.service.js";
 import { FlowJson } from "../../flow/types.js";
 import { ServiceHoursService } from "../../serviceHours/serviceHours.service.js";
 
+import { sendOutOfHoursMessage } from "./HandleSendOutOfHoursMessage.js";
+
 const flowService = new FlowsService();
 const svc = new ServiceHoursService();
 
@@ -73,6 +75,24 @@ export const handleMessage = async (
         return { isNew, ticketId: ticket.id };
       }
 
+      const status = await svc.isWithinServiceHours(ticket.queueId!);
+
+      if (!status.withinHours) {
+        if (status.reason === "outside_schedule") {
+          await sendOutOfHoursMessage(
+            "🤖 Agradeço sua mensagem. Não estou disponível nesse canal. Para suporte acesse nosso chat em www.exp.com.br/contato. \
+Nosso horário é 08h às 18h (seg. a sex).\
+Obrigado pela compreensão!",
+            ticket,
+          );
+          await updateTicket(ticket.id, {
+            status: "closed",
+          });
+          console.log("fora do horário — avisa o contato e não atribui agente");
+          return;
+        }
+        // fora do horário — avisa o contato e não atribui agente
+      }
       const flow = await flowService.findFirst();
       if (!flow || !flow.flow_json) {
         console.warn("Nenhum flow encontrado para ticket novo.");
@@ -139,13 +159,7 @@ export const handleMessage = async (
         const flow = await flowService.findFirst();
         if (!flow || !flow.flow_json) {
           console.warn("Nenhum flow encontrado para ticket existente.");
-          await updateTicket(ticket.id, {
-            isFlow: false,
-            isBot: false,
-            queue: {
-              connect: { id: "2" },
-            },
-          });
+
           return { isNew, ticketId: ticket.id };
         }
 
@@ -157,6 +171,13 @@ export const handleMessage = async (
           console.warn(
             `Módulo "${moduleName}" não encontrado no flow. Abortando execução.`,
           );
+          await updateTicket(ticket.id, {
+            isFlow: false,
+            isBot: false,
+            queue: {
+              connect: { id: "2" },
+            },
+          });
           return { isNew, ticketId: ticket.id };
         }
 
