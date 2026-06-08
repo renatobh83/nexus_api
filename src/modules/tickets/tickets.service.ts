@@ -39,6 +39,11 @@ export class TicketService {
 
     if (dataForUpdate.status === "pending") {
       dataForUpdate.closedAt = null;
+      dataForUpdate.isFlow = false;
+      dataForUpdate.isBot = false;
+      dataForUpdate.queue = {
+        connect: { id: "1" },
+      };
     }
     if (dataForUpdate.status === "open") {
       dataForUpdate.closedAt = null;
@@ -46,7 +51,7 @@ export class TicketService {
       dataForUpdate.isFlow = false;
       dataForUpdate.isBot = false;
       dataForUpdate.queue = {
-        connect: { id: "2" },
+        connect: { id: "1" },
       };
     }
 

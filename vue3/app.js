@@ -319,6 +319,7 @@ async function initApp() {
           const ticket = tickets.allTickets.value.find(
             (t) => t.id === message.ticketid,
           );
+
           const ticketName =
             ticket?.owner || ticket?.name || `Ticket ${message.ticketid}`;
           const isIncoming =
@@ -350,8 +351,13 @@ async function initApp() {
         });
 
         socket.on("ticket-updated", async (data) => {
-          if (data.status === "pending" && data.previousStatus !== "pending") {
+          if (
+            data.status === "pending" &&
+            data.previousStatus !== "pending" &&
+            !data.isBot
+          ) {
             ticketNovo.value = data;
+
             const name = data.owner || data.name || `Ticket ${data.id}`;
             notifications.show({
               body: data.lastMessage,
