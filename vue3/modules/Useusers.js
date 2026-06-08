@@ -88,7 +88,7 @@ function useUsers({ URL_BASE, token, currentUser, sonnerAlert }) {
       method,
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${token.value}`,
       },
       body: JSON.stringify(editingUser.value),
     });

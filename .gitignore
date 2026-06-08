@@ -3,7 +3,7 @@ node_modules
 pnpm-lock.*
 /src/generated/prisma
 userDataDir
-prisma/migrations
+
 # public/
 dist/
 .DS_STORE
