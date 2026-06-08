@@ -38,14 +38,14 @@ model Channel {
 
 model IntegrationConfig {
   id              String   @id @default(uuid())
-  integrationName String   @unique // Ex: 'scheduling_api', 'crm_integration'
-  clientId        String? // Opcional: para configurações por cliente/tenant
+  integrationName String   @unique
+  clientId        String?
   isActive        Boolean  @default(true)
-  settings        Json // Armazena configurações específicas da integração (chaves, URLs, templates)
+  settings        Json
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  @@map("integration_configs") // Nome da tabela no banco de dados
+  @@map("integration_configs")
 }
 
 model flows {
@@ -53,15 +53,15 @@ model flows {
   nome         String          @unique
   descricao    String
   flow_json    Json
-  gatilho      String?
   ativo        Boolean         @default(true)
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
+  gatilho      String?
+  queueId      String?
   executions   FlowExecution[]
   flowTriggers FlowTrigger[]
-  queueId      String?
 
-  @@map("flows") // Nome da tabela no banco de dados
+  @@map("flows")
 }
 
 model FlowTrigger {
@@ -79,11 +79,11 @@ model FlowExecution {
   status        String
   context       Json
   flowSnapshot  Json
-  moduleName    String
-  ticketId      String?
-  flow          flows    @relation(fields: [flowId], references: [id])
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  ticketId      String?
+  moduleName    String
+  flow          flows    @relation(fields: [flowId], references: [id])
 }
 
 model User {
@@ -92,13 +92,12 @@ model User {
   email        String    @unique
   role         String
   isActive     Boolean   @default(true)
-  passwordHash String?
-  lastLogin    DateTime?
-  lastOnline   DateTime?
-  lastLogout   DateTime?
   isOnline     Boolean   @default(false)
-
-  tickets Ticket[] @relation("TicketToUser")
+  lastLogin    DateTime?
+  lastLogout   DateTime?
+  lastOnline   DateTime?
+  passwordHash String?
+  tickets      Ticket[]  @relation("TicketToUser")
 
   @@map("Users")
 }
@@ -106,33 +105,34 @@ model User {
 model ServiceHours {
   id        String  @id @default(uuid())
   queueId   String?
-  queue     Queue?  @relation(fields: [queueId], references: [id])
-  dayOfWeek Int // 0=Dom ... 6=Sáb
-  startTime String // "08:00"
-  endTime   String // "18:00"
+  dayOfWeek Int
+  startTime String
+  endTime   String
   enabled   Boolean @default(true)
   timezone  String  @default("America/Sao_Paulo")
+  queue     Queue?  @relation(fields: [queueId], references: [id])
 
-  @@unique([dayOfWeek, queueId]) // mantém
+  @@unique([dayOfWeek, queueId])
 }
 
 model Holiday {
   id        String   @id @default(uuid())
-  date      String // "2026-12-25" — formato ISO date
+  date      String
   name      String
-  queueId   String? // null = vale para todas as filas
-  queue     Queue?   @relation(fields: [queueId], references: [id])
+  queueId   String?
   createdAt DateTime @default(now())
+  queue     Queue?   @relation(fields: [queueId], references: [id])
 
-  @@unique([date, queueId]) // mesma data não pode aparecer duas vezes na mesma fila
+  @@unique([date, queueId])
 }
 
 model Queue {
   id           String         @id @default(uuid())
   name         String
   hasHuman     Boolean        @default(true)
+  holidays     Holiday[]
+  tickets      Ticket[]
   serviceHours ServiceHours[]
-  holidays     Holiday[] // ← adicionar isso
 }
 
 model Ticket {
@@ -156,28 +156,24 @@ model Ticket {
   lastAbsenceMessageAt DateTime?
   chatClient           Boolean?
   socketId             String?
-  isFlow               Boolean   @default(false)
   apiConfig            Json?
-
-  contato   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  channelId     Int
-  isInteraction Boolean @default(false)
-  owner         String?
-
-  messages Message[]
-
-  channel Channel @relation(fields: [channelId], references: [id])
-
-  // RELAÇÃO
-  user   User?   @relation("TicketToUser", fields: [userId], references: [id])
-  userId String? @db.Uuid
-
-  integrationSource String? @map("integration_source")
-  externalRefId     String? @map("external_ref_id")
-  metadata          Json?   @default("{}")
+  contato              String
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  channelId            Int
+  isInteraction        Boolean   @default(false)
+  owner                String?
+  externalRefId        String?   @map("external_ref_id")
+  integrationSource    String?   @map("integration_source")
+  metadata             Json?     @default("{}")
+  userId               String?   @db.Uuid
+  isFlow               Boolean   @default(false)
+  isBot                Boolean   @default(true)
+  queueId              String?
+  queue     Queue?    @relation(fields: [queueId], references: [id])
+  messages             Message[]
+  channel              Channel   @relation(fields: [channelId], references: [id])
+  user                 User?     @relation("TicketToUser", fields: [userId], references: [id])
 
   @@map("Tickets")
 }
@@ -210,11 +206,11 @@ model Message {
   to             String
   type           enum_MessageType       @default(chat)
   caption        String?
-  sender         String?
   chatId         String?
   content        String
   mimetype       String?
-  ticket         Ticket                 @relation(fields: [ticketid], references: [id])
+  sender         String?
+   ticket   Ticket @relation(fields: [ticketid], references: [id], onDelete: Cascade)
 
   @@unique([messageId, ticketid])
   @@map("Messages")

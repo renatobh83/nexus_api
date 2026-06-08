@@ -12,9 +12,8 @@ interface CreateTicketInput {
   isInteraction?: boolean;
   socketId?: string;
   chatClient?: boolean;
-  status?: string
-  isFlow?: boolean
-
+  status?: string;
+  isFlow?: boolean;
 }
 
 //  Logger
@@ -43,13 +42,12 @@ const buildSharedFields = (input: CreateTicketInput, now: number) => ({
   socketId: input.socketId,
   chatClient: input.chatClient,
   status: input.status,
-  isFlow: input.isFlow
+  isFlow: input.isFlow,
 });
 
 export const createTicket = async (
   input: CreateTicketInput,
 ): Promise<{ ticket: Ticket; isNew: boolean }> => {
-  
   const { channelId, contactOwner, contato, ticketGroup } = input;
 
   // 4. Timestamp único para ambos os payloads
@@ -62,9 +60,12 @@ export const createTicket = async (
     contato,
     isGroup: ticketGroup,
     channel: { connect: { id: channelId } },
-    isFlow: true
+    isFlow: true,
+    isBot: true,
   };
-
+  createPayload.queue = {
+    connect: { id: process.env.BOT_QUEUE_ID },
+  };
   // 5. Usando upsert do Prisma em vez de find → create/update manual
   const existingTicket = await ticketService.findTicket({
     contato,
@@ -84,4 +85,11 @@ export const createTicket = async (
     sharedFields,
   );
   return { ticket, isNew: false };
+};
+
+export const updateTicket = async (
+  ticketId: number,
+  data: Prisma.TicketUpdateInput,
+) => {
+  await ticketService.updateTicket(ticketId, data);
 };

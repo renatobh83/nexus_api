@@ -1,5 +1,8 @@
 import { MessageInternal } from "../messages.types.js";
-import { createTicket } from "../../tickets/Helpers/CreateTicket.js";
+import {
+  createTicket,
+  updateTicket,
+} from "../../tickets/Helpers/CreateTicket.js";
 import { VerifyMessage } from "./verifyMessage.js";
 import { getClientIONamespace } from "../../../lib/socket.js";
 import {
@@ -10,9 +13,10 @@ import {
 import { FlowExecutorService } from "../../flow/executor/flow-executor.service.js";
 import { FlowsService } from "../../flow/flow.service.js";
 import { FlowJson } from "../../flow/types.js";
-
+import { ServiceHoursService } from "../../serviceHours/serviceHours.service.js";
 
 const flowService = new FlowsService();
+const svc = new ServiceHoursService();
 
 const formatLastMessage = (message: MessageInternal): string => {
   if (message.type !== "chat") return "Media";
@@ -26,12 +30,11 @@ export const handleMessage = async (
   message: MessageInternal,
   session: SessionInternal,
   contato: ContactInternal,
-  userId?: string
+  userId?: string,
 ): Promise<void | any> => {
   try {
     const serialized = contato.id._serialized;
     const lastMessage = formatLastMessage(message);
-    
     const { ticket, isNew } = await createTicket({
       contato: serialized,
       contactOwner: contato,
@@ -60,14 +63,26 @@ export const handleMessage = async (
     if (isNew) {
       const clientNamespace = getClientIONamespace();
       clientNamespace.emit("ticket-updated", { ...result, isNew });
-      // TODO colocar para nao pegar as mensagens que eu envio para entrar no flow
-      if (message.socketId || !ticket.isFlow || message.fromMe || ticket.isGroup) {
+
+      if (
+        message.socketId ||
+        !ticket.isFlow ||
+        message.fromMe ||
+        ticket.isGroup
+      ) {
         return { isNew, ticketId: ticket.id };
       }
 
       const flow = await flowService.findFirst();
       if (!flow || !flow.flow_json) {
         console.warn("Nenhum flow encontrado para ticket novo.");
+        await updateTicket(ticket.id, {
+          isFlow: false,
+          isBot: false,
+          queue: {
+            connect: { id: "2" },
+          },
+        });
         return { isNew, ticketId: ticket.id };
       }
 
@@ -95,9 +110,7 @@ export const handleMessage = async (
       });
 
       return { isNew, ticketId: ticket.id };
-
     } else {
-      // TODO colocar para nao pegar as mensagens que eu envio para entrar no flow
       if (!ticket.isFlow || message.fromMe || ticket.isGroup) {
         return { isNew, ticketId: ticket.id };
       }
@@ -120,13 +133,19 @@ export const handleMessage = async (
             mensagem: messageBody,
             executionId: pendingExecution.id,
           },
-          pendingExecution.moduleName
+          pendingExecution.moduleName,
         );
-
       } else {
         const flow = await flowService.findFirst();
         if (!flow || !flow.flow_json) {
           console.warn("Nenhum flow encontrado para ticket existente.");
+          await updateTicket(ticket.id, {
+            isFlow: false,
+            isBot: false,
+            queue: {
+              connect: { id: "2" },
+            },
+          });
           return { isNew, ticketId: ticket.id };
         }
 
@@ -135,7 +154,9 @@ export const handleMessage = async (
 
         // Validação: verifica se o módulo existe antes de tentar executar
         if (!hasModule(flowJson, moduleName)) {
-          console.warn(`Módulo "${moduleName}" não encontrado no flow. Abortando execução.`);
+          console.warn(
+            `Módulo "${moduleName}" não encontrado no flow. Abortando execução.`,
+          );
           return { isNew, ticketId: ticket.id };
         }
 
@@ -157,7 +178,6 @@ export const handleMessage = async (
 
       return { isNew, ticketId: ticket.id }; // <-- return que estava faltando
     }
-
   } catch (error) {
     console.error(`Erro ao processar mensagem ${message.messageId}:`, error);
   }
@@ -171,5 +191,5 @@ function hasModule(flowJson: FlowJson, moduleName: string): boolean {
   return moduleName in drawflow;
 }
 function isJsonObject(val: unknown): val is Record<string, unknown> {
-  return typeof val === 'object' && val !== null && !Array.isArray(val);
+  return typeof val === "object" && val !== null && !Array.isArray(val);
 }

@@ -29,9 +29,9 @@ export const SendMessageTeleprotoChannel = async (
       caption: body,
       forceDocument: true, // Opcional: para enviar como documento mesmo que seja uma imagem/vídeo
     });
-  //  await AuxiTbot(tbot, message);
+    await AuxiTbot(tbot, message);
   } else {
     const message = await tbot.sendMessage(to, { message: body });
-    // await AuxiTbot(tbot, message);
+    await AuxiTbot(tbot, message);
   }
 };
