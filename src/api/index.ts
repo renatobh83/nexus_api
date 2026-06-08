@@ -68,6 +68,7 @@ async function buildServer(): Promise<FastifyInstance> {
       if (auth?.startsWith("Bearer ")) {
         token = auth.replace("Bearer ", "");
       }
+
       if (!token) {
         return reply.code(401).send({ message: "Not authenticated" });
       }

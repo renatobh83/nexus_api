@@ -113,7 +113,7 @@ model ServiceHours {
   enabled   Boolean @default(true)
   timezone  String  @default("America/Sao_Paulo")
 
-  @@unique([queueId, dayOfWeek]) // evita duplicata de dia por fila
+  @@unique([dayOfWeek, queueId]) // mantém
 }
 
 model Holiday {

@@ -45,7 +45,7 @@ async function initApp() {
     ConfigIntegracao,
     TabDashboard,
     TabFlow,
-    ConfigSettings
+    ConfigSettings,
   ] = await Promise.all([
     loadComponent("./templates/tab-chats.html", autoInject),
     loadComponent("./templates/config-users.html", autoInject),
@@ -56,7 +56,6 @@ async function initApp() {
     loadComponent("./templates/tab-dashboard.html", autoInject),
     loadComponent("./templates/tab-flow.html", autoInject),
     loadComponent("./templates/config-settings.html", autoInject),
-    
   ]);
 
   const app = createApp({
@@ -88,9 +87,6 @@ async function initApp() {
       const ticketNovo = ref("");
       // Socket exposto como ref para os módulos acessarem reativamente
       const socketRef = ref(null);
-
-
-
 
       // =========================================================================
       // 3. UTILITÁRIOS (usados por múltiplos módulos)
@@ -253,7 +249,7 @@ async function initApp() {
         initAI,
         aiEngine,
       });
-      const settings = UseSettings()
+      const settings = UseSettings({ ...shared });
       const broadcast = useBroadcast({ ...shared });
       const dashboard = useDashboard({
         allTickets: tickets.allTickets,
@@ -464,6 +460,9 @@ async function initApp() {
           channels.loadChannels(),
           users.loadUsers(),
           integracoes.loadIntegracao(),
+          settings.loadQueues(),
+          settings.loadHours(),
+          settings.loadHolidays(),
         ]);
         if ("serviceWorker" in navigator) {
           navigator.serviceWorker.ready.then(() => {
@@ -538,7 +537,6 @@ async function initApp() {
         // teste
         sonnerAlert,
         webllm,
- 
       };
 
       provide("appContext", allData);
@@ -559,7 +557,6 @@ async function initApp() {
   app.component("tab-dashboard", TabDashboard);
   app.component("tab-flow", TabFlow);
   app.component("config-settings", ConfigSettings);
-  
 
   app.mount("#app");
 }
