@@ -209,7 +209,7 @@ body::before {
 
 .menu-item {
   flex: 1;
-  padding: 16px 20px;
+  padding: 8px 20px;
   text-align: center;
   cursor: pointer;
   color: #606060;
@@ -2676,7 +2676,7 @@ a:hover {
 }
 
 /* ─── Drawflow overrides ─── */
-.drawflow {
+#drawflow {
   background: #101014 !important;
   background-image: radial-gradient(
     circle,

@@ -5,6 +5,7 @@ import {
   getClientIONamespace,
   waitForSocket,
 } from "../../lib/socket.js";
+import { clearAiHistory } from "../flow/nodes/ProcessAiNode.js";
 
 export class TicketService {
   private ticketRepository: TicketsRepository;
@@ -35,6 +36,7 @@ export class TicketService {
     const dataForUpdate = data;
     if (dataForUpdate.status === "closed") {
       dataForUpdate.closedAt = new Date().getTime();
+      clearAiHistory(id);
     }
 
     if (dataForUpdate.status === "pending") {
