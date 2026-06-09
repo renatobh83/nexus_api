@@ -1,4 +1,11 @@
-function useFlow({ ticketNovo, URL_BASE, token, initAI, aiEngine }) {
+function useFlow({
+  ticketNovo,
+  URL_BASE,
+  token,
+  initAI,
+  aiEngine,
+  sonnerAlert,
+}) {
   const { ref, onMounted, nextTick, watch } = Vue;
 
   /* ── Node HTML ── */
@@ -46,7 +53,6 @@ function useFlow({ ticketNovo, URL_BASE, token, initAI, aiEngine }) {
       props: [
         { k: "Numero", v: "" },
         { k: "Mensagem", v: "" },
-
       ],
       inputs: 1,
       outputs: 1,
@@ -73,12 +79,12 @@ function useFlow({ ticketNovo, URL_BASE, token, initAI, aiEngine }) {
       props: [
         { k: "Campo", v: "" },
         { k: "Operador", v: "=" },
-        { k: "Valor", v: "" }
+        { k: "Valor", v: "" },
       ],
       inputs: 1,
       outputs: 2,
     },
-     {
+    {
       type: "waitResponse",
       label: "Aguardar resposta",
       icon: "🛑",
@@ -94,10 +100,7 @@ function useFlow({ ticketNovo, URL_BASE, token, initAI, aiEngine }) {
       icon: "🗓️",
       color: "#bf5af2",
       sub: "Condição lógica",
-      props: [
-        { k: "Mensagem", v: "" },
-
-      ],
+      props: [{ k: "Mensagem", v: "" }],
       inputs: 1,
       outputs: 1,
     },
@@ -120,7 +123,16 @@ function useFlow({ ticketNovo, URL_BASE, token, initAI, aiEngine }) {
       icon: "🧠",
       color: "#32d74b",
       sub: "Processar com IA",
-
+      props: [
+        { k: "model", v: "gemma-4-31b-it" },
+        {
+          k: "Prompt",
+          v: "agendamento",
+        },
+        { k: "maxHistory", v: "10" },
+        { k: "temperature", v: "0.7" },
+        { k: "maxTokens", v: "500" },
+      ],
       inputs: 1,
       outputs: 1,
     },
@@ -164,37 +176,143 @@ function useFlow({ ticketNovo, URL_BASE, token, initAI, aiEngine }) {
   const flowsDisponiveis = ref([]);
   const carregandoFlows = ref(false);
 
+  const showVars = ref(false);
+  const currentPropIndex = ref(null);
 
-      const showVars = ref(false);
-      const currentPropIndex = ref (null);
+  const showModalPrompts = ref(false);
+  const promptsDisponiveis = ref([]);
+  const carregandoPrompts = ref(false);
+  const promptEditando = ref(null);
+  const salvandoPrompt = ref(false);
 
-      const variables = [
-        { label: "Nome do Cliente", value: "{{ticket.owner}}" },
-        { label: "Telefone", value: "{{ticket.contato}}" },
-        { label: "Status Ticket", value: "{{ticket.status}}" },
-        { label: "Última Mensagem", value: "{{mensagem}}" },
-      ];
+  const variables = [
+    { label: "Nome do Cliente", value: "{{ticket.owner}}" },
+    { label: "Telefone", value: "{{ticket.contato}}" },
+    { label: "Status Ticket", value: "{{ticket.status}}" },
+    { label: "Última Mensagem", value: "{{mensagem}}" },
+  ];
 
-      function showVariables(index) {
-        currentPropIndex.value = index;
-        showVars.value = true;
+  function showVariables(index) {
+    currentPropIndex.value = index;
+    showVars.value = true;
+  }
+
+  function insertVariable(variable) {
+    console.log(variable);
+    if (currentPropIndex.value === null || !selectedNode.value) {
+      return;
+    }
+
+    selectedNode.value.props[currentPropIndex.value].v += variable;
+
+    showVars.value = false;
+  }
+  async function apiFetch(path, options = {}) {
+    const headers = {
+      Authorization: `Bearer ${token.value}`,
+      ...options.headers,
+    };
+
+    // Só adiciona Content-Type se:
+    // 1. Não for FormData
+    // 2. Tiver um body (não for GET/HEAD/DELETE sem body)
+    // 3. O body não for null/undefined
+    // 4. Não tiver Content-Type especificado nas options
+    const hasBody = options.body && !(options.body instanceof FormData);
+    const isGetOrHead = options.method === "GET" || options.method === "HEAD";
+
+    if (hasBody && !isGetOrHead && !options.headers?.["Content-Type"]) {
+      headers["Content-Type"] = "application/json";
+    }
+
+    const res = await fetch(`${URL_BASE}/api/v1${path}`, {
+      headers,
+      ...options,
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  }
+  // ── Funções ──
+
+  async function abrirModalPrompts() {
+    showModalPrompts.value = true;
+    promptEditando.value = null;
+    await buscarPrompts();
+  }
+
+  function fecharModalPrompts() {
+    showModalPrompts.value = false;
+    promptEditando.value = null;
+  }
+
+  async function buscarPrompts() {
+    carregandoPrompts.value = true;
+    try {
+      const resp = await apiFetch("/flows/aiPrompt");
+
+      promptsDisponiveis.value = resp;
+    } catch (e) {
+      console.error("Erro ao buscar prompts:", e);
+    } finally {
+      carregandoPrompts.value = false;
+    }
+  }
+
+  function novoPrompt() {
+    promptEditando.value = { id: null, name: "", content: "" };
+  }
+
+  function editarPrompt(p) {
+    // cópia para não editar a lista direto
+    promptEditando.value = { ...p };
+  }
+
+  async function salvarPrompt() {
+    if (!promptEditando.value) return;
+    const { id, name, content } = promptEditando.value;
+
+    if (!name.trim() || !content.trim()) return;
+
+    salvandoPrompt.value = true;
+    try {
+      if (id) {
+        // atualizar
+        const resp = await apiFetch(`/flows/aiPrompt/${id}`, {
+          method: "PUT",
+          body: JSON.stringify({ name, content }),
+        });
+
+        const idx = promptsDisponiveis.value.findIndex((p) => p.id === id);
+        if (idx !== -1) promptsDisponiveis.value[idx] = resp;
+      } else {
+        // criar
+        const resp = await apiFetch(`/flows/aiPrompt`, {
+          method: "POST",
+          body: JSON.stringify({ name, content }),
+        });
+
+        promptsDisponiveis.value.unshift(resp);
       }
+      promptEditando.value = null;
+    } catch (e) {
+      console.error("Erro ao salvar prompt:", JSON.stringify(e, null, 2));
+    } finally {
+      salvandoPrompt.value = false;
+    }
+  }
 
-      function insertVariable(variable) {
-        console.log(variable)
-        if (
-          currentPropIndex.value === null ||
-          !selectedNode.value
-        ) {
-          return;
-        }
-
-        selectedNode.value.props[currentPropIndex.value].v += variable;
-
-        showVars.value = false;
-      }
-
-
+  async function deletarPrompt(id) {
+    if (!window.confirm("Excluir este prompt?")) return;
+    try {
+      await apiFetch(`/flows/aiPrompt/${id}`, { method: "DELETE" });
+      promptsDisponiveis.value = promptsDisponiveis.value.filter(
+        (p) => p.id !== id,
+      );
+    } catch (e) {
+      console.error("Erro ao deletar prompt:", e);
+    }
+  }
   /* ── Helpers ── */
   function setBadge(nodeId, cls, text) {
     const el = document.querySelector(`#node-${nodeId} .n-badge`);
@@ -217,7 +335,6 @@ function useFlow({ ticketNovo, URL_BASE, token, initAI, aiEngine }) {
     };
     return value * multipliers[unit];
   }
-
 
   /* ── Módulos ── */
   function criarModulo(nome) {
@@ -517,7 +634,7 @@ function useFlow({ ticketNovo, URL_BASE, token, initAI, aiEngine }) {
       }),
     });
     const saved = await resp.json();
-    console.log("Flow salvo:", saved);
+
     return saved;
   }
   async function abrirModalCarregar() {
@@ -532,7 +649,7 @@ function useFlow({ ticketNovo, URL_BASE, token, initAI, aiEngine }) {
       });
       flowsDisponiveis.value = await resp.json();
     } catch (e) {
-      console.error('Erro ao listar flows:', e);
+      console.error("Erro ao listar flows:", e);
     } finally {
       carregandoFlows.value = false;
     }
@@ -555,38 +672,39 @@ function useFlow({ ticketNovo, URL_BASE, token, initAI, aiEngine }) {
       Object.keys(modData).forEach((modulo) => {
         const nodes = modData[modulo].data;
         Object.keys(nodes).forEach((nodeId) => {
-          const nodeData = nodes[nodeId].data;  // o { ...p } que você salvou
+          const nodeData = nodes[nodeId].data; // o { ...p } que você salvou
           if (nodeData) {
-            nodes[nodeId].html = nodeHTML(nodeData);  // ← re-renderiza com CSS atual
+            nodes[nodeId].html = nodeHTML(nodeData); // ← re-renderiza com CSS atual
           }
         });
       });
 
       editor.import(flowJson);
       modulos.value = Object.keys(flowJson.drawflow);
-      moduloAtivo.value = modulos.value[0] || 'Home';
+      moduloAtivo.value = modulos.value[0] || "Home";
       showModalCarregar.value = false;
-
     } catch (e) {
-      console.error('Erro ao carregar flow:', e);
+      console.error("Erro ao carregar flow:", e);
     }
   }
 
   async function deletarFlow(id) {
-    const confirmar = window.confirm('Excluir este flow?');
+    const confirmar = window.confirm("Excluir este flow?");
     if (!confirmar) return;
 
     try {
       await fetch(`${URL_BASE}/api/v1/flows/${id}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
           Authorization: `Bearer ${token.value}`,
         },
       });
       // remove da lista sem precisar buscar de novo
-      flowsDisponiveis.value = flowsDisponiveis.value.filter(f => f.id !== id);
+      flowsDisponiveis.value = flowsDisponiveis.value.filter(
+        (f) => f.id !== id,
+      );
     } catch (e) {
-      console.error('Erro ao deletar flow:', e);
+      console.error("Erro ao deletar flow:", e);
     }
   }
   async function listarFlows() {
@@ -631,10 +749,21 @@ function useFlow({ ticketNovo, URL_BASE, token, initAI, aiEngine }) {
     abrirModalCarregar,
     carregarFlow,
     deletarFlow,
-      showVars,
-        variables,
-        showVariables, 
-        insertVariable,
-        currentPropIndex
+    showVars,
+    variables,
+    showVariables,
+    insertVariable,
+    currentPropIndex,
+    showModalPrompts,
+    promptsDisponiveis,
+    carregandoPrompts,
+    promptEditando,
+    salvandoPrompt,
+    abrirModalPrompts,
+    fecharModalPrompts,
+    novoPrompt,
+    editarPrompt,
+    salvarPrompt,
+    deletarPrompt,
   };
 }

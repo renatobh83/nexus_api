@@ -55,6 +55,7 @@ export class TicketService {
       dataForUpdate.queue = {
         connect: { id: "1" },
       };
+      clearAiHistory(id);
     }
 
     const ticket = await this.ticketRepository.updateTicket(id, dataForUpdate);

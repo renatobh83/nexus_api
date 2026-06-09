@@ -32,7 +32,7 @@ export class FlowsRepository {
       where: { id },
     });
   }
-   async findFirst() {
+  async findFirst() {
     return await prisma.flows.findFirst({
       where: { ativo: true },
     });
@@ -60,18 +60,42 @@ export class FlowsRepository {
 
   async flowExecutionFindFirst(where: Prisma.FlowExecutionWhereInput) {
     return await prisma.flowExecution.findFirst({
-      where
+      where,
     });
   }
-  async createflowExecution(data:Prisma.FlowExecutionCreateInput){
-    return prisma.flowExecution.create({data: data
-
-    })
+  async createflowExecution(data: Prisma.FlowExecutionCreateInput) {
+    return prisma.flowExecution.create({ data: data });
   }
-  async updateFlowExecution(id: string, data: Prisma.FlowExecutionUpdateInput){
+  async updateFlowExecution(id: string, data: Prisma.FlowExecutionUpdateInput) {
     return prisma.flowExecution.update({
-      where:{id: id},
-      data :data
-    })
+      where: { id: id },
+      data: data,
+    });
+  }
+
+  // Ai Prompts
+  async listAIPromptRepo() {
+    return prisma.aiPrompt.findMany();
+  }
+  async findAIPromptRepo(promptName: string) {
+    return prisma.aiPrompt.findFirst({ where: { name: promptName } });
+  }
+
+  async createAiPrompt(data: Prisma.AiPromptCreateInput) {
+    return prisma.aiPrompt.create({
+      data,
+    });
+  }
+
+  async updateAiPrompt(id: string, data: Prisma.AiPromptUpdateInput) {
+    return prisma.aiPrompt.update({
+      where: { id },
+      data,
+    });
+  }
+  async delteAiPrompt(id: string) {
+    return prisma.aiPrompt.delete({
+      where: { id },
+    });
   }
 }

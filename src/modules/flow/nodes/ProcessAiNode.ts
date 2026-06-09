@@ -1,3 +1,5 @@
+import { FlowsService } from "../flow.service.js";
+
 const conversationHistories = new Map<
   string,
   { role: string; content: string }[]
@@ -6,10 +8,28 @@ const conversationHistories = new Map<
 export function clearAiHistory(ticketId: string | number) {
   conversationHistories.delete(String(ticketId));
 }
-
+const flowService = new FlowsService();
 export const ProcessAiNode = {
   async execute(node: any, context: any) {
+    const model = node.data.props.find(
+      (p: { k: string }) => p.k === "model",
+    )?.v;
+    const promptData = node.data.props.find(
+      (p: { k: string }) => p.k === "Prompt",
+    )?.v;
+    const maxHistory = node.data.props.find(
+      (p: { k: string }) => p.k === "maxHistory",
+    )?.v;
+    const temperature = node.data.props.find(
+      (p: { k: string }) => p.k === "temperature",
+    )?.v;
+    const maxTokens = node.data.props.find(
+      (p: { k: string }) => p.k === "maxTokens",
+    )?.v;
+
     const prompt = context.mensagem;
+    const promptAgent = await flowService.findAiPrompt(promptData);
+
     const ticketId = String(context.ticketId ?? context.ticket_id ?? "default");
 
     if (!conversationHistories.has(ticketId)) {
@@ -21,21 +41,33 @@ export const ProcessAiNode = {
 
     const systemMessage = {
       role: "system",
-      content:
-        "Você é um assistente prestativo. Responda sempre de forma direta e amigável, sem mostrar seu processo de raciocínio ou listar opções internas. Apenas dê a resposta final.",
+      content: promptAgent?.content || "default",
     };
 
-    const messages = [systemMessage, ...sanitizeHistory(history)];
+    const messages = [
+      systemMessage,
+      ...sanitizeHistory(history.slice(-maxHistory)),
+    ];
 
     const response = await fetchWithRetry(
       ticketId,
       messages,
       history,
       systemMessage,
+      1,
+      model,
+      temperature,
+      maxTokens,
     );
 
     const data = await response.json();
+    const usage = data.usage;
+
     const raw = data.choices[0].message.content as string;
+    console.log({
+      raw,
+      usage,
+    });
     const clean = extractFinalResponse(raw);
 
     history.push({ role: "assistant", content: clean });
@@ -60,9 +92,12 @@ async function fetchWithRetry(
   history: { role: string; content: string }[],
   systemMessage: { role: string; content: string },
   attempt = 1,
+  model = "gemma-4-31b-it",
+  temperature = 0.7,
+  tokens = 500,
 ): Promise<Response> {
   const response = await fetch(
-    "https://openui.panelapps.site/api/chat/completions",
+    "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
     {
       method: "POST",
       headers: {
@@ -70,8 +105,10 @@ async function fetchWithRetry(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "models/gemma-4-31b-it",
+        model: `models/${model}`,
         messages,
+        temperature,
+        max_tokens: tokens,
       }),
     },
   );
@@ -96,6 +133,9 @@ async function fetchWithRetry(
         history,
         systemMessage,
         2,
+        model,
+        temperature,
+        tokens,
       );
     }
 

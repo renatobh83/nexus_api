@@ -3,6 +3,8 @@
   <!-- ── Topbar ── -->
   <div class="topbar">
     <span class="logo">⬡ FlowBR</span>
+    <button class="btn btn-ghost" style="margin-left:8px;font-size:11px;padding:4px 10px;" @click="abrirModalPrompts"
+      title="Gerenciar Prompts">🧠 Prompts</button>
     <div class="spacer"></div>
 
     <!-- abas de módulos -->
@@ -172,6 +174,112 @@
         </div>
       </div>
 
+    </div>
+  </div>
+  <!-- ── Modal de Prompts ── -->
+  <!-- adicione antes do </div> final do tab-flow -->
+  <div v-if="showModalPrompts" style="position:fixed;inset:0;background:rgba(0,0,0,.6);
+         display:flex;align-items:center;justify-content:center;z-index:999;" @click.self="fecharModalPrompts">
+    <div style="background:#1e1e28;border:1px solid #2e2e3e;border-radius:12px;
+              padding:24px;width:560px;max-height:80vh;display:flex;flex-direction:column;gap:16px;">
+
+      <!-- header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:14px;font-weight:600;color:#e1e1e6;">🧠 Prompts</span>
+        <span @click="fecharModalPrompts" style="font-size:18px;color:#66668a;cursor:pointer;line-height:1;">×</span>
+      </div>
+
+      <!-- painel: lista ou formulário -->
+      <div v-if="!promptEditando" style="display:flex;flex-direction:column;gap:12px;overflow:hidden;">
+
+        <!-- botão novo -->
+        <div style="display:flex;justify-content:flex-end;">
+          <button class="btn btn-run" style="font-size:12px;" @click="novoPrompt">+ Novo Prompt</button>
+        </div>
+
+        <!-- carregando -->
+        <div v-if="carregandoPrompts" style="color:#66668a;font-size:13px;text-align:center;padding:24px 0;">
+          Buscando prompts...
+        </div>
+
+        <!-- vazio -->
+        <div v-else-if="promptsDisponiveis.length === 0"
+          style="color:#66668a;font-size:13px;text-align:center;padding:24px 0;">
+          Nenhum prompt cadastrado ainda.
+        </div>
+
+        <!-- lista -->
+        <div v-else style="overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
+          <div v-for="p in promptsDisponiveis" :key="p.id" style="display:flex;align-items:center;gap:10px;padding:10px 14px;
+                 border-radius:8px;border:1px solid #2e2e3e;" onmouseover="this.style.background='#23232f'"
+            onmouseout="this.style.background='transparent'">
+            <!-- info -->
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:600;color:#e1e1e6;
+                        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                {{ p.name }}
+              </div>
+              <div style="font-size:11px;color:#66668a;margin-top:2px;
+                        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                {{ p.content.substring(0, 80) }}{{ p.content.length > 80 ? '…' : '' }}
+              </div>
+            </div>
+
+            <!-- ações -->
+            <div style="display:flex;gap:6px;flex-shrink:0;">
+              <span @click.stop="editarPrompt(p)" title="Editar" style="font-size:14px;color:#66668a;cursor:pointer;padding:3px 7px;
+                     border-radius:4px;border:1px solid #2e2e3e;transition:color .15s;"
+                onmouseover="this.style.color='#0a84ff'" onmouseout="this.style.color='#66668a'">✏️</span>
+              <span @click.stop="deletarPrompt(p.id)" title="Excluir" style="font-size:14px;color:#66668a;cursor:pointer;padding:3px 7px;
+                     border-radius:4px;border:1px solid #2e2e3e;transition:color .15s;"
+                onmouseover="this.style.color='#ff453a'" onmouseout="this.style.color='#66668a'">🗑</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- formulário criar/editar -->
+      <div v-else style="display:flex;flex-direction:column;gap:14px;">
+
+        <!-- header do form -->
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span @click="promptEditando = null" style="color:#66668a;cursor:pointer;font-size:18px;line-height:1;"
+            title="Voltar">←</span>
+          <span style="font-size:13px;font-weight:600;color:#e1e1e6;">
+            {{ promptEditando.id ? 'Editar Prompt' : 'Novo Prompt' }}
+          </span>
+        </div>
+
+        <!-- campo nome -->
+        <div>
+          <label style="font-size:11px;color:#66668a;display:block;margin-bottom:4px;">Nome</label>
+          <input v-model="promptEditando.name" placeholder="ex: Classificar ticket" style="width:100%;background:#101014;border:1px solid #2e2e3e;border-radius:6px;
+                 padding:7px 10px;color:#e1e1e6;font-size:13px;outline:none;box-sizing:border-box;" />
+        </div>
+
+        <!-- campo content -->
+        <div>
+          <label style="font-size:11px;color:#66668a;display:block;margin-bottom:4px;">Content</label>
+          <textarea v-model="promptEditando.content" rows="8" placeholder="Você é um assistente que..." style="width:100%;background:#101014;border:1px solid #2e2e3e;border-radius:6px;
+                 padding:7px 10px;color:#e1e1e6;font-size:13px;outline:none;
+                 box-sizing:border-box;resize:vertical;font-family:inherit;line-height:1.5;"></textarea>
+          <div style="font-size:10px;color:#55557a;margin-top:4px;">
+            {{ promptEditando.content.length }} caracteres
+          </div>
+        </div>
+
+        <!-- ações do form -->
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button class="btn btn-ghost" @click="promptEditando = null">Cancelar</button>
+          <button class="btn btn-run" @click="salvarPrompt"
+            :disabled="!promptEditando.name.trim() || !promptEditando.content.trim()"
+            style="opacity: (!promptEditando.name.trim() || !promptEditando.content.trim()) ? 0.5 : 1">
+            {{ salvandoPrompt ? 'Salvando...' : 'Salvar' }}
+          </button>
+        </div>
+
+      </div>
     </div>
   </div>
 </div>

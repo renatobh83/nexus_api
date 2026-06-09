@@ -9,7 +9,7 @@ export async function flowController(fastify: FastifyInstance) {
   });
 
   fastify.get("/:id", async (request: FastifyRequest, reply: FastifyReply) => {
-    const {id }= request.params as any;
+    const { id } = request.params as any;
     const flow = await flowsService.findById(id);
     reply.status(200).send(flow);
   });
@@ -26,9 +26,43 @@ export async function flowController(fastify: FastifyInstance) {
   fastify.delete(
     "/:id",
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const {id} = request.params as any;
+      const { id } = request.params as any;
       await flowsService.deleteFlows(id);
       reply.status(200).send({ ok: true });
+    },
+  );
+  fastify.get(
+    "/aiPrompt",
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const aiPrompt = await flowsService.listAiPrompt();
+      reply.status(200).send(aiPrompt);
+    },
+  );
+  fastify.put(
+    "/aiPrompt/:id",
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { id } = request.params as any;
+      const data = request.body as any;
+
+      const aiPrompt = await flowsService.updateAiPrompt(id, data);
+      reply.status(200).send(aiPrompt);
+    },
+  );
+  fastify.post(
+    "/aiPrompt",
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const data = request.body as any;
+      const aiPrompt = await flowsService.createAiPrompt(data);
+      reply.status(200).send(aiPrompt);
+    },
+  );
+  fastify.delete(
+    "/aiPrompt/:id",
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { id } = request.params as any;
+      await flowsService.deleteAiPrompt(id);
+
+      reply.status(200).send({ sucesso: true });
     },
   );
 }
