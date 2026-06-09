@@ -115,4 +115,5 @@ export const checkTicketIntegration = async (input: any) => {
   );
 
   console.log("Job enfileirado:", job.id, job.name);
+  return true;
 };

@@ -46,6 +46,7 @@ export const wbotWebListener = async (wbot: Session): Promise<void> => {
     if (message.chatId === "status@broadcast") return;
     if (message.type === "list_response" && !message.fromMe) {
       const response = await checkTicketIntegration(message);
+
       if (!response) {
         wbot.sendText(message.from, "Processo de confirmação já realizado.");
       }

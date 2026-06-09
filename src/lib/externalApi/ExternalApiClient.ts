@@ -35,6 +35,7 @@ export class ExternalApiClient {
     logger.info(
       `[ExternalApiClient] renovando token para ${this.config.baseUrl}`,
     );
+    console.log(this.config.baseUrl);
 
     const response = await fetch(`${this.config.baseUrl}doFuncionarioLogin`, {
       method: "POST",

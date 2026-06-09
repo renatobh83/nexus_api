@@ -57,7 +57,7 @@ export async function integrationController(fastify: FastifyInstance) {
         integrationName,
         ...body,
       });
-      reply.status(200).send("Ok");
+      reply.status(200).send({ success: true });
     },
   );
 }
