@@ -76,7 +76,7 @@ export const ProcessAiNode = {
       ...context,
       output: {
         type: "mensagem",
-        data: clean,
+        data: `🤖 ${clean}`,
       },
     };
   },

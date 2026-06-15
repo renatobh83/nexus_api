@@ -1,11 +1,13 @@
 import { TicketService } from "../tickets.service.js";
 import { Prisma, Ticket } from "@prisma/client";
 import { ContactInternal } from "../../../providers/session.types.js";
+import { VerifyMessage } from "../../messages/handlers/verifyMessage.js";
+import { pendingMessagesQueue } from "../../../queues/pendingMessagesQueue.js";
 
 interface CreateTicketInput {
   contato: string;
   contactOwner: ContactInternal;
-  channelId: number;
+  session: any;
   ticketGroup: boolean;
   msg: string;
   unreadMessages: number;
@@ -14,6 +16,7 @@ interface CreateTicketInput {
   chatClient?: boolean;
   status?: string;
   isFlow?: boolean;
+  ObjMessage?: any;
 }
 
 //  Logger
@@ -30,8 +33,10 @@ export const logger = {
 const ticketService = new TicketService();
 
 // 2. Utilitário para resolver o nome do contato
-const resolveOwnerName = (owner: ContactInternal): string =>
-  owner.name || owner.pushname || owner.shortName || "Desconhecido";
+const resolveOwnerName = (
+  owner: ContactInternal,
+  contato = "Desconhecido",
+): string => owner.name || owner.pushname || owner.shortName || contato;
 
 // 3. Monta os campos compartilhados entre create e update
 const buildSharedFields = (input: CreateTicketInput, now: number) => ({
@@ -47,16 +52,20 @@ const buildSharedFields = (input: CreateTicketInput, now: number) => ({
 
 export const createTicket = async (
   input: CreateTicketInput,
-): Promise<{ ticket: Ticket; isNew: boolean }> => {
-  const { channelId, contactOwner, contato, ticketGroup } = input;
+): Promise<{
+  ticket: Ticket;
+  isNew: boolean;
+  isConcurrentMessage?: boolean;
+}> => {
+  const { session, contactOwner, contato, ticketGroup } = input;
 
   // 4. Timestamp único para ambos os payloads
   const now = Date.now();
   const sharedFields = buildSharedFields(input, now);
-
+  const channelId = session.id;
   const createPayload: Prisma.TicketCreateInput = {
     ...sharedFields,
-    owner: resolveOwnerName(contactOwner),
+    owner: resolveOwnerName(contactOwner, contato),
     contato,
     isGroup: ticketGroup,
     channel: { connect: { id: channelId } },
@@ -74,8 +83,53 @@ export const createTicket = async (
 
   if (!existingTicket) {
     logger.info("Criando novo ticket");
-    const ticket = await ticketService.createTicket(createPayload);
-    return { ticket, isNew: true };
+    try {
+      const ticket = await ticketService.createTicket(createPayload);
+      return { ticket, isNew: true };
+    } catch (error: any) {
+      if (error.code === "P2002") {
+        logger.warn("Ticket criado por outra requisição concorrente", {
+          contato,
+        });
+
+        const ticket = await ticketService.findTicket({
+          contato,
+          status: {
+            in: ["pending", "open"],
+          },
+        });
+
+        if (!ticket) {
+          throw error;
+        }
+
+        await VerifyMessage(input.ObjMessage, contactOwner, ticket.id, session);
+        // await pendingMessagesQueue.add(
+        //   "process-messages-queue",
+        //   {
+        //     ticketId: ticket.id,
+        //     message: input.ObjMessage,
+        //     contato: contactOwner,
+        //     session: session,
+        //   },
+        //   {
+        //     attempts: 3, // retenta até 3x em caso de falha
+        //     backoff: {
+        //       type: "exponential",
+        //       delay: 5000,
+        //     },
+        //   },
+        // );
+
+        return {
+          ticket,
+          isNew: false,
+          isConcurrentMessage: true,
+        };
+      }
+
+      throw error;
+    }
   }
   logger.info("Ticket já existente, atualizando", {
     ticketId: existingTicket.id,

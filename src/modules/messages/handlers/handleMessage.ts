@@ -1,6 +1,7 @@
 import { MessageInternal } from "../messages.types.js";
 import {
   createTicket,
+  logger,
   updateTicket,
 } from "../../tickets/Helpers/CreateTicket.js";
 import { VerifyMessage } from "./verifyMessage.js";
@@ -37,19 +38,23 @@ export const handleMessage = async (
   try {
     const serialized = contato.id._serialized;
     const lastMessage = formatLastMessage(message);
-    const { ticket, isNew } = await createTicket({
+    const { ticket, isNew, isConcurrentMessage } = await createTicket({
       contato: serialized,
       contactOwner: contato,
-      channelId: session.id,
+      session: session,
       ticketGroup: message.isGroupMsg,
       msg: lastMessage,
       unreadMessages: 0,
       chatClient: message.socketId ? true : false,
       socketId: message.socketId,
+      ObjMessage: message,
     });
 
     if (ticket.isInteraction) return;
-
+    if (isConcurrentMessage) {
+      logger.info("Mensagem concorrente ignorada durante criação do ticket");
+      return;
+    }
     const createdMessage = await VerifyMessage(
       message,
       contato,
