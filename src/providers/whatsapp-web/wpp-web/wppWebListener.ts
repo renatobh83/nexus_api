@@ -37,7 +37,7 @@ export const wbotWebListener = async (wbot: Session): Promise<void> => {
   setTimeout(() => {
     isSyncing = false;
     console.log("Escultando evento onAnyMessage");
-  }, 10000);
+  }, 60000);
   wbot.onAnyMessage(async (message: Message) => {
     if (isSyncing) {
       return;

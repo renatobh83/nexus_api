@@ -241,6 +241,7 @@ async function initApp() {
         ...shared,
         socket: socketRef,
         channels: channels.channels,
+        sidebarOpen,
       });
 
       const flow = useFlow({

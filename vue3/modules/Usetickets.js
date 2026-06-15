@@ -9,6 +9,7 @@ function useTickets({
   socket,
   sonnerAlert,
   channels,
+  sidebarOpen,
 }) {
   const { ref, computed, nextTick } = Vue;
 
@@ -170,9 +171,11 @@ function useTickets({
    * @param {number|string} ticketId
    */
   const selectTicket = async (ticketId) => {
+    sidebarOpen.value = !sidebarOpen.value;
     if (currentTicket.value?.id === ticketId) return;
     currentTicket.value = allTickets.value.find((t) => t.id === ticketId);
     if (!currentTicket.value) return;
+
     loadingMessages.value = true;
     loadMessages(ticketId);
     loadingMessages.value = false;
