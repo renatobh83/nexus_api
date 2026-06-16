@@ -22,35 +22,42 @@
     </div>
 
     <!-- Lista dos tickets -->
-    <div class="tickets-list">
-      <div v-if="loadingTickets" class="loading-state">
-        <div class="spinner"></div>Carregando...
-      </div>
-      <template v-if="!loadingTickets">
-        <div v-if="filteredTickets.length === 0" class="empty-state">📭 Nenhum ticket</div>
-        <div v-for="ticket in filteredTickets" :key="ticket.id" class="ticket-item" :data-ticket="ticket.id"
-          :class="{ active: currentTicket?.id === ticket.id, updated: updatedTickets[ticket.id] }"
-          @click="selectTicket(ticket.id)">
-          <div class="ticket-avatar">
-            {{ getTicketAvatar(ticket) }}
-            <span class="channel-badge">{{ getChannelIconByTicket(ticket) }}</span>
-          </div>
-          <div class="ticket-info">
-            <div class="ticket-name">
-              <span>{{ ticket.owner || ticket.name || `Ticket ${ticket.id}` }}</span>
-              <span class="ticket-time">{{ formatTime(ticket.lastMessageAt) }}</span>
+    <div class="vscroll-wrap" id="vscroll-wrap" @scroll="onVirtualScroll">
+      <div class="vscroll-inner" :style="{ height: virtualScrollHeight }">
+        <div class="vscroll-window" :style="{ transform: `translateY(${virtualScrollOffset}px)` }">
+          <div class="tickets-list">
+            <div v-if="loadingTickets" class="loading-state">
+              <div class="spinner"></div>Carregando...
             </div>
-            <div class="ticket-preview">{{ (ticket.lastMessage || 'Nenhuma mensagem').substring(0, 50) }}</div>
-            <span class="status-badge" :class="ticket.status">{{ getStatusText(ticket.status) }}</span>
-          </div>
-          <div class="ticket-actions">
-            <button class="action-btn attend" @click.stop="attendTicket(ticket.id)">🎧</button>
-            <button class="action-btn close" @click.stop="closeTicket(ticket.id)">✅</button>
-            <button class="action-btn reopen" @click.stop="reopenTicket(ticket.id)">🔄</button>
+            <template v-if="!loadingTickets">
+              <div v-if="visibleTickets.length === 0" class="empty-state">📭 Nenhum ticket</div>
+              <div v-for="ticket in visibleTickets" :key="ticket.id" class="ticket-item" :data-ticket="ticket.id"
+                :class="{ active: currentTicket?.id === ticket.id, updated: updatedTickets[ticket.id] }"
+                @click="selectTicket(ticket.id)">
+                <div class="ticket-avatar">
+                  {{ getTicketAvatar(ticket) }}
+                  <span class="channel-badge">{{ getChannelIconByTicket(ticket) }}</span>
+                </div>
+                <div class="ticket-info">
+                  <div class="ticket-name">
+                    <span>{{ ticket.owner || ticket.name || `Ticket ${ticket.id}` }}</span>
+                    <span class="ticket-time">{{ formatTime(ticket.lastMessageAt) }}</span>
+                  </div>
+                  <div class="ticket-preview">{{ (ticket.lastMessage || 'Nenhuma mensagem').substring(0, 50) }}</div>
+                  <span class="status-badge" :class="ticket.status">{{ getStatusText(ticket.status) }}</span>
+                </div>
+                <div class="ticket-actions">
+                  <button class="action-btn attend" @click.stop="attendTicket(ticket.id)">🎧</button>
+                  <button class="action-btn close" @click.stop="closeTicket(ticket.id)">✅</button>
+                  <button class="action-btn reopen" @click.stop="reopenTicket(ticket.id)">🔄</button>
+                </div>
+              </div>
+            </template>
           </div>
         </div>
-      </template>
+      </div>
     </div>
+
   </div>
 
   <!-- Área de chat -->

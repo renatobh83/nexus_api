@@ -63,8 +63,8 @@ async function initApp() {
       // =========================================================================
       // 1. CONFIGURAÇÃO E CONSTANTES
       // =========================================================================
-      // const URL_BASE = "https://fast.panelapps.site";
-      const URL_BASE = "http://localhost:3000";
+      const URL_BASE = "https://fast.panelapps.site";
+      // const URL_BASE = "http://localhost:3000";
 
       let token = ref("");
       let webllm = null;
@@ -88,6 +88,10 @@ async function initApp() {
       // Socket exposto como ref para os módulos acessarem reativamente
       const socketRef = ref(null);
 
+      const ITEM_H = 108;
+      const OVERSCAN = 3;
+      const scrollTop = ref(0);
+      const containerHeight = ref(0);
       // =========================================================================
       // 3. UTILITÁRIOS (usados por múltiplos módulos)
       // =========================================================================
@@ -176,7 +180,9 @@ async function initApp() {
         clearSession();
         redirectToLogin();
       };
-
+      const onVirtualScroll = (event) => {
+        scrollTop.value = event.target.scrollTop;
+      };
       const checkAuthentication = () => {
         const storedToken = localStorage.getItem("auth_token");
         token.value = storedToken;
@@ -281,7 +287,34 @@ async function initApp() {
             ? "✈️"
             : "🕸️";
       };
+      const virtualScrollHeight = computed(() => {
+        return tickets.filteredTickets.value.length
+          ? tickets.filteredTickets.value.length * ITEM_H + 8 + "px"
+          : "0px";
+      });
+      const virtualScrollOffset = computed(() => {
+        const firstIdx = Math.max(
+          0,
+          Math.floor(scrollTop.value / ITEM_H) - OVERSCAN,
+        );
+        return firstIdx * ITEM_H + 4;
+      });
 
+      const visibleTickets = computed(() => {
+        if (tickets.filteredTickets.value.length === 0) return [];
+
+        const height = containerHeight.value;
+        const firstIdx = Math.max(
+          0,
+          Math.floor(scrollTop.value / ITEM_H) - OVERSCAN,
+        );
+        const lastIdx = Math.min(
+          tickets.filteredTickets.value.length - 1,
+          Math.ceil((scrollTop.value + height) / ITEM_H) + OVERSCAN,
+        );
+
+        return tickets.filteredTickets.value.slice(firstIdx, lastIdx + 1);
+      });
       // =========================================================================
       // 8. SOCKET.IO
       // =========================================================================
@@ -542,6 +575,10 @@ async function initApp() {
         getChannelIconByTicket,
         getStatusText,
         formatTime,
+        virtualScrollHeight,
+        virtualScrollOffset,
+        visibleTickets,
+        onVirtualScroll,
         // teste
         sonnerAlert,
         webllm,
