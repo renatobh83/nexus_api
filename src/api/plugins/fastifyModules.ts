@@ -34,19 +34,13 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
 
   // --- 2. CORS Configurado corretamente ---
   const allowedOrigins = [
-    "http://127.0.0.1:5500",
-    "http://localhost:5500",
     "http://127.0.0.1:3000",
-    "http://localhost:3000/",
-    "http://127.0.0.1:8080",
-    "http://localhost:8080",
-    "http://172.18.0.4",
     "http://localhost:51333",
-    "https://test.panelapps.site",
-    "undefined",
-    "https://fast.panelapps.site",
-    "null",
+    "https://atendimento.devrenato.com.br",
+    "https://nexus.devrenato.com.br",
     "https://renatobh83.github.io",
+    "undefined",
+    "null",
   ];
 
   await fastify.register(cors, {
