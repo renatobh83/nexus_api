@@ -505,13 +505,23 @@ async function initApp() {
           settings.loadHours(),
           settings.loadHolidays(),
         ]);
+        requestNotificationPermission();
         if ("serviceWorker" in navigator) {
-          navigator.serviceWorker.ready.then(() => {
-            navigator.serviceWorker.addEventListener(
-              "message",
-              handleSWMessage,
-            );
-          });
+          navigator.serviceWorker
+            .register("/sw.js") // ajuste o caminho pro seu arquivo real
+            .then((registration) => {
+              console.log("SW registrado:", registration.scope);
+              return navigator.serviceWorker.ready;
+            })
+            .then(() => {
+              navigator.serviceWorker.addEventListener(
+                "message",
+                handleSWMessage,
+              );
+            })
+            .catch((err) => {
+              console.error("Falha ao registrar SW:", err);
+            });
         }
 
         getWebLLM();

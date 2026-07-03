@@ -79,8 +79,8 @@
   loadScript("https://cdn.socket.io/4.7.2/socket.io.min.js", () => {
     injectStyles();
 
-    const API_URL = "https://fast.panelapps.site";
-    const URL_SOCKET = "https://fast.panelapps.site/chat-web";
+    const API_URL = "https://nexus.devrenato.com.br";
+    const URL_SOCKET = "https://nexus.devrenato.com.br/chat-web";
 
     let socket;
     let chatVisible = false;

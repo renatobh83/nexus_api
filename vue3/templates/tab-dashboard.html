@@ -1,11 +1,13 @@
 <!-- Template do componente tab-dashboard -->
-<div class="dash-wrap" :class="{ hidden: activeTab !== 'dashboard' }" @vue:mounted="dashInitChart" @vue:unmounted="dashDisposeChart">
+<div class="dash-wrap" :class="{ hidden: activeTab !== 'dashboard' }" @vue:mounted="dashInitChart"
+  @vue:unmounted="dashDisposeChart">
 
   <!-- Header -->
   <div class="dash-header">
     <div>
       <h1 class="dash-title">Dashboard de Atendimento</h1>
-      <p class="dash-date">{{ new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }) }}</p>
+      <p class="dash-date">{{ new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })
+        }}</p>
     </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <!-- Config SLA -->
@@ -78,12 +80,8 @@
         <span class="dash-badge-accent">{{ dashChannelStats.length }} canais</span>
       </div>
       <div class="dash-channel-grid">
-        <div
-          v-for="ch in dashChannelStats"
-          :key="ch.id"
-          class="dash-channel-card"
-          :style="{ borderLeftColor: ch.color }"
-        >
+        <div v-for="ch in dashChannelStats" :key="ch.id" class="dash-channel-card"
+          :style="{ borderLeftColor: ch.color }">
           <div class="dash-channel-name">
             <span>{{ ch.icon }}</span>
             <span>{{ ch.name }}</span>
@@ -101,11 +99,9 @@
     <!-- Donut SVG puro -->
     <div class="dash-card dash-donut-card" style="margin-bottom:0">
       <div class="dash-section-title">Distribuição</div>
-      <svg width="130" height="130" style="display:block;margin:0 auto">
+      <!-- <svg width="80" height="80" style="display:block;margin:0 auto">
         <template v-for="(s, i) in dashPieData" :key="i">
-          <path
-            v-if="dashPieTotal > 0 && s.value > 0"
-            :d="(() => {
+          <path v-if="dashPieTotal > 0 && s.value > 0" :d="(() => {
               const cx = 65, cy = 65, r = 48, ri = 30;
               let startAngle = -Math.PI / 2;
               for (let j = 0; j < i; j++) startAngle += (dashPieData[j].value / dashPieTotal) * 2 * Math.PI;
@@ -121,14 +117,12 @@
               const iy2 = cy + ri * Math.sin(startAngle);
               const large = sweep > Math.PI ? 1 : 0;
               return `M ${x1} ${y1} A 48 48 0 ${large} 1 ${x2} ${y2} L ${ix1} ${iy1} A 30 30 0 ${large} 0 ${ix2} ${iy2} Z`;
-            })()"
-            :fill="s.color"
-            opacity="0.9"
-          />
+            })()" :fill="s.color" opacity="0.9" />
         </template>
-        <text x="65" y="60" text-anchor="middle" fill="#e8eaf0" font-size="20" font-weight="700">{{ dashStats.filaTotal }}</text>
+        <text x="65" y="60" text-anchor="middle" fill="#e8eaf0" font-size="20" font-weight="700">{{ dashStats.filaTotal
+          }}</text>
         <text x="65" y="76" text-anchor="middle" fill="#8b92a8" font-size="10">na fila</text>
-      </svg>
+      </svg> -->
       <div class="dash-donut-legend">
         <div v-for="d in dashPieData" :key="d.name" class="dash-donut-row">
           <span><span :style="{ color: d.color }">● </span>{{ d.name }}</span>
@@ -188,11 +182,8 @@
       <div class="dash-tab-row">
         <button
           v-for="[key, label] in [['all','Todos'],['whatsapp','WhatsApp'],['telegram','Telegram'],['webchat','Web']]"
-          :key="key"
-          class="dash-tab-btn"
-          :class="{ active: dashTabFiltro === key }"
-          @click="dashTabFiltro = key"
-        >{{ label }}</button>
+          :key="key" class="dash-tab-btn" :class="{ active: dashTabFiltro === key }" @click="dashTabFiltro = key">{{
+          label }}</button>
       </div>
     </div>
 
@@ -219,18 +210,14 @@
           </tr>
         </thead>
         <tbody>
-          <tr
-            v-for="(t, i) in dashFilteredTickets"
-            :key="t.id"
-            :class="{
+          <tr v-for="(t, i) in dashFilteredTickets" :key="t.id" :class="{
               'dash-row-risco':    dashTicketEmRisco(t),
               'dash-row-anterior': !dashTicketEmRisco(t) && dashTicketAnterior(t),
               'dash-row-alt':      !dashTicketEmRisco(t) && !dashTicketAnterior(t) && i % 2 !== 0,
-            }"
-          >
+            }">
             <td class="dash-td-id">
               {{ t.id }}
-              <span class="dash-sla-tag"  v-if="dashTicketEmRisco(t)">SLA</span>
+              <span class="dash-sla-tag" v-if="dashTicketEmRisco(t)">SLA</span>
               <span class="dash-prev-tag" v-else-if="dashTicketAnterior(t)">anterior</span>
             </td>
             <td>
@@ -241,12 +228,12 @@
             </td>
             <td :style="{ color: dashUserColor(t.userId) }">{{ dashUserName(t.userId) }}</td>
             <td>
-              <span
-                class="dash-status-badge"
-                :style="{ background: dashStatusBg(t.status), color: dashStatusColor(t.status) }"
-              >{{ dashStatusLabel(t.status) }}</span>
+              <span class="dash-status-badge"
+                :style="{ background: dashStatusBg(t.status), color: dashStatusColor(t.status) }">{{
+                dashStatusLabel(t.status) }}</span>
             </td>
-            <td style="font-size:11px" :style="{ color: dashTicketEmRisco(t) ? 'var(--dash-danger)' : 'var(--dash-muted)' }">
+            <td style="font-size:11px"
+              :style="{ color: dashTicketEmRisco(t) ? 'var(--dash-danger)' : 'var(--dash-muted)' }">
               {{ t.status !== 'closed' ? dashFmtHorasAtras(t.createdAt) : '—' }}
             </td>
             <td class="dash-td-time">{{ dashFmtTime(t.createdAt) }}</td>
@@ -267,24 +254,19 @@
     </div>
     <div v-else style="display:flex;flex-direction:column;gap:10px">
       <div v-for="(item, i) in dashTopContatos" :key="item.contato" class="dash-top-row">
-        <div
-          class="dash-top-pos"
-          :style="{
+        <div class="dash-top-pos" :style="{
             background: i === 0 ? 'rgba(251,191,36,0.15)' : i === 1 ? 'rgba(148,163,184,0.15)' : 'rgba(180,120,60,0.12)',
             color:      i === 0 ? '#fbbf24'               : i === 1 ? '#94a3b8'                 : '#b4783c',
-          }"
-        >{{ i + 1 }}</div>
-        <div style="flex:1;min-width:0;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+          }">{{ i + 1 }}</div>
+        <div
+          style="flex:1;min-width:0;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
           {{ item.contato }}
         </div>
         <div class="dash-top-bar-wrap">
-          <div
-            class="dash-top-bar"
-            :style="{
+          <div class="dash-top-bar" :style="{
               width: (item.total / dashTopContatos[0].total * 100) + '%',
               background: i === 0 ? '#fbbf24' : 'var(--dash-accent)',
-            }"
-          ></div>
+            }"></div>
         </div>
         <div class="dash-top-val" :style="{ color: i === 0 ? '#fbbf24' : 'var(--dash-accent)' }">
           {{ item.total }}
