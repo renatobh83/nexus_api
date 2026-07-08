@@ -203,6 +203,7 @@ model Message {
   hasReaction    Boolean                @default(false)
   isGroupMsg     Boolean                @default(false)
   isNotification Boolean                @default(false)
+  quotedMsgId    String?
   to             String
   type           enum_MessageType       @default(chat)
   caption        String?

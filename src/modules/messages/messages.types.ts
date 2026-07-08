@@ -49,6 +49,7 @@ export interface MessageInternal {
   from: string | null | undefined;
   mediaUrl?: string | null | any;
   mediaType?: string | null | any;
+  quotedMsgId?: string | null;
   timestamp: bigint | number;
   contactName: string;
   ticketId: number | undefined;

@@ -43,6 +43,7 @@ export const toInternalMessage = (msg: Message): MessageInternal => ({
   caption: msg.caption,
   content: msg.content,
   mimetype: msg.mimetype,
+  quotedMsgId: msg.quotedMsgId,
   chatId: resolveId(msg.chatId),
 });
 const writeFileAsync = promisify(writeFile);
@@ -51,10 +52,6 @@ export const toInternalSession = (session: Session): SessionInternal => ({
   id: session.id,
   getChatById: async (chatId: string): Promise<ChatInternal> => {
     return await session.getChatById(chatId);
-    // return {
-    //   id: { _serialized: chat.id._serialized },
-    //   unreadCount: chat.unreadCount,
-    // };
   },
 
   getContact: async (contactId: string): Promise<ContactInternal> => {

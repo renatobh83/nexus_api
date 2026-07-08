@@ -86,6 +86,7 @@ function useDashboard({ allTickets, users, channels }) {
   // ── KPIs ──────────────────────────────────────────────────────────────────
   const dashStats = computed(() => ({
     // Fila real — todos os pendentes independente de data
+
     abertos: dashTicketsAbertos.value.length,
     abertosHoje: dashAbertosHoje.value.length,
     abertosAnteriores: dashAbertosAnteriores.value.length,

@@ -54,6 +54,7 @@ export const VerifyMessage = async (
     content:
       message.type === "chat" ? message.content : message.caption || media,
     mimetype: message.mimetype,
+    quotedMsgId: message.quotedMsgId,
     ticket: {
       connect: undefined,
     },

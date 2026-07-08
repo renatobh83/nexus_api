@@ -147,7 +147,12 @@ function useTickets({
       loadingTickets.value = false;
     }
   };
-
+  const loadQuotedMsg = (quotedMsgId) => {
+    const messageRespondida = currentMessages.value.find(
+      (m) => m.messageId === quotedMsgId,
+    );
+    return messageRespondida.body;
+  };
   /**
    * Carrega as mensagens de um ticket específico.
    * @param {number|string} ticketId
@@ -429,6 +434,7 @@ function useTickets({
     filteredTickets,
     allMessages,
     // Funções
+    loadQuotedMsg,
     scrollToBottom,
     updateSingleTicket,
     loadTickets,

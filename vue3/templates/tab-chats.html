@@ -80,6 +80,7 @@
         :class="msg.fromMe ? 'sent' : 'received'">
         <div class="message-bubble">
           <!-- Mensagem apagada -->
+
           <div v-if="msg.isDeleted" style="font-style: italic; color: #667781;">
             Mensagem apagada
           </div>
@@ -88,7 +89,8 @@
             <div v-show="msg.isGroupMsg" class="sender" v-html="msg.sender"></div>
 
             <!-- IMAGEM -->
-            <template v-if="['image','image/png','jpg','image/jpeg','png','imageMessage'].includes(msg.mediaType)">
+            <template v-if="[
+            'image','image/png','jpg','image/jpeg','png','imageMessage','image/webp'].includes(msg.mediaType)">
               <img :src="getMediaUrl(msg.mediaUrl)" crossorigin="anonymous" alt="Imagem"
                 style="max-width: 250px; max-height: 250px; border-radius: 6px; cursor: pointer;"
                 @click="openInNewTab(getMediaUrl(msg.mediaUrl))" />
@@ -113,7 +115,7 @@
 
             <!-- DOCUMENTO -->
             <template
-              v-else-if="['document','txt','documentMessage','application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(msg.mediaType)">
+              v-else-if="['application/zip','application/x-zip-compressed','document','txt','documentMessage','application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(msg.mediaType)">
               <div
                 style="display: flex; align-items: center; gap: 10px; background: #1e1e1e; padding: 10px; border-radius: 8px;">
                 <div style="font-size: 30px;">📄</div>
@@ -128,8 +130,20 @@
               </div>
               <div v-if="msg.body && !isDocumentWithoutCaption(msg.mediaType)" style="margin-top: 6px;"
                 v-html="formatMessage(msg.body)"></div>
-            </template>
 
+            </template>
+            <template v-else-if="msg.quotedMsgId">
+              <div class="quoted-msg">
+                <div class="box-quoted-msg">
+                  <div class="quoted">
+                    <div class="msg">
+                      {{loadQuotedMsg(msg.quotedMsgId)}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div v-html="formatMessage(msg.body)"></div>
+            </template>
             <!-- TEXTO (fallback) -->
             <div v-else v-html="formatMessage(msg.body)"></div>
           </div>
