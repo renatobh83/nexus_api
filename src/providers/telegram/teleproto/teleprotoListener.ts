@@ -14,7 +14,6 @@ import { handleMessage } from "../../../modules/messages/handlers/handleMessage.
 export const teleprotoListener = async (tbot: SessionTbot) => {
   // Mensagens e Mensagem de midia com caption
   tbot.addEventHandler(async (event) => {
-    console.log(event);
     const messageIsGroup = event.message.isChannel || event.message.isGroup;
     // ||
     // @ts-ignore - _chat.bot existe em runtime
