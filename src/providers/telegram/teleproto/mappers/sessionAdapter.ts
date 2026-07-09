@@ -57,6 +57,7 @@ export const toInternalMessageTbot = async (
     : undefined,
   chatId: "",
   sender: null,
+  quotedMsgId: msg.replyTo?.replyToMsgId?.toString(),
 });
 
 export const toInternalSession = (session: SessionTbot): SessionInternal => ({

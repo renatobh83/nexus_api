@@ -45,7 +45,6 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
 
   await fastify.register(cors, {
     origin: (origin, cb) => {
-      console.log(origin);
       // Importante: em desenvolvimento, origens null/undefined devem ser permitidas
       if (!origin || allowedOrigins.includes(origin)) {
         return cb(null, true);

@@ -41,7 +41,6 @@ async function main() {
     });
 
     console.log("✅ Logado com sucesso!");
-
   } catch (err) {
     console.error("Erro na autenticação principal:", err.message);
     await client.disconnect();
@@ -53,7 +52,6 @@ async function main() {
 
   console.log("🔑 Sessão:");
   const sessionString = client.session.save();
-  console.log(sessionString);
 
   await client.sendMessage("me", {
     message: "🚀 Funcionando!",
@@ -62,4 +60,4 @@ async function main() {
   await client.disconnect();
 }
 
-main().catch(error => console.error("Erro na execução principal:", error));
+main().catch((error) => console.error("Erro na execução principal:", error));

@@ -26,14 +26,18 @@ const {
 } = Vue;
 
 // Carrega um template HTML externo e retorna um componente Vue compilado
-async function loadComponent(path, setupFn) {
+async function loadComponent(path, setupFn, props = []) {
   const res = await fetch(path);
   const template = await res.text();
 
-  return defineComponent({ template, setup: setupFn });
+  return defineComponent({ template, props, setup: setupFn });
 }
 // Função que injeta os dados automaticamente
 const autoInject = () => inject("appContext");
+const autoInjectWithMsg = (props) => {
+  const appContext = inject("appContext");
+  return { ...appContext, msg: props.msg };
+};
 async function initApp() {
   // Carrega todos os templates em paralelo antes de montar o app
   const [
@@ -46,6 +50,7 @@ async function initApp() {
     TabDashboard,
     TabFlow,
     ConfigSettings,
+    MessageMedia,
   ] = await Promise.all([
     loadComponent("./templates/tab-chats.html", autoInject),
     loadComponent("./templates/config-users.html", autoInject),
@@ -56,6 +61,7 @@ async function initApp() {
     loadComponent("./templates/tab-dashboard.html", autoInject),
     loadComponent("./templates/tab-flow.html", autoInject),
     loadComponent("./templates/config-settings.html", autoInject),
+    loadComponent("./templates/message-media.html", autoInjectWithMsg, ["msg"]),
   ]);
 
   const app = createApp({
@@ -95,6 +101,7 @@ async function initApp() {
       // =========================================================================
       // 3. UTILITÁRIOS (usados por múltiplos módulos)
       // =========================================================================
+
       const sonnerAlert = (msg, success = true) => {
         showAlerta.value = true;
         isSuccess.value = success;
@@ -214,11 +221,28 @@ async function initApp() {
       // 5. NOTIFICAÇÕES
       // =========================================================================
       const notifications = useNotifications({
-        playNotificationSound: () =>
-          new Audio(
-            "https://notificationsounds.com/storage/sounds/file-sounds-1147-that-was-quick.mp3",
-          ).play(),
+        onNotificationClick: (data) => {
+          console.log("🔔 Notificação clicada:", data);
+          // Seu código para abrir ticket
+          tickets.selectTicket(data.ticket);
+        },
+        playNotificationSound: () => {
+          try {
+            const audio = new Audio(
+              "https://notificationsounds.com/storage/sounds/file-sounds-1147-that-was-quick.mp3",
+            );
+            audio.play().catch((err) => {
+              console.warn("⚠️ Erro ao tocar áudio:", err);
+            });
+          } catch (error) {
+            console.warn("⚠️ Erro ao criar áudio:", error);
+          }
+        },
         openChat: (ticket) => tickets.selectTicket(ticket),
+        onSWMessage: (data) => {
+          console.log("📨 Mensagem do SW:", data);
+          // Atualiza seu store com a mensagem recebida em background
+        },
       });
 
       async function requestNotificationPermission() {
@@ -501,24 +525,26 @@ async function initApp() {
           settings.loadHours(),
           settings.loadHolidays(),
         ]);
-        requestNotificationPermission();
-        if ("serviceWorker" in navigator) {
-          navigator.serviceWorker
-            .register("/sw.js") // ajuste o caminho pro seu arquivo real
-            .then((registration) => {
-              console.log("SW registrado:", registration.scope);
-              return navigator.serviceWorker.ready;
-            })
-            .then(() => {
-              navigator.serviceWorker.addEventListener(
-                "message",
-                handleSWMessage,
-              );
-            })
-            .catch((err) => {
-              console.error("Falha ao registrar SW:", err);
-            });
-        }
+        // 4. 🔥 ÚNICA LINHA que você precisa para o SW agora:
+        await notifications.requestPermission();
+        // requestNotificationPermission();
+        // if ("serviceWorker" in navigator) {
+        //   navigator.serviceWorker
+        //     .register("/sw.js") // ajuste o caminho pro seu arquivo real
+        //     .then((registration) => {
+        //       console.log("SW registrado:", registration.scope);
+        //       return navigator.serviceWorker.ready;
+        //     })
+        //     .then(() => {
+        //       navigator.serviceWorker.addEventListener(
+        //         "message",
+        //         handleSWMessage,
+        //       );
+        //     })
+        //     .catch((err) => {
+        //       console.error("Falha ao registrar SW:", err);
+        //     });
+        // }
 
         getWebLLM();
       });
@@ -609,6 +635,7 @@ async function initApp() {
   app.component("tab-dashboard", TabDashboard);
   app.component("tab-flow", TabFlow);
   app.component("config-settings", ConfigSettings);
+  app.component("message-media", MessageMedia);
 
   app.mount("#app");
 }

@@ -151,7 +151,10 @@ function useTickets({
     const messageRespondida = currentMessages.value.find(
       (m) => m.messageId === quotedMsgId,
     );
-    return messageRespondida.body;
+    if (messageRespondida) {
+      return messageRespondida;
+    }
+    return null;
   };
   /**
    * Carrega as mensagens de um ticket específico.

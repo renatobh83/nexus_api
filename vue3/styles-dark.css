@@ -1039,26 +1039,7 @@ input:checked + .slider-footer:before {
   word-wrap: break-word;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
-.quoted-msg {
-  position: relative;
-  display: flex;
-  flex-wrap: "nowrap";
-  min-height: 32px;
-  max-height: 150px;
-  margin-top: 8px;
-  margin-bottom: 4px;
-}
-.box-quoted-msg {
-  min-width: 100px;
-  max-width: 350px;
-}
-.quoted-msg {
-  border-radius: 10px;
-  min-height: 48px;
-  position: relative;
-  padding: 10px;
-  background: #71b9ac61;
-}
+
 .msg {
   word-break: break-all;
   width: 100%;
@@ -1096,7 +1077,31 @@ input:checked + .slider-footer:before {
   font-size: 11px;
   color: #606060;
 }
-
+.container-quoted {
+  position: relative;
+  display: flex;
+  flex-wrap: nowrap;
+  min-height: 48px;
+  max-height: 150px;
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+.box-quoted {
+  min-width: 100px;
+  max-width: 350px;
+}
+.quoted {
+  border-radius: 10px;
+  min-height: 48px;
+  padding: 4px;
+  position: relative;
+  background: #71b9ac61;
+}
+.quoted-msg {
+  font-size: 11px;
+  word-break: break-word;
+  width: 100%;
+}
 /* ── Chat Footer ── */
 .chat-footer {
   background: #141414;

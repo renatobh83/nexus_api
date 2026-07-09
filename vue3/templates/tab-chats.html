@@ -86,66 +86,9 @@
           </div>
           <!-- Conteúdo normal -->
           <div v-else>
+
             <div v-show="msg.isGroupMsg" class="sender" v-html="msg.sender"></div>
-
-            <!-- IMAGEM -->
-            <template v-if="[
-            'image','image/png','jpg','image/jpeg','png','imageMessage','image/webp'].includes(msg.mediaType)">
-              <img :src="getMediaUrl(msg.mediaUrl)" crossorigin="anonymous" alt="Imagem"
-                style="max-width: 250px; max-height: 250px; border-radius: 6px; cursor: pointer;"
-                @click="openInNewTab(getMediaUrl(msg.mediaUrl))" />
-              <div v-if="msg.body" style="margin-top: 6px;" v-html="formatMessage(msg.body)"></div>
-            </template>
-
-            <!-- VÍDEO -->
-            <template v-else-if="['video','videoMessage','video/mp4'].includes(msg.mediaType)">
-              <video controls style="max-width: 250px; border-radius: 6px;" crossorigin="anonymous">
-                <source :src="getMediaUrl(msg.mediaUrl)">
-              </video>
-              <div v-if="msg.body" style="margin-top: 6px;" v-html="formatMessage(msg.body)"></div>
-            </template>
-
-            <!-- ÁUDIO -->
-            <template v-else-if="['audio','audioMessage','audio/ogg; codecs=opus'].includes(msg.mediaType)">
-              <audio controls style="width: 250px;" crossorigin="anonymous">
-                <source :src="getMediaUrl(msg.mediaUrl)">
-              </audio>
-              <div v-if="msg.body" style="margin-top: 6px;" v-html="formatMessage(msg.body)"></div>
-            </template>
-
-            <!-- DOCUMENTO -->
-            <template
-              v-else-if="['application/zip','application/x-zip-compressed','document','txt','documentMessage','application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(msg.mediaType)">
-              <div
-                style="display: flex; align-items: center; gap: 10px; background: #1e1e1e; padding: 10px; border-radius: 8px;">
-                <div style="font-size: 30px;">📄</div>
-                <div style="flex: 1;">
-                  <div style="font-weight: 500; font-size: 13px;">{{ getFileName(msg.body) }}</div>
-                  <div style="font-size: 11px; color: #667781;">{{ getFileExtension(msg.body) }}</div>
-                </div>
-                <button @click="openInNewTab(getMediaUrl(msg.mediaUrl))"
-                  style="background: #075e54; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
-                  Baixar
-                </button>
-              </div>
-              <div v-if="msg.body && !isDocumentWithoutCaption(msg.mediaType)" style="margin-top: 6px;"
-                v-html="formatMessage(msg.body)"></div>
-
-            </template>
-            <template v-else-if="msg.quotedMsgId">
-              <div class="quoted-msg">
-                <div class="box-quoted-msg">
-                  <div class="quoted">
-                    <div class="msg">
-                      {{loadQuotedMsg(msg.quotedMsgId)}}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div v-html="formatMessage(msg.body)"></div>
-            </template>
-            <!-- TEXTO (fallback) -->
-            <div v-else v-html="formatMessage(msg.body)"></div>
+            <message-media :msg="msg"></message-media>
           </div>
 
           <div class="message-footer">

@@ -14,12 +14,11 @@ import { handleMessage } from "../../../modules/messages/handlers/handleMessage.
 export const teleprotoListener = async (tbot: SessionTbot) => {
   // Mensagens e Mensagem de midia com caption
   tbot.addEventHandler(async (event) => {
-    const messageIsGroup =
-      event.message.isChannel ||
-      event.message.isGroup 
-      // ||
-      // @ts-ignore - _chat.bot existe em runtime
-      // event.message._chat?.bot;
+    console.log(event);
+    const messageIsGroup = event.message.isChannel || event.message.isGroup;
+    // ||
+    // @ts-ignore - _chat.bot existe em runtime
+    // event.message._chat?.bot;
     if (messageIsGroup) return;
 
     await AuxiTbot(tbot, event.message);
