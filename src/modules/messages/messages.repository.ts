@@ -33,6 +33,22 @@ export class MessageRepository {
   ): Promise<Message | null> {
     return await prisma.message.findFirst({ where, include: messageInclude });
   }
+  async findForUpdateMessage(messageId: string) {
+    return await prisma.message.findFirst({
+      where: {
+        messageId: messageId,
+      },
+    });
+  }
+  async updateMessage(messaegId: string, data: Prisma.MessageUpdateInput) {
+    return prisma.message.update({
+      where: {
+        messageId: messaegId,
+      },
+
+      data: data,
+    });
+  }
   async findAllMessageTicket(where: Prisma.MessageWhereInput): Promise<any> {
     const DEFAULT_LIMIT = 40;
     const DEFAULT_SKIP = 0;

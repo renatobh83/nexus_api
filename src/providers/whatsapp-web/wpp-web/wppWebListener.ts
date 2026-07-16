@@ -8,6 +8,8 @@ import { ContactInternal } from "../../session.types.js";
 import { Contact, Message } from "@wppconnect-team/wppconnect";
 import { checkTicketIntegration } from "../../../modules/externals/Helpers/checkIntegration.js";
 import { blockedMessages } from "../../../modules/externals/api/scheduling_api/BlockedMessages.js";
+import { Reaction } from "../../../types/reaction.types.js";
+import { HandleMsgReaction } from "./HandleMsgReaction.js";
 
 const resolveContact = async (
   message: Message,
@@ -77,6 +79,9 @@ export const wbotWebListener = async (wbot: Session): Promise<void> => {
   });
   wbot.onBackendEvent((eventName, ...args) => {
     console.log("Backend event:", eventName, args);
+  });
+  wbot.onReactionMessage(async (msg: any) => {
+    await HandleMsgReaction(msg);
   });
   // /**
   //  * Evento de mensagem recebida

@@ -4,7 +4,6 @@ import { buildMessageBody } from "./message.utils.js";
 import { MessageRepository } from "./messages.repository.js";
 import { SendMessageSystemProxy } from "./handlers/handleSendMessageSystemProxy.js";
 import { TicketsRepository } from "../tickets/tickets.repository.js";
-import { logger } from "../tickets/Helpers/CreateTicket.js";
 
 export class MessageService {
   private messageRepository: MessageRepository;
@@ -60,5 +59,15 @@ export class MessageService {
         return SendMessageSystemProxy(body, data.ticket, media);
       }),
     );
+  }
+  async findMessageForUpdate(messageId: string) {
+    return this.messageRepository.findForUpdateMessage(messageId);
+  }
+  async updateMessage(messageId: string, data: Prisma.MessageUpdateInput) {
+    const clientNamespace = getClientIONamespace();
+    const updated = await this.messageRepository.updateMessage(messageId, data);
+    clientNamespace.emit("chat:update", {
+      ...updated,
+    });
   }
 }

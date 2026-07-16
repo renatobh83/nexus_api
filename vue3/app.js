@@ -69,8 +69,8 @@ async function initApp() {
       // =========================================================================
       // 1. CONFIGURAÇÃO E CONSTANTES
       // =========================================================================
-      const URL_BASE = "https://nexus.devrenato.com.br";
-      // const URL_BASE = "http://localhost:3000";
+      // const URL_BASE = "https://nexus.devrenato.com.br";
+      const URL_BASE = "http://localhost:3000";
 
       let token = ref("");
       let webllm = null;
@@ -423,6 +423,45 @@ async function initApp() {
           tickets.updateSingleTicket(data);
           const ch2 = graficos.getChartHandler2();
           if (ch2) ch2.render();
+        });
+        socket.on("chat:update", (data) => {
+          // 1. Atualiza no array allTickets
+          const ticketIndex = tickets.allTickets.value.findIndex(
+            (ticket) => ticket.id === data.ticketid,
+          );
+
+          if (ticketIndex !== -1) {
+            const ticket = tickets.allTickets.value[ticketIndex];
+
+            // Encontra e atualiza a mensagem no ticket
+            const messageIndex = ticket.messages?.findIndex(
+              (msg) => msg.messageId === data.messageId,
+            );
+
+            if (messageIndex !== -1 && messageIndex !== undefined) {
+              // Atualiza no ticket
+              Object.assign(ticket.messages[messageIndex], data);
+
+              // 2. Se o ticket atual estiver aberto, atualiza também no currentMessages
+              if (tickets.currentTicket.value?.id === data.ticketid) {
+                const currentMessageIndex =
+                  tickets.currentMessages.value.findIndex(
+                    (msg) => msg.messageId === data.messageId,
+                  );
+
+                if (currentMessageIndex !== -1) {
+                  // Atualiza a mensagem no array atual
+                  Object.assign(
+                    tickets.currentMessages.value[currentMessageIndex],
+                    data,
+                  );
+                } else {
+                  // Se por algum motivo a mensagem não estiver no currentMessages, adiciona
+                  tickets.currentMessages.value.push(data);
+                }
+              }
+            }
+          }
         });
 
         socket.on("ChatWebFechado", (data) => {

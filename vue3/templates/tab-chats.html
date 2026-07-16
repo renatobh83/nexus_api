@@ -86,12 +86,15 @@
           </div>
           <!-- Conteúdo normal -->
           <div v-else>
-
             <div v-show="msg.isGroupMsg" class="sender" v-html="msg.sender"></div>
-
             <message-media :msg="msg"></message-media>
           </div>
 
+          <!-- <div>{{msg.reaction}} {{msg.reactionFromMe}}</div> -->
+          <span v-if="msg.reactionFromMe || msg.reaction">
+            {{ msg.reactionFromMe }}
+            {{ msg.reaction}}
+          </span>
           <div class="message-footer">
             <span>{{ formatTime(msg.createdAt) }}</span>
             <span v-if="msg.fromMe" class="msg-status">
