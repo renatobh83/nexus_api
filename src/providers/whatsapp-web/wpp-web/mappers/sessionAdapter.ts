@@ -1,5 +1,6 @@
 import { MessageInternal } from "../../../../modules/messages/messages.types.js";
 import { Session } from "../Wpp-web.js";
+import { v4 as uuidV4 } from "uuid";
 import {
   ChatInternal,
   ContactInternal,
@@ -24,7 +25,11 @@ const resolveId = (id: string | Wid): string => {
 
 export const toInternalMessage = (msg: Message): MessageInternal => ({
   body: msg.body || msg.caption || "",
-  messageId: msg.id,
+  messageId:
+    msg.id ||
+    (msg.fromMe
+      ? `true_${msg.author}_${uuidV4()}`
+      : `false_${msg.chatId}_${uuidV4()}`),
   fromMe: msg.fromMe,
   isGroupMsg: msg.isGroupMsg,
   type: msg.type,

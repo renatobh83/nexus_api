@@ -527,25 +527,6 @@ async function initApp() {
         ]);
         // 4. 🔥 ÚNICA LINHA que você precisa para o SW agora:
         await notifications.requestPermission();
-        // requestNotificationPermission();
-        // if ("serviceWorker" in navigator) {
-        //   navigator.serviceWorker
-        //     .register("/sw.js") // ajuste o caminho pro seu arquivo real
-        //     .then((registration) => {
-        //       console.log("SW registrado:", registration.scope);
-        //       return navigator.serviceWorker.ready;
-        //     })
-        //     .then(() => {
-        //       navigator.serviceWorker.addEventListener(
-        //         "message",
-        //         handleSWMessage,
-        //       );
-        //     })
-        //     .catch((err) => {
-        //       console.error("Falha ao registrar SW:", err);
-        //     });
-        // }
-
         getWebLLM();
       });
 

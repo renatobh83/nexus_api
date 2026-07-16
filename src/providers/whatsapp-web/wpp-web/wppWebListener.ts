@@ -59,7 +59,6 @@ export const wbotWebListener = async (wbot: Session): Promise<void> => {
       return messageContent.includes(blocked);
     });
     if (isBlocked) return;
-    console.log(message);
     const messageInternal = toInternalMessage(message);
 
     const session = toInternalSession(wbot);

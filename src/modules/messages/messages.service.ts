@@ -24,7 +24,6 @@ export class MessageService {
       body: bodyToDb,
       ...restDto,
     };
-
     const message = await this.messageRepository.create(messageData);
 
     const clientNamespace = getClientIONamespace();

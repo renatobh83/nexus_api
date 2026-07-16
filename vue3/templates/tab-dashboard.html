@@ -99,30 +99,6 @@
     <!-- Donut SVG puro -->
     <div class="dash-card dash-donut-card" style="margin-bottom:0">
       <div class="dash-section-title">Distribuição</div>
-      <!-- <svg width="80" height="80" style="display:block;margin:0 auto">
-        <template v-for="(s, i) in dashPieData" :key="i">
-          <path v-if="dashPieTotal > 0 && s.value > 0" :d="(() => {
-              const cx = 65, cy = 65, r = 48, ri = 30;
-              let startAngle = -Math.PI / 2;
-              for (let j = 0; j < i; j++) startAngle += (dashPieData[j].value / dashPieTotal) * 2 * Math.PI;
-              const sweep = (s.value / dashPieTotal) * 2 * Math.PI;
-              if (sweep < 0.01) return '';
-              const x1  = cx + r  * Math.cos(startAngle);
-              const y1  = cy + r  * Math.sin(startAngle);
-              const x2  = cx + r  * Math.cos(startAngle + sweep);
-              const y2  = cy + r  * Math.sin(startAngle + sweep);
-              const ix1 = cx + ri * Math.cos(startAngle + sweep);
-              const iy1 = cy + ri * Math.sin(startAngle + sweep);
-              const ix2 = cx + ri * Math.cos(startAngle);
-              const iy2 = cy + ri * Math.sin(startAngle);
-              const large = sweep > Math.PI ? 1 : 0;
-              return `M ${x1} ${y1} A 48 48 0 ${large} 1 ${x2} ${y2} L ${ix1} ${iy1} A 30 30 0 ${large} 0 ${ix2} ${iy2} Z`;
-            })()" :fill="s.color" opacity="0.9" />
-        </template>
-        <text x="65" y="60" text-anchor="middle" fill="#e8eaf0" font-size="20" font-weight="700">{{ dashStats.filaTotal
-          }}</text>
-        <text x="65" y="76" text-anchor="middle" fill="#8b92a8" font-size="10">na fila</text>
-      </svg> -->
       <div class="dash-donut-legend">
         <div v-for="d in dashPieData" :key="d.name" class="dash-donut-row">
           <span><span :style="{ color: d.color }">● </span>{{ d.name }}</span>

@@ -32,7 +32,6 @@ export const VerifyMessage = async (
 
   const media =
     message.type !== "chat" ? await session.downloadMedia(message) : "";
-
   const messageData: Prisma.MessageCreateInput = {
     messageId: message.messageId,
     body: message.type === "chat" ? body : message.caption || media,
