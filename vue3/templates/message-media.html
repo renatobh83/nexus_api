@@ -24,7 +24,10 @@
   <div style="display: flex; align-items: center; gap: 10px; background: #1e1e1e; padding: 10px; border-radius: 8px;">
     <div style="font-size: 30px;">📄</div>
     <div style="flex: 1;">
-      <div style="font-weight: 500; font-size: 13px;">{{ getFileName(msg.body) }}</div>
+      <div
+        style="font-weight: 500; font-size: 13px; overflow: hidden; text-overflow: ellipsis;  word-break: break-word;">
+        {{
+        getFileName(msg.body) }}</div>
       <div style="font-size: 11px; color: #667781;">{{ getFileExtension(msg.body) }}</div>
     </div>
     <button @click="openInNewTab(getMediaUrl(msg.mediaUrl))"

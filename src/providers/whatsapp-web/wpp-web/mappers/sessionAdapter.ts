@@ -29,7 +29,7 @@ export const toInternalMessage = (msg: Message): MessageInternal => ({
     msg.id ||
     (msg.fromMe
       ? `true_${msg.author}_${uuidV4()}`
-      : `false_${msg.chatId}_${uuidV4()}`),
+      : `false_${resolveId(msg.chatId)}_${uuidV4()}`),
   fromMe: msg.fromMe,
   isGroupMsg: msg.isGroupMsg,
   type: msg.type,
