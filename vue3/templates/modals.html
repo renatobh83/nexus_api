@@ -34,16 +34,31 @@
       <button class="modal-close" @click="broadcastModalVisible = false">&times;</button>
     </div>
     <div class="modal-body">
-      <div class="form-group">
-        <span>Canal</span>
-        <select v-model="broadcastChannelId">
-          <option value="">Selecione</option>
-          <option v-for="ch in channels.filter(ch => ch.status === 'CONNECTED' && ch.type !== 'web')" :key="ch.id"
-            :value="ch.id">
-            {{ ch.name }}
-          </option>
-        </select>
+      <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+        <div>
+          <span>Canal</span>
+          <select v-model="broadcastChannelId" name="channel">
+            <option value="">Selecione</option>
+            <option v-for="ch in channels.filter(ch => ch.status === 'CONNECTED' && ch.type !== 'web')" :key="ch.id"
+              :value="ch.id">
+              {{ ch.name }}
+            </option>
+          </select>
+        </div>
+
+        <div v-if="contatoByTicket.length > 0 && broadcastChannelId && hasWhatsAppChannel">
+
+          <span>Contato ticket</span>
+          <select v-model="selectedContato" name="contatoTicket">
+            <option value="">Selecione</option>
+            <option v-for="ticket in contatoByTicket" :key="ticket.contato" :value="ticket.contato">
+              {{ ticket.owner }}
+            </option>
+          </select>
+
+        </div>
       </div>
+
       <div class="form-group">
         <span>Número</span>
         <input v-model="broadcastNumber" placeholder="31999999999"

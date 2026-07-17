@@ -69,8 +69,8 @@ async function initApp() {
       // =========================================================================
       // 1. CONFIGURAÇÃO E CONSTANTES
       // =========================================================================
-      // const URL_BASE = "https://nexus.devrenato.com.br";
-      const URL_BASE = "http://localhost:3000";
+      const URL_BASE = "https://nexus.devrenato.com.br";
+      // const URL_BASE = "http://localhost:3000";
 
       let token = ref("");
       let webllm = null;
@@ -282,7 +282,11 @@ async function initApp() {
         sonnerAlert,
       });
       const settings = UseSettings({ ...shared });
-      const broadcast = useBroadcast({ ...shared });
+      const broadcast = useBroadcast({
+        ...shared,
+        tickets,
+        channels: channels.channels,
+      });
       const dashboard = useDashboard({
         allTickets: tickets.allTickets,
         users: users.users,

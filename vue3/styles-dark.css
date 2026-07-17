@@ -1169,6 +1169,44 @@ input:checked + .slider-footer:before {
   cursor: not-allowed;
 }
 
+/* ── Form Groups ── */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #a0a0a0;
+  font-size: 14px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  background: #141414;
+  color: #f0f0f0;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #075e54;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
 /* ── Broadcast Modal ── */
 .broadcast-modal {
   display: none;
@@ -1241,45 +1279,6 @@ input:checked + .slider-footer:before {
 .broadcast-modal textarea {
   resize: vertical;
   min-height: 100px;
-}
-
-/* ── Form Groups ── */
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 500;
-  color: #a0a0a0;
-  font-size: 14px;
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #2a2a2a;
-  border-radius: 8px;
-  font-size: 14px;
-  font-family: inherit;
-  background: #141414;
-  color: #f0f0f0;
-  transition: border-color 0.2s;
-}
-
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: #075e54;
-}
-
-.form-group textarea {
-  resize: vertical;
-  min-height: 80px;
 }
 
 .modal-close {

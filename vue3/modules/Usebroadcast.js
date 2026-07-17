@@ -2,8 +2,8 @@
  * @file useBroadcast.js
  * @description Composable para envio de mensagens em broadcast.
  */
-function useBroadcast({ URL_BASE, token, sonnerAlert }) {
-  const { ref } = Vue;
+function useBroadcast({ URL_BASE, token, sonnerAlert, tickets, channels }) {
+  const { ref, watch, computed } = Vue;
 
   // --- Estado ---
   const broadcastModalVisible = ref(false);
@@ -14,6 +14,28 @@ function useBroadcast({ URL_BASE, token, sonnerAlert }) {
   const broadcastFileName = ref("");
   const selectedBroadcastFiles = ref([]);
   const sendingBroadcast = ref(false);
+  const contatoByTicket = ref("");
+  const selectedContato = ref("");
+  const hasWhatsAppChannel = computed(() => {
+    return channels.value.some(
+      (ch) => ch.type === "whatsapp" && ch.id === broadcastChannelId.value,
+    );
+  });
+  const getByTicket = () => {
+    if (broadcastChannelId.value) {
+      const ticketsByChannel = Array.from(
+        new Map(
+          tickets.allTickets.value
+            .filter(
+              (t) => t.channelId === broadcastChannelId.value && !t.isGroup,
+            )
+            .map((t) => [t.contato, { contato: t.contato, owner: t.owner }]),
+        ).values(),
+      );
+
+      contatoByTicket.value = ticketsByChannel;
+    }
+  };
 
   // --- Funções ---
 
@@ -23,6 +45,7 @@ function useBroadcast({ URL_BASE, token, sonnerAlert }) {
     broadcastMessage.value = "";
     broadcastFileName.value = "";
     selectedBroadcastFiles.value = [];
+    selectedContato.value = "";
   };
 
   /** Abre o modal de broadcast e limpa o form. */
@@ -100,20 +123,36 @@ function useBroadcast({ URL_BASE, token, sonnerAlert }) {
 
     sendingBroadcast.value = true;
     try {
-      await fetch(
-        `${URL_BASE}/api/v1/channel/${broadcastChannelId.value}/send`,
-        {
-          method: "POST",
-          body: formData,
-          headers: { Authorization: `Bearer ${token.value}` },
-        },
-      );
+      // await fetch(
+      //   `${URL_BASE}/api/v1/channel/${broadcastChannelId.value}/send`,
+      //   {
+      //     method: "POST",
+      //     body: formData,
+      //     headers: { Authorization: `Bearer ${token.value}` },
+      //   },
+      // );
     } finally {
       sendingBroadcast.value = false;
       closeBroadcastModal();
     }
   };
-
+  watch(selectedContato, (newValue) => {
+    if (newValue) {
+      broadcastNumber.value = newValue; // Preenche o campo número
+    } else {
+      broadcastNumber.value = ""; // Limpa se desmarcar
+    }
+  });
+  watch(broadcastChannelId, (newValue) => {
+    if (newValue) {
+      broadcastNumber.value = ""; // Preenche o campo número
+      selectedContato.value = "";
+      getByTicket();
+    } else {
+      contatoByTicket.value = "";
+      selectedContato.value = ""; // Limpa se desmarcar
+    }
+  });
   return {
     broadcastModalVisible,
     broadcastFileInput,
@@ -129,5 +168,8 @@ function useBroadcast({ URL_BASE, token, sonnerAlert }) {
     handleBroadcastFileSelect,
     removeBroadcastFile,
     sendBroadcastMessage,
+    contatoByTicket,
+    selectedContato,
+    hasWhatsAppChannel,
   };
 }
