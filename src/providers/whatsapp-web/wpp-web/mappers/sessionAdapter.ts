@@ -82,7 +82,7 @@ export const toInternalSession = (session: Session): SessionInternal => ({
     const base64Data = matches ? matches[2] : media;
 
     const fileData = Buffer.from(base64Data, "base64");
-
+    console.log(message);
     let ext = getSafeExtension(message.caption!, message.mimetype);
 
     const filename = buildFilename(message, ext);

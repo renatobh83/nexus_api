@@ -123,14 +123,14 @@ function useBroadcast({ URL_BASE, token, sonnerAlert, tickets, channels }) {
 
     sendingBroadcast.value = true;
     try {
-      // await fetch(
-      //   `${URL_BASE}/api/v1/channel/${broadcastChannelId.value}/send`,
-      //   {
-      //     method: "POST",
-      //     body: formData,
-      //     headers: { Authorization: `Bearer ${token.value}` },
-      //   },
-      // );
+      await fetch(
+        `${URL_BASE}/api/v1/channel/${broadcastChannelId.value}/send`,
+        {
+          method: "POST",
+          body: formData,
+          headers: { Authorization: `Bearer ${token.value}` },
+        },
+      );
     } finally {
       sendingBroadcast.value = false;
       closeBroadcastModal();

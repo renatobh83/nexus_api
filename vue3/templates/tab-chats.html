@@ -85,6 +85,7 @@
             Mensagem apagada
           </div>
           <!-- Conteúdo normal -->
+
           <div v-else>
             <div v-show="msg.isGroupMsg" class="sender" v-html="msg.sender"></div>
             <message-media :msg="msg"></message-media>
