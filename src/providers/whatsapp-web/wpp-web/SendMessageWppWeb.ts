@@ -43,11 +43,10 @@ export const SendMessageWppWeb = async (
       });
       return messageSent;
     } else {
-      const messageSent = await wbot.sendFile(
-        ticket.contato,
-        fileData,
-        hasMedia.filename,
-      );
+      const messageSent = await wbot.sendFile(ticket.contato, fileData, {
+        filename: hasMedia.filename,
+        caption: body || hasMedia.filename,
+      });
       await ticketService.updateTicket(ticket.id, {
         lastMessage: hasMedia.filename,
         lastMessageAt: Date.now(),
@@ -55,7 +54,6 @@ export const SendMessageWppWeb = async (
       return messageSent;
     }
   } else {
-    
     const messageSent = await wbot.sendText(ticket.contato, body);
     await ticketService.updateTicket(ticket.id, {
       lastMessage: body.length > 255 ? body.slice(0, 252) + "..." : body,

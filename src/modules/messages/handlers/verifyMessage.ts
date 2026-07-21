@@ -42,7 +42,7 @@ export const VerifyMessage = async (
     mediaType: message.type === "chat" ? "" : message.mimetype,
     sendType: "chat",
     isGroupMsg: message.isGroupMsg,
-    caption: message.caption,
+    caption: message.body || message.caption,
     from: message.from,
     hasReaction: message.hasReaction,
     fromMe: message.fromMe,

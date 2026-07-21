@@ -88,7 +88,7 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
   });
 
   await fastify.register(formbody);
-  await fastify.register(multipart, { limits: { fileSize: 10 * 1024 * 1024 } });
+  await fastify.register(multipart, { limits: { fileSize: 60 * 1024 * 1024 } });
 
   // --- 6. Proteção contra Poluição de Parâmetros HTTP (HPP) ---
 

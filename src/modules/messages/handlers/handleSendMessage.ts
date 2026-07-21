@@ -9,11 +9,9 @@ export const handleSendMessage = async (
   body: any,
   media: any,
 ) => {
-
   const hasMedia = Boolean(media) ? await transformFile(media) : false;
 
   const channelType = channel.type;
-  // console.log(hasMedia);
 
   switch (channelType) {
     case "whatsapp":

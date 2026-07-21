@@ -86,7 +86,8 @@ export async function channelController(fastify: FastifyInstance) {
       }
       const { to, body } = fields;
       const channel = await service.findChannelOrThrow(id);
-      const enviarPara = `+55${to}`;
+      const enviarPara = to.includes("@") ? to : `+55${to}`;
+
       await Promise.all(
         (filesArray && filesArray.length ? filesArray : [null]).map(
           async (media: string) => {

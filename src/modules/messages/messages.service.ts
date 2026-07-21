@@ -51,6 +51,7 @@ export class MessageService {
 
   async createMessageSystem(data: any) {
     const body = buildMessageBody(data.message.body, data.ticket);
+
     return await Promise.all(
       (data.filesArray && data.filesArray.length
         ? data.filesArray
