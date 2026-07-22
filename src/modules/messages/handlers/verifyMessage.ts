@@ -1,21 +1,11 @@
-import { writeFile } from "node:fs";
-import { join } from "node:path";
-import { promisify } from "node:util";
-
 import { MessageInternal } from "../messages.types.js";
 
-import {
-  buildFilename,
-  getSafeExtension,
-} from "../../../utils/messsageMedia.js";
 import { Prisma } from "@prisma/client";
-import { PUBLIC_DIR } from "../../../config/env.js";
 import { MessageService } from "../messages.service.js";
 import {
   ContactInternal,
   SessionInternal,
 } from "../../../providers/session.types.js";
-import { logger } from "../../tickets/Helpers/CreateTicket.js";
 
 const messageService = new MessageService();
 
