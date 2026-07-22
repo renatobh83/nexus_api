@@ -2,6 +2,7 @@ import { Channel } from "@prisma/client";
 import { transformFile } from "../../../utils/messsageMedia.js";
 import { SendMessageTeleprotoChannel } from "../../../providers/telegram/teleproto/sendMessageTeleprotoChannel.js";
 import { SendMessageWppWebChannel } from "../../../providers/whatsapp-web/wpp-web/SendMessageWppWebChannel.js";
+import { SendMessageChatClient } from "../../chatWeb/helpers/SendMessageChatClient.js";
 
 export const handleSendMessage = async (
   channel: Channel,
@@ -20,6 +21,7 @@ export const handleSendMessage = async (
     case "telegram":
       await SendMessageTeleprotoChannel(body, channel.id, to, hasMedia);
       break;
+
     default:
       break;
   }
