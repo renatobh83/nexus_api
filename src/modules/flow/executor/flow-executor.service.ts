@@ -110,7 +110,7 @@ export class FlowExecutorService {
     // 4. Fluxo padrão
 
     const nextNodes = FlowParser.getNextNodes(node);
-    console.log(nextNodes);
+
     if (!nextNodes.length) {
       console.log(`[FLOW] Fluxo finalizado no node ${node.id}`);
       return;

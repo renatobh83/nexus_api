@@ -118,6 +118,16 @@ function useFlow({
       outputs: 1,
     },
     {
+      type: "processarDados",
+      label: "Processamento de dados",
+      icon: "⚙️",
+      color: "#32d74b",
+      sub: "Processamentos de dados",
+      props: [{ k: "Processar dados:", v: "agendamento" }],
+      inputs: 1,
+      outputs: 1,
+    },
+    {
       type: "processarIa",
       label: "Processar-ia",
       icon: "🧠",

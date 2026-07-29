@@ -2,6 +2,7 @@ import { ConvertNode } from "./ConvertNode.js";
 import { FilterNode } from "./FilterNode.js";
 import { NotifyNode } from "./NotifyNode.js";
 import { ProcessAiNode } from "./ProcessAiNode.js";
+import { ProcessarDados } from "./ProcessarDados.js";
 import { SendMessage } from "./SendMessage.js";
 import { TextNode } from "./TextNode.js";
 import { TriggerNode } from "./TriggerNode.js";
@@ -15,5 +16,6 @@ export const nodeRegistry = {
   processarIa: ProcessAiNode,
   waitResponse: WaitResponseNode,
   text: TextNode,
-  transform: ConvertNode
+  transform: ConvertNode,
+  processarDados: ProcessarDados,
 };
