@@ -68,12 +68,26 @@ export const ProcessAiNode = {
       raw,
       usage,
     });
-    const clean = extractFinalResponse(raw);
+    const dadosExtraidos = extractDados(raw);
+    const semMarcador = stripDadosMarker(raw); // remove a linha ###DADOS### antes da extractFinalResponse
+
+    const clean = extractFinalResponse(semMarcador);
 
     history.push({ role: "assistant", content: clean });
-
+    // merge defensivo: nunca perde campo já coletado em turno anterior
+    const dadosAcumulados = {
+      ...(context.dadosAgendamento ?? {}),
+      ...Object.fromEntries(
+        Object.entries(dadosExtraidos ?? {}).filter(
+          ([k, v]) => k !== "concluido" && v != null,
+        ),
+      ),
+    };
+    const concluido = dadosExtraidos?.concluido === true;
     return {
       ...context,
+      dadosAgendamento: dadosAcumulados,
+      etapaConcluida: concluido,
       output: {
         type: "mensagem",
         data: `🤖 ${clean}`,
@@ -85,6 +99,26 @@ export const ProcessAiNode = {
     conversationHistories.delete(String(ticketId));
   },
 };
+
+function extractDados(raw: string): {
+  especialidade: string | null;
+  nome_paciente: string | null;
+  dia_horario: string | null;
+  concluido: boolean;
+} | null {
+  const match = raw.match(/###DADOS###\s*(\{[\s\S]*?\})/);
+  if (!match) return null;
+  try {
+    return JSON.parse(match[1]);
+  } catch {
+    console.error("Falha ao parsear ###DADOS###:", match[1]);
+    return null;
+  }
+}
+
+function stripDadosMarker(raw: string): string {
+  return raw.replace(/###DADOS###\s*\{[\s\S]*?\}/, "").trim();
+}
 
 async function fetchWithRetry(
   ticketId: string,

@@ -69,8 +69,8 @@ async function initApp() {
       // =========================================================================
       // 1. CONFIGURAÇÃO E CONSTANTES
       // =========================================================================
-      const URL_BASE = "https://nexus.devrenato.com.br";
-      // const URL_BASE = "http://localhost:3000";
+      // const URL_BASE = "https://nexus.devrenato.com.br";
+      const URL_BASE = "http://localhost:3000";
 
       let token = ref("");
       let webllm = null;

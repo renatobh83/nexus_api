@@ -3,7 +3,7 @@ import { FlowParser } from "./FlowParser.js";
 import { nodeRegistry } from "../nodes/index.js";
 import { FlowsService } from "../flow.service.js";
 
-const flowExecutionService = new FlowsService()
+const flowExecutionService = new FlowsService();
 
 export class FlowExecutorService {
   /**
@@ -32,7 +32,7 @@ export class FlowExecutorService {
     flow: FlowJson,
     nodeId: string,
     context: Record<string, any> = {},
-    moduleName: string
+    moduleName: string,
   ): Promise<void> {
     await this.executeNode(flow, nodeId, context, moduleName);
   }
@@ -44,7 +44,7 @@ export class FlowExecutorService {
     flow: FlowJson,
     nodeId: string,
     context: Record<string, any>,
-    moduleName: string
+    moduleName: string,
   ): Promise<void> {
     const node = FlowParser.findNode(flow, nodeId, moduleName);
 
@@ -66,19 +66,14 @@ export class FlowExecutorService {
       const { __waitResponse, ...contextToSave } = result;
       const nextNodes = FlowParser.getNextNodes(node);
 
-
-      await flowExecutionService.updoateFlowExecution(
-        context.executionId,
-        {
-          status: "waiting_response",
-          currentNodeId: nextNodes[0],
-          context: contextToSave
-        }
-      );
+      await flowExecutionService.updoateFlowExecution(context.executionId, {
+        status: "waiting_response",
+        currentNodeId: nextNodes[0],
+        context: contextToSave,
+      });
 
       return;
     }
-
 
     /**
      * DelayNode ou WaitResponseNode
@@ -105,7 +100,7 @@ export class FlowExecutorService {
           flow,
           conn.node.toString(),
           cleanResult,
-          moduleName
+          moduleName,
         );
       }
 
@@ -115,14 +110,11 @@ export class FlowExecutorService {
     // 4. Fluxo padrão
 
     const nextNodes = FlowParser.getNextNodes(node);
-
-
+    console.log(nextNodes);
     if (!nextNodes.length) {
       console.log(`[FLOW] Fluxo finalizado no node ${node.id}`);
-
       return;
     }
-
 
     for (const nextNodeId of nextNodes) {
       await this.executeNode(flow, nextNodeId, result, moduleName);

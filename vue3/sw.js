@@ -4,8 +4,8 @@
 // CONFIGURAÇÕES
 // ============================================
 const WS_CONFIG = {
-  url: "wss://nexus.devrenato.com.br/socket.io/?EIO=4&transport=websocket", // ← AJUSTE PARA SUA URL
-  // url: "ws://localhost:3000/socket.io/?EIO=4&transport=websocket",
+  // url: "wss://nexus.devrenato.com.br/socket.io/?EIO=4&transport=websocket", // ← AJUSTE PARA SUA URL
+  url: "ws://localhost:3000/socket.io/?EIO=4&transport=websocket",
   heartbeatInterval: 25000,
   reconnectDelay: 3000,
   maxReconnectAttempts: 10,

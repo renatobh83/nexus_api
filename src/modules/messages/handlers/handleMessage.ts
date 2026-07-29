@@ -99,6 +99,7 @@ Obrigado pela compreensão!",
         // fora do horário — avisa o contato e não atribui agente
       }
       const flow = await flowService.findFirst();
+
       if (!flow || !flow.flow_json) {
         console.warn("Nenhum flow encontrado para ticket novo.");
         await updateTicket(ticket.id, {
@@ -164,7 +165,6 @@ Obrigado pela compreensão!",
         const flow = await flowService.findFirst();
         if (!flow || !flow.flow_json) {
           console.warn("Nenhum flow encontrado para ticket existente.");
-
           return { isNew, ticketId: ticket.id };
         }
 
