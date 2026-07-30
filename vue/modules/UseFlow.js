@@ -27,7 +27,7 @@ function useFlow({
       </div>
       <div class="n-body">
         ${props}
-        <div class="n-badge st-idle">· Aguardando</div>
+        <!--<div class="n-badge st-idle">· Aguardando</div>-->
       </div>
     </div>`;
   }
@@ -44,6 +44,7 @@ function useFlow({
       inputs: 0,
       outputs: 1,
     },
+
     {
       type: "sendMsg",
       label: "Enviar Menssagem",
@@ -90,7 +91,6 @@ function useFlow({
       icon: "🛑",
       color: "#bf5af2",
       sub: "Condição lógica",
-
       inputs: 1,
       outputs: 1,
     },
@@ -135,7 +135,7 @@ function useFlow({
       sub: "incrementar Tentativa",
       props: [{ k: "maxTentativas", v: "3" }],
       inputs: 1,
-      outputs: 2,
+      outputs: 1,
     },
     {
       type: "processarIa",

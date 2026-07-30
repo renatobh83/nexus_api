@@ -1,6 +1,5 @@
-export const FilterNode = {
+export const WaitUntil = {
   async execute(node: any, context: Record<string, any>) {
-    console.log(context);
     const field = node.data.props.find(
       (p: { k: string }) => p.k === "Campo",
     )?.v;
@@ -126,7 +125,6 @@ export const FilterNode = {
 
     return {
       ...context,
-      route: passed ? "output_1" : "output_2",
     };
   },
 };

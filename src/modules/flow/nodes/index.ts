@@ -8,6 +8,7 @@ import { SendMessage } from "./SendMessage.js";
 import { TextNode } from "./TextNode.js";
 import { TriggerNode } from "./TriggerNode.js";
 import { WaitResponseNode } from "./WaitResponseNode.js";
+import { WaitUntil } from "./WaitUntil.js";
 
 export const nodeRegistry = {
   trigger: TriggerNode,
@@ -20,4 +21,5 @@ export const nodeRegistry = {
   transform: ConvertNode,
   processarDados: ProcessarDados,
   incrementarTentativa: IncrementarTentativaNode,
+  waitUntil: WaitUntil,
 };

@@ -9,14 +9,16 @@ export const IncrementarTentativaNode = {
 
     const tentativas = (context.tentativasIdentificacao ?? 0) + 1;
     const excedeu = tentativas >= maxTentativas;
-    console.log(tentativas);
+    console.log(
+      `[Tentativas] ticket=${context.ticket.id} tentativa=${tentativas}/${maxTentativas}`,
+      context,
+    );
     return {
       ...context,
       dados_identificacao: {}, // limpa pra IA perguntar de novo sem "vício" do valor errado
       etapaConcluida_identificacao: false,
       tentativasIdentificacao: tentativas,
       tentativasExcedidas: excedeu,
-      route: excedeu ? "output_1" : "output_2",
     };
   },
 };
