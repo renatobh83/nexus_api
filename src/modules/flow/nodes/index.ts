@@ -1,5 +1,6 @@
 import { ConvertNode } from "./ConvertNode.js";
 import { FilterNode } from "./FilterNode.js";
+import { IncrementarTentativaNode } from "./IncrementarTentativaNode.js";
 import { NotifyNode } from "./NotifyNode.js";
 import { ProcessAiNode } from "./ProcessAiNode.js";
 import { ProcessarDados } from "./ProcessarDados.js";
@@ -18,4 +19,5 @@ export const nodeRegistry = {
   text: TextNode,
   transform: ConvertNode,
   processarDados: ProcessarDados,
+  incrementarTentativa: IncrementarTentativaNode,
 };

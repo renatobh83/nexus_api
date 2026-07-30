@@ -81,7 +81,7 @@ export const handleMessage = async (
       }
 
       const status = await svc.isWithinServiceHours(ticket.queueId!);
-
+      console.log(status);
       if (!status.withinHours) {
         if (status.reason === "outside_schedule") {
           await sendOutOfHoursMessage(
@@ -169,7 +169,7 @@ Obrigado pela compreensão!",
         }
 
         const flowJson = flow.flow_json as unknown as FlowJson;
-        const moduleName = "Módulo 1";
+        const moduleName = "Home";
 
         // Validação: verifica se o módulo existe antes de tentar executar
         if (!hasModule(flowJson, moduleName)) {

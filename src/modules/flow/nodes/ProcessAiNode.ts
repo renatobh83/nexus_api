@@ -62,35 +62,55 @@ export const ProcessAiNode = {
 
     const data = await response.json();
     const usage = data.usage;
-
-    const raw = data.choices[0].message.content as string;
+    const choice = data.choices[0];
+    const finishReason = choice.finish_reason;
+    if (finishReason === "length") {
+      console.warn(
+        `[AI][ticket=${ticketId}] Resposta truncada por limite de tokens.`,
+      );
+      // não envia mensagem em branco: usa fallback e não avança o fluxo
+      return {
+        ...context,
+        output: {
+          type: "mensagem",
+          data: "🤖 Só um momento, deixa eu confirmar isso de novo...",
+        },
+      };
+    }
+    const raw = choice.message.content as string;
     console.log({
       raw,
       usage,
     });
-    const dadosExtraidos = extractDados(raw);
-    const semMarcador = stripDadosMarker(raw); // remove a linha ###DADOS### antes da extractFinalResponse
+    const semThought = stripThought(raw);
+    const dadosExtraidos = extractDados(semThought); // só então procura ###DADOS###
+    const clean = extractFinalResponse(semThought); // e só então monta o texto final
 
-    const clean = extractFinalResponse(semMarcador);
+    const respostaFinal =
+      clean && clean.trim().length > 0
+        ? clean
+        : "Desculpe, pode repetir a última informação?"; // fallback nunca-vazio
 
     history.push({ role: "assistant", content: clean });
-    // merge defensivo: nunca perde campo já coletado em turno anterior
+    const escopo = promptData;
+    const chaveDados = `dados_${escopo}`;
+    const chaveEtapa = `etapaConcluida_${escopo}`;
     const dadosAcumulados = {
-      ...(context.dadosAgendamento ?? {}),
+      ...(context[chaveDados] ?? {}),
       ...Object.fromEntries(
         Object.entries(dadosExtraidos ?? {}).filter(
           ([k, v]) => k !== "concluido" && v != null,
         ),
       ),
     };
-    const concluido = dadosExtraidos?.concluido === true;
+
     return {
       ...context,
-      dadosAgendamento: dadosAcumulados,
-      etapaConcluida: concluido,
+      [chaveDados]: dadosAcumulados,
+      [chaveEtapa]: dadosExtraidos?.concluido === true,
       output: {
         type: "mensagem",
-        data: `🤖 ${clean}`,
+        data: `🤖 ${respostaFinal}`,
       },
     };
   },
@@ -99,26 +119,6 @@ export const ProcessAiNode = {
     conversationHistories.delete(String(ticketId));
   },
 };
-
-function extractDados(raw: string): {
-  especialidade: string | null;
-  nome_paciente: string | null;
-  dia_horario: string | null;
-  concluido: boolean;
-} | null {
-  const match = raw.match(/###DADOS###\s*(\{[\s\S]*?\})/);
-  if (!match) return null;
-  try {
-    return JSON.parse(match[1]);
-  } catch {
-    console.error("Falha ao parsear ###DADOS###:", match[1]);
-    return null;
-  }
-}
-
-function stripDadosMarker(raw: string): string {
-  return raw.replace(/###DADOS###\s*\{[\s\S]*?\}/, "").trim();
-}
 
 async function fetchWithRetry(
   ticketId: string,
@@ -189,37 +189,27 @@ function sanitizeHistory(
   });
 }
 
-function extractFinalResponse(raw: string): string {
-  let cleaned = raw.replace(/<think>[\s\S]*?<\/think>/gi, "");
-  cleaned = cleaned.replace(/<thought>[\s\S]*?<\/thought>/gi, "");
-  cleaned = cleaned.replace(/<\/think>/gi, "");
-  cleaned = cleaned.replace(/<\/thought>/gi, "");
+function stripThought(raw: string): string {
+  return raw
+    .replace(/<thought>[\s\S]*?<\/thought>/gi, "")
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    .replace(/<\/?think>/gi, "")
+    .replace(/<\/?thought>/gi, "");
+}
 
-  const lines = cleaned.split("\n");
-  let lastBulletIndex = -1;
-  for (let i = lines.length - 1; i >= 0; i--) {
-    if (lines[i].trim().startsWith("*")) {
-      lastBulletIndex = i;
-      break;
-    }
+function extractDados(semThought: string): Record<string, any> | null {
+  const match = semThought.match(/###DADOS###\s*(\{[\s\S]*\})/);
+  if (!match) return null;
+
+  try {
+    return JSON.parse(match[1]);
+  } catch (err) {
+    console.error("Falha ao parsear ###DADOS###:", match[1]);
+    console.error("Erro real:", err);
+    return null;
   }
+}
 
-  if (lastBulletIndex !== -1) {
-    const lastBulletLine = lines[lastBulletIndex];
-
-    const inlineMatch = lastBulletLine.match(/\)\s*([^)]+)$/);
-    if (inlineMatch) {
-      return inlineMatch[1].trim();
-    }
-
-    const afterBullets = lines
-      .slice(lastBulletIndex + 1)
-      .map((l) => l.trim())
-      .filter((l) => l.length > 0)
-      .join("\n");
-
-    if (afterBullets) return afterBullets;
-  }
-
-  return cleaned.trim();
+function extractFinalResponse(semThought: string): string {
+  return semThought.replace(/###DADOS###\s*\{[\s\S]*\}/, "").trim();
 }
