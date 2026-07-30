@@ -1,10 +1,9 @@
 export async function validarCadastro(context: any) {
   const dados = context.dados_identificacao ?? {};
   const cpf = normalizarCpf(dados.cpf ?? "");
-  console.log(dados);
 
   // const paciente = await prisma.paciente.findFirst({ where: { cpf } });
-  const encontrado = false;
+  const encontrado = true;
 
   return {
     ...context,

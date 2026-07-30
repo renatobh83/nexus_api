@@ -1,6 +1,5 @@
 export const FilterNode = {
   async execute(node: any, context: Record<string, any>) {
-    console.log(context);
     const field = node.data.props.find(
       (p: { k: string }) => p.k === "Campo",
     )?.v;

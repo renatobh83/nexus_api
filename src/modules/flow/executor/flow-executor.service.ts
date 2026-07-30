@@ -47,10 +47,7 @@ export class FlowExecutorService {
     moduleName: string,
   ): Promise<void> {
     const node = FlowParser.findNode(flow, nodeId, moduleName);
-    console.log(
-      `[FLOW] node=${node.id} tipo=${node.data.type} context.mensagem=`,
-      context.mensagem,
-    );
+
     if (!node) {
       throw new Error(`Node ${nodeId} não encontrado`);
     }
