@@ -69,8 +69,8 @@ export const createTicket = async (
     contato,
     isGroup: ticketGroup,
     channel: { connect: { id: channelId } },
-    isFlow: true,
-    isBot: true,
+    isFlow: !ticketGroup,
+    isBot: !ticketGroup,
   };
   createPayload.queue = {
     connect: { id: process.env.BOT_QUEUE_ID },
