@@ -9,6 +9,7 @@ export async function validarCadastro(context: any) {
     ...context,
     clienteEncontrado: encontrado,
     pacienteId: null,
+    mensagem: encontrado ? "__INICIO_ATENDIMENTO__" : "",
     route: encontrado ? "output_1" : "output_2",
   };
 }

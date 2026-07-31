@@ -125,7 +125,7 @@ function useFlow({
       sub: "Processamentos de dados",
       props: [{ k: "Processar dados", v: "agendamento" }],
       inputs: 1,
-      outputs: 2,
+      outputs: 4,
     },
     {
       type: "incrementarTentativa",
