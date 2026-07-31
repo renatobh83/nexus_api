@@ -106,3 +106,12 @@ export async function queuesList(
   const filas = await svc.getFilas();
   return reply.status(200).send(filas);
 }
+
+export async function checkHoursServices(
+  request: FastifyRequest,
+  reply: FastifyReply,
+) {
+  const { withinHours } = await svc.isWithinServiceHours("1");
+
+  return reply.status(200).send(withinHours);
+}

@@ -81,7 +81,7 @@ export const handleMessage = async (
       }
 
       const status = await svc.isWithinServiceHours(ticket.queueId!);
-      console.log(status);
+
       if (!status.withinHours) {
         if (status.reason === "outside_schedule") {
           await sendOutOfHoursMessage(

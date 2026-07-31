@@ -23,6 +23,18 @@ export async function ticketController(fastify: FastifyInstance) {
     },
   );
   fastify.put(
+    "/:ticketid/flow",
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { ticketid } = request.params as any;
+      const { status } = request.body as any;
+      const numberTicket = parseInt(ticketid);
+      const ticket = await service.updateTicket(numberTicket, { status });
+
+      reply.status(200).send(ticket);
+    },
+  );
+
+  fastify.put(
     "/:ticketid",
     async (
       request: FastifyRequest<{

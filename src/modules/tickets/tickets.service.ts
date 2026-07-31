@@ -31,7 +31,6 @@ export class TicketService {
 
     return ticket;
   }
-
   async updateTicket(id: number, data: Prisma.TicketUpdateInput) {
     const dataForUpdate = data;
     if (dataForUpdate.status === "closed") {

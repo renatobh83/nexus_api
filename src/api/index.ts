@@ -146,13 +146,13 @@ async function buildServer(): Promise<FastifyInstance> {
  */
 export async function start() {
   const app = await buildServer();
-  // const flowServiceToken = jwt.sign(
-  //   { service: "flow-executor", role: "internal" },
+  //   const flowServiceToken = jwt.sign(
+  //     { service: "flow-executor", role: "internal" },
 
-  //   { expiresIn: "1y" }, // ajuste conforme sua política
-  // );
+  //     { expiresIn: "1y" }, // ajuste conforme sua política
+  //   );
 
-  // console.log(flowServiceToken);
+  //   console.log(flowServiceToken);
   fastifyApp = app;
   try {
     app.server.keepAliveTimeout = 5 * 60 * 1000;

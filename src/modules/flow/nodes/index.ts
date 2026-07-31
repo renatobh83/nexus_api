@@ -1,7 +1,6 @@
 import { ConvertNode } from "./ConvertNode.js";
 import { FilterNode } from "./FilterNode.js";
 import { HttpNode } from "./http.js";
-import { IncrementarTentativaNode } from "./IncrementarTentativaNode.js";
 import { NotifyNode } from "./NotifyNode.js";
 import { ProcessAiNode } from "./ProcessAiNode.js";
 import { ProcessarDados } from "./ProcessarDados.js";
@@ -23,7 +22,6 @@ export const nodeRegistry = {
   waitResponse: WaitResponseNode,
   transform: ConvertNode,
   processarDados: ProcessarDados,
-  incrementarTentativa: IncrementarTentativaNode,
   waitUntil: WaitUntil,
   http: HttpNode,
 };

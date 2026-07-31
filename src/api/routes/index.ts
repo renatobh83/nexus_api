@@ -23,6 +23,7 @@ async function apiV1Routes(fastify: FastifyInstance) {
   fastify.register(integrationController, { prefix: "/apiext" });
 
   fastify.register(authController, { prefix: "/auth" });
+
   fastify.register(async (privateScope) => {
     privateScope.addHook("preHandler", fastify.authenticate);
     privateScope.register(channelController, { prefix: "/channel" });

@@ -9,6 +9,7 @@ import {
   addHolidayHandler,
   deleteHolidayHandler,
   queuesList,
+  checkHoursServices,
 } from "../../modules/serviceHours/serviceHours.controller.js";
 
 export async function serviceHoursRoutes(app: FastifyInstance) {
@@ -23,4 +24,7 @@ export async function serviceHoursRoutes(app: FastifyInstance) {
   app.post("/holidays", saveHolidaysHandler); // replace all
   app.post("/holidays/add", addHolidayHandler); // add one
   app.delete("/holidays/:id", deleteHolidayHandler);
+
+  // Get
+  app.get("/check", checkHoursServices);
 }

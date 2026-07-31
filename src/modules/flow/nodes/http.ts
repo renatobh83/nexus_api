@@ -66,6 +66,7 @@ export const HttpNode = {
       return {
         ...context,
         httpStatus: response.status,
+        response: data,
         httpSuccess: true,
         route: "output_1",
       };
