@@ -34,6 +34,9 @@ function useFlow({
 
   /* ── Palette ── */
   const PALETTE = [
+    // ========================================
+    // 🚀 TRIGGERS E INÍCIO DE FLUXO
+    // ========================================
     {
       type: "trigger",
       label: "Trigger",
@@ -45,38 +48,141 @@ function useFlow({
       outputs: 1,
     },
 
+    // ========================================
+    // 💬 ENVIO DE MENSAGENS (WhatsApp)
+    // ========================================
     {
       type: "sendMsg",
-      label: "Enviar Menssagem",
+      label: "Enviar Mensagem",
       icon: "💬",
       color: "#0a84ff",
-      sub: "Enviar Menssagem",
+      sub: "Envia mensagem direta",
       props: [
-        { k: "Numero", v: "" },
+        { k: "Número", v: "" },
         { k: "Mensagem", v: "" },
       ],
       inputs: 1,
       outputs: 1,
     },
     {
-      type: "http",
-      label: "HTTP Request",
-      icon: "🌐",
+      type: "sendMessage",
+      label: "Resposta ao Usuário",
+      icon: "📨",
       color: "#0a84ff",
-      sub: "GET / POST",
+      sub: "Envia resposta final processada pela IA",
+      inputs: 1,
+      outputs: 1,
+    },
+    {
+      type: "text",
+      label: "Mensagem Fixa",
+      icon: "📝",
+      color: "#0a84ff",
+      sub: "Define texto estático para o fluxo",
+      props: [{ k: "Mensagem", v: "" }],
+      inputs: 1,
+      outputs: 1,
+    },
+
+    // ========================================
+    // 🧠 PROCESSAMENTO COM IA
+    // ========================================
+    {
+      type: "processarIa",
+      label: "Processar com IA",
+      icon: "🧠",
+      color: "#32d74b",
+      sub: "Gera resposta usando modelo de IA",
       props: [
-        { k: "Método", v: "GET" },
-        { k: "URL", v: "/api/fiis" },
+        { k: "Modelo", v: "gemma-4-31b-it" },
+        { k: "Prompt", v: "agendamento" },
+        { k: "Histórico Máx.", v: "10" },
+        { k: "Temperatura", v: "0.7" },
+        { k: "Tokens Máx.", v: "500" },
       ],
       inputs: 1,
       outputs: 1,
     },
+
+    // ========================================
+    // ⚙️ PROCESSAMENTO DE DADOS
+    // ========================================
+    {
+      type: "processarDados",
+      label: "Processar Dados",
+      icon: "⚙️",
+      color: "#32d74b",
+      sub: "Executa lógica de negócio nos dados",
+      props: [{ k: "Operação", v: "agendamento" }],
+      inputs: 1,
+      outputs: 4,
+    },
+    {
+      type: "transform",
+      label: "Transformar Dados",
+      icon: "🔀",
+      color: "#32d74b",
+      sub: "Converte formato dos dados",
+      props: [
+        { k: "Entrada", v: "auto" },
+        { k: "Saída", v: "JSON" },
+      ],
+      inputs: 1,
+      outputs: 1,
+    },
+
+    // ========================================
+    // 🌐 INTEGRAÇÕES EXTERNAS
+    // ========================================
+    {
+      type: "http",
+      label: "HTTP Request",
+      icon: "🌐",
+      color: "#0a84ff",
+      sub: "Consulta API externa",
+      props: [
+        {
+          k: "Método",
+          v: "GET",
+        },
+        { k: "URL", v: "/api/" },
+        {
+          k: "Parâmetros da Rota",
+          v: "",
+        },
+
+        { k: "Body", v: '{"status":"pending"}' },
+      ],
+      inputs: 1,
+      outputs: 1,
+    },
+
+    // ========================================
+    // 🗄️ BANCO DE DADOS
+    // ========================================
+    {
+      type: "db",
+      label: "Banco de Dados",
+      icon: "🗄️",
+      color: "#34c759",
+      sub: "Persiste dados no banco",
+      props: [
+        { k: "Tabela", v: "fiis_score" },
+        { k: "Operação", v: "UPSERT" },
+      ],
+      inputs: 1,
+      outputs: 1,
+    },
+
+    // ========================================
+    // ⚖️ CONTROLE DE FLUXO
+    // ========================================
     {
       type: "filter",
       label: "Filtro IF",
       icon: "⚖️",
       color: "#bf5af2",
-      sub: "Condição lógica",
+      sub: "Condição lógica para decisão",
       props: [
         { k: "Campo", v: "" },
         { k: "Operador", v: "=" },
@@ -87,100 +193,28 @@ function useFlow({
     },
     {
       type: "waitResponse",
-      label: "Aguardar resposta",
-      icon: "🛑",
+      label: "Aguardar Resposta",
+      icon: "⏳",
       color: "#bf5af2",
-      sub: "Condição lógica",
+      sub: "Espera interação do usuário",
       inputs: 1,
-      outputs: 1,
+      outputs: 2,
     },
-    {
-      type: "text",
-      label: "Mensagem",
-      icon: "🗓️",
-      color: "#bf5af2",
-      sub: "Condição lógica",
-      props: [{ k: "Mensagem", v: "" }],
-      inputs: 1,
-      outputs: 1,
-    },
-    {
-      type: "transform",
-      label: "Transformar",
-      icon: "🔀",
-      color: "#32d74b",
-      sub: "Mapear dados",
-      props: [
-        { k: "Entrada", v: "auto" },
-        { k: "Saída", v: "JSON" },
-      ],
-      inputs: 1,
-      outputs: 1,
-    },
-    {
-      type: "processarDados",
-      label: "Processamento de dados",
-      icon: "⚙️",
-      color: "#32d74b",
-      sub: "Processamentos de dados",
-      props: [{ k: "Processar dados", v: "agendamento" }],
-      inputs: 1,
-      outputs: 4,
-    },
-    {
-      type: "incrementarTentativa",
-      label: "Incrementar",
-      icon: "➕",
-      color: "#d77c32",
-      sub: "incrementar Tentativa",
-      props: [{ k: "maxTentativas", v: "3" }],
-      inputs: 1,
-      outputs: 1,
-    },
-    {
-      type: "processarIa",
-      label: "Processar-ia",
-      icon: "🧠",
-      color: "#32d74b",
-      sub: "Processar com IA",
-      props: [
-        { k: "model", v: "gemma-4-31b-it" },
-        {
-          k: "Prompt",
-          v: "agendamento",
-        },
-        { k: "maxHistory", v: "10" },
-        { k: "temperature", v: "0.7" },
-        { k: "maxTokens", v: "500" },
-      ],
-      inputs: 1,
-      outputs: 1,
-    },
-    {
-      type: "db",
-      label: "Banco de Dados",
-      icon: "🗄️",
-      color: "#34c759",
-      sub: "SQL / NoSQL",
-      props: [
-        { k: "Tabela", v: "fiis_score" },
-        { k: "Op.", v: "UPSERT" },
-      ],
-      inputs: 1,
-      outputs: 1,
-    },
+
+    // ========================================
+    // 🔔 NOTIFICAÇÕES E ALERTAS
+    // ========================================
     {
       type: "notify",
       label: "Notificação",
       icon: "🔔",
       color: "#ff6d5a",
-      sub: "Email / Slack",
+      sub: "Envia alerta externo",
       props: [{ k: "Canal", v: "#alertas" }],
       inputs: 1,
       outputs: 0,
     },
   ];
-
   /* ── Estado ── */
   let _drag = null;
   let editor = null;

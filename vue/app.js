@@ -69,8 +69,8 @@ async function initApp() {
       // =========================================================================
       // 1. CONFIGURAÇÃO E CONSTANTES
       // =========================================================================
-      // const URL_BASE = "https://nexus.devrenato.com.br";
-      const URL_BASE = "http://localhost:3000";
+      const URL_BASE = "https://nexus.devrenato.com.br";
+      // const URL_BASE = "http://localhost:3000";
 
       let token = ref("");
       let webllm = null;
@@ -414,7 +414,12 @@ async function initApp() {
         });
 
         socket.on("ticket-updated", async (data) => {
-          if (data.status === "pending" && data.previousStatus !== "pending") {
+          if (
+            data.status === "pending" &&
+            data.previousStatus !== "pending" &&
+            !data.isFlow &&
+            !data.isBot
+          ) {
             ticketNovo.value = data;
 
             const name = data.owner || data.name || `Ticket ${data.id}`;

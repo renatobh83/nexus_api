@@ -15,6 +15,7 @@ import { initSocket } from "../lib/socket.js";
 import { errorHandler } from "../utils/errorHandler.js";
 const SECRET = process.env.JWT_SECRET as string;
 let io: SocketIOServer | null = null;
+
 // 🔧 Extensão do tipo para o Fastify reconhecer a propriedade 'io'
 declare module "fastify" {
   interface FastifyInstance {
@@ -63,6 +64,7 @@ async function buildServer(): Promise<FastifyInstance> {
     "authenticate",
     async function (request: FastifyRequest, reply: FastifyReply) {
       const auth = request.headers.authorization;
+
       let token: string | undefined;
 
       if (auth?.startsWith("Bearer ")) {
@@ -72,8 +74,22 @@ async function buildServer(): Promise<FastifyInstance> {
       if (!token) {
         return reply.code(401).send({ message: "Not authenticated" });
       }
+      try {
+        const decoded = jwt.verify(token, SECRET) as any;
 
-      jwt.verify(token, SECRET);
+        // marca a request como chamada interna do flow, se aplicável
+        if (
+          decoded?.service === "flow-executor" &&
+          decoded?.role === "internal"
+        ) {
+          (request as any).isInternalFlow = true;
+        }
+
+        (request as any).user = decoded; // se você já usa isso em outras rotas
+      } catch (err) {
+        return reply.code(401).send({ message: "Invalid token" });
+      }
+      // jwt.verify(token, SECRET);
     },
   );
   server.setErrorHandler(
@@ -130,7 +146,13 @@ async function buildServer(): Promise<FastifyInstance> {
  */
 export async function start() {
   const app = await buildServer();
+  // const flowServiceToken = jwt.sign(
+  //   { service: "flow-executor", role: "internal" },
 
+  //   { expiresIn: "1y" }, // ajuste conforme sua política
+  // );
+
+  // console.log(flowServiceToken);
   fastifyApp = app;
   try {
     app.server.keepAliveTimeout = 5 * 60 * 1000;
