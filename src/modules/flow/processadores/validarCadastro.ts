@@ -1,16 +1,36 @@
+import { buscarCadastro } from "../../../integrations/genesis/services/autoatendimento/index.js";
+import { SessaoPacienteService } from "../../../integrations/genesis/services/autoatendimento/SessaoPacienteService.js";
+
 export async function validarCadastro(context: any) {
   const dados = context.dados_identificacao ?? {};
   const cpf = normalizarCpf(dados.cpf ?? "");
+  
+  const senha =  normalizarSenha(dados.senha ?? "")
+  
+  const resultado = await buscarCadastro({senha: senha, cpf:cpf})
 
-  // const paciente = await prisma.paciente.findFirst({ where: { cpf } });
+  const paciente = Array.isArray(resultado) ? resultado[0] : resultado;
+  
+  if (!paciente?.cd_paciente) {
+    return { ...context, clienteEncontrado: false, route: "output_2" };
+  }
   const encontrado = true;
 
+   await SessaoPacienteService.criar(context.ticket.id, {
+      cd_paciente: paciente.cd_paciente,
+      ds_paciente: paciente.ds_paciente,
+      ds_email: paciente.ds_email,
+      ds_token: paciente.ds_token,
+      cd_funcionario: paciente.cd_funcionario,
+    });
+    
+    console.log(paciente)
   return {
     ...context,
     clienteEncontrado: encontrado,
-    pacienteId: null,
+    nome_completo: paciente.ds_paciente,
     mensagem: encontrado ? "__INICIO_ATENDIMENTO__" : "",
-    route: encontrado ? "output_1" : "output_2",
+    route: "output_1" 
   };
 }
 
@@ -18,8 +38,8 @@ function normalizarCpf(cpf: string): string {
   return cpf.replace(/\D/g, "");
 }
 
-function normalizarNome(nome: string): string {
-  return nome
+function normalizarSenha(senha: string): string {
+  return senha
     .trim()
     .toLowerCase()
     .normalize("NFD")

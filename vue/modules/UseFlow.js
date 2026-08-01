@@ -58,6 +58,7 @@ function useFlow({
       color: "#0a84ff",
       sub: "Envia mensagem direta",
       props: [
+        { k: "Tipo", v: "text" },
         { k: "Número", v: "" },
         { k: "Mensagem", v: "" },
       ],
@@ -113,7 +114,7 @@ function useFlow({
       icon: "⚙️",
       color: "#32d74b",
       sub: "Executa lógica de negócio nos dados",
-      props: [{ k: "Operação", v: "agendamento" }],
+      props: [{ k: "Processar dados", v: "agendamento" }],
       inputs: 1,
       outputs: 4,
     },

@@ -8,12 +8,14 @@ import { Server as SocketIOServer } from "socket.io";
 import { prisma } from "../lib/prisma.js";
 import jwt from "jsonwebtoken";
 import { ChannelManager } from "../modules/channels/ChannelManager.js";
-import { TicketService } from "../modules/tickets/tickets.service.js";
+
 import routes from "./routes/index.js";
 import fastifyModule from "./plugins/fastifyModules.js";
 import { initSocket } from "../lib/socket.js";
 import { errorHandler } from "../utils/errorHandler.js";
+
 const SECRET = process.env.JWT_SECRET as string;
+
 let io: SocketIOServer | null = null;
 
 // 🔧 Extensão do tipo para o Fastify reconhecer a propriedade 'io'
@@ -60,6 +62,7 @@ async function buildServer(): Promise<FastifyInstance> {
   });
 
   await server.register(fastifyModule);
+  
   server.decorate(
     "authenticate",
     async function (request: FastifyRequest, reply: FastifyReply) {
@@ -146,6 +149,7 @@ async function buildServer(): Promise<FastifyInstance> {
  */
 export async function start() {
   const app = await buildServer();
+  
   //   const flowServiceToken = jwt.sign(
   //     { service: "flow-executor", role: "internal" },
 

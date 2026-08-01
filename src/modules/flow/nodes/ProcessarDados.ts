@@ -2,10 +2,11 @@ import { processadores } from "../processadores/index.js";
 
 export const ProcessarDados = {
   async execute(node: any, context: any) {
+    
     const dadosDe = node.data.props.find(
       (p: any) => p.k === "Processar dados",
     )?.v;
-    console.log(dadosDe);
+    
     const handler = processadores[dadosDe];
 
     if (!handler) {

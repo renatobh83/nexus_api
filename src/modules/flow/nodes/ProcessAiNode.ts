@@ -8,6 +8,12 @@ const conversationHistories = new Map<
 export function clearAiHistory(ticketId: string | number) {
   conversationHistories.delete(String(ticketId));
 }
+
+function formatarListaLaudos(laudos: any[]): string {
+  return laudos
+    .map((l) => `${l.indice}. ${l.procedimento} — ${l.data}`)
+    .join("\n");
+}
 const flowService = new FlowsService();
 export const ProcessAiNode = {
   async execute(node: any, context: any) {
@@ -39,9 +45,15 @@ export const ProcessAiNode = {
 
     history.push({ role: "user", content: prompt });
 
+    const listaLaudosTexto = context.laudosDisponiveis
+      ? formatarListaLaudos(context.laudosDisponiveis)
+      : "Nenhum laudo disponível no momento.";
+
     const systemMessage = {
       role: "system",
-      content: promptAgent?.content || "default",
+      content: (promptAgent?.content || "default")
+        .replace("{{nome_completo}}", context.dados_identificacao?.nome_completo ?? "")
+        .replace("{{lista_laudos}}", listaLaudosTexto),
     };
 
     const messages = [
@@ -92,9 +104,14 @@ export const ProcessAiNode = {
         : "Desculpe, pode repetir a última informação?"; // fallback nunca-vazio
 
     history.push({ role: "assistant", content: clean });
+
+
     const escopo = promptData;
     const chaveDados = `dados_${escopo}`;
     const chaveEtapa = `etapaConcluida_${escopo}`;
+
+
+
     const dadosAcumulados = {
       ...(context[chaveDados] ?? {}),
       ...Object.fromEntries(
@@ -103,7 +120,15 @@ export const ProcessAiNode = {
         ),
       ),
     };
-
+    const indiceEscolhido = dadosAcumulados?.indice_escolhido;
+   
+    const laudoValido =
+      indiceEscolhido != null &&
+      Number.isInteger(Number(indiceEscolhido)) &&
+      Number(indiceEscolhido) >= 1 &&
+      Number(indiceEscolhido) <= (context.laudosDisponiveis?.length ?? 0);
+      console.log(laudoValido)
+    
     return {
       ...context,
       [chaveDados]: dadosAcumulados,

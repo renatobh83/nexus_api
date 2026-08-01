@@ -58,12 +58,16 @@ export class ExternalApiClient {
   }
 
   // ── HTTP ─────────────────────────────────────────────────────────────────
+  private buildUrl(path: string, stripSe1?: boolean): string {
+    const fullPath = `${this.config.baseUrl}${path}`;
+    return stripSe1 ? fullPath.replace("se1/", "") : fullPath;
+  }
 
   private async request<T>(
     method: string,
     path: string,
     body?: unknown,
-    options?: { formEncoded?: boolean }, // ← opção adicional
+    options?: { formEncoded?: boolean; stripSe1?: boolean }, // ← nova opção
     retry = true,
   ): Promise<T> {
     const token = await this.getToken();
@@ -83,7 +87,8 @@ export class ExternalApiClient {
         ? JSON.stringify(body)
         : undefined;
 
-    const response = await fetch(`${this.config.baseUrl}${path}`, {
+    const url = this.buildUrl(path, options?.stripSe1);
+    const response = await fetch(url, {
       method,
       headers,
       body: encodedBody,
@@ -104,19 +109,23 @@ export class ExternalApiClient {
   }
   // ── Métodos públicos ──────────────────────────────────────────────────────
 
-  async get<T>(path: string): Promise<T> {
-    return this.request<T>("GET", path);
+  async get<T>(path: string, options?: { stripSe1?: boolean }): Promise<T> {
+    return this.request<T>("GET", path, undefined, options);
   }
 
   async post<T>(
     path: string,
     body: unknown,
-    options?: { formEncoded?: boolean },
+    options?: { formEncoded?: boolean; stripSe1?: boolean },
   ): Promise<T> {
     return this.request<T>("POST", path, body, options);
   }
 
-  async put<T>(path: string, body: unknown): Promise<T> {
-    return this.request<T>("PUT", path, body);
+  async put<T>(
+    path: string,
+    body: unknown,
+    options?: { stripSe1?: boolean },
+  ): Promise<T> {
+    return this.request<T>("PUT", path, body, options);
   }
 }

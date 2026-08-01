@@ -6,6 +6,7 @@ import {
   waitForSocket,
 } from "../../lib/socket.js";
 import { clearAiHistory } from "../flow/nodes/ProcessAiNode.js";
+import { SessaoPacienteService } from "../../integrations/genesis/services/autoatendimento/SessaoPacienteService.js";
 
 export class TicketService {
   private ticketRepository: TicketsRepository;
@@ -36,6 +37,7 @@ export class TicketService {
     if (dataForUpdate.status === "closed") {
       dataForUpdate.closedAt = new Date().getTime();
       clearAiHistory(id);
+      await SessaoPacienteService.encerrar(String(id));
     }
 
     if (dataForUpdate.status === "pending") {
@@ -55,6 +57,7 @@ export class TicketService {
         connect: { id: "1" },
       };
       clearAiHistory(id);
+      await SessaoPacienteService.encerrar(String(id));
     }
 
     const ticket = await this.ticketRepository.updateTicket(id, dataForUpdate);
