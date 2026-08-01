@@ -6,10 +6,11 @@ import {
 } from "./mappers/sessionAdapter.js";
 import { ContactInternal } from "../../session.types.js";
 import { Contact, Message } from "@wppconnect-team/wppconnect";
-import { checkTicketIntegration } from "../../../modules/externals/Helpers/checkIntegration.js";
-import { blockedMessages } from "../../../modules/externals/api/scheduling_api/BlockedMessages.js";
+import { checkTicketIntegration } from "../../../integrations/genesis/services/scheduling_api/Helpers/checkIntegration.js";
+
 import { Reaction } from "../../../types/reaction.types.js";
 import { HandleMsgReaction } from "./HandleMsgReaction.js";
+import { blockedMessages } from "../../../integrations/genesis/services/scheduling_api/Helpers/BlockedMessages.js";
 
 const resolveContact = async (
   message: Message,

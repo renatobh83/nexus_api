@@ -1,8 +1,9 @@
+import { IntegracaoService } from "../../../../modules/externals/integrationConfig.service.js";
 import {
   getWbot,
   Session,
 } from "../../../../providers/whatsapp-web/wpp-web/Wpp-web.js";
-import { IntegracaoService } from "../../integrationConfig.service.js";
+
 import { removeNinthDigit } from "../../../../utils/removeNinthDigit.js";
 
 const service = new IntegracaoService();

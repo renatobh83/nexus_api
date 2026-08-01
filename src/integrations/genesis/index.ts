@@ -1,4 +1,5 @@
-import { schedulingApi } from "./scheduling_api/index.js";
+import { schedulingApi } from "./services/scheduling_api/index.js";
+
 
 export const checkBot = async (input: any, config: any) => {
   const { contatos } = input;

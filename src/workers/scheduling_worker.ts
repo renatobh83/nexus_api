@@ -1,19 +1,16 @@
 // workers/confirmacao/confirmacao.worker.ts
 import { Worker, Job } from "bullmq";
-import { getWbot } from "../../providers/whatsapp-web/wpp-web/Wpp-web.js";
-import { IntegracaoService } from "../../modules/externals/integrationConfig.service.js";
-import { delay, DELAYS, MENSAGENS } from "./scheduling_helpers.js";
-import {
-  ConfirmacaoJobData,
-  STATUS_CONFIRMACAO,
-} from "../../types/schedulingApi.types.js";
-import { logger } from "../../modules/tickets/Helpers/CreateTicket.js";
-import { redisConnection } from "../../config/redis.js";
+import { delay, DELAYS, MENSAGENS } from "../integrations/genesis/services/scheduling_api/actions/scheduling_helpers.js";
 import {
   enviarPreparos,
   processarConfirmacoes,
   todosResultadosVazios,
-} from "./scheduling_actions.js";
+} from "../integrations/genesis/services/scheduling_api/actions/scheduling_actions.js";
+import { IntegracaoService } from "../modules/externals/integrationConfig.service.js";
+import { redisConnection } from "../config/redis.js";
+import { logger } from "../modules/tickets/Helpers/CreateTicket.js";
+import { getWbot } from "../providers/whatsapp-web/wpp-web/Wpp-web.js";
+import { ConfirmacaoJobData, STATUS_CONFIRMACAO } from "../types/schedulingApi.types.js";
 
 const integracaoService = new IntegracaoService();
 async function handleConfirmacao(job: Job<ConfirmacaoJobData>): Promise<void> {

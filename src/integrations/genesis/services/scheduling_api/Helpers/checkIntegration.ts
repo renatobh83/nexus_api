@@ -1,6 +1,6 @@
-import { ticketIntegrationQueue } from "../../../queues/ticketIntegration.queue.js";
-import { checkBot } from "../api/index.js";
-import { IntegracaoService } from "../integrationConfig.service.js";
+import { ticketIntegrationQueue } from "../../../../../queues/ticketIntegration.queue.js";
+import { checkBot } from "../../../index.js";
+import { IntegracaoService } from "../../../../../modules/externals/integrationConfig.service.js";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

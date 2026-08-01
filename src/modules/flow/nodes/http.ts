@@ -1,6 +1,6 @@
 export const HttpNode = {
   async execute(node: any, context: any) {
-    const BASE_URL = process.env.BASE_URL;
+    const BASE_URL = process.env.BACKEND_URL;
 
     const metodo = (
       node.data.props.find((p: any) => p.k === "Método")?.v || "GET"

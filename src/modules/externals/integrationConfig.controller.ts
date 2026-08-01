@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { IntegracaoService } from "./integrationConfig.service.js";
-import { checkIntegration } from "./Helpers/checkIntegration.js";
+import { checkIntegration } from "../../integrations/genesis/services/scheduling_api/Helpers/checkIntegration.js";
 
 const integracaoService = new IntegracaoService();
 export async function integrationController(fastify: FastifyInstance) {

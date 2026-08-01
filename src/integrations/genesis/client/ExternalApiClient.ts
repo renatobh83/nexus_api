@@ -1,7 +1,7 @@
-// lib/externalApi/ExternalApiClient.ts
-import { Redis, RedisOptions } from "ioredis";
-import { logger } from "../../modules/tickets/Helpers/CreateTicket.js";
-import { redisConnection } from "../../config/redis.js";
+import { Redis } from "ioredis";
+import { redisConnection } from "../../../config/redis.js";
+import { logger } from "../../../modules/tickets/Helpers/CreateTicket.js";
+
 
 interface ExternalApiConfig {
   baseUrl: string;

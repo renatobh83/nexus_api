@@ -1,9 +1,13 @@
 // ── Confirmação de exames externos ──────────────────────────────────────────
 
 import { Ticket } from "@prisma/client";
-import { getWbot } from "../../providers/whatsapp-web/wpp-web/Wpp-web.js";
-import { getExternalApiClient } from "../../lib/externalApi/clients.js";
+
+
+
 import { isBase64Meaningful, MENSAGENS } from "./scheduling_helpers.js";
+import { getExternalApiClient } from "../../../client/index.js";
+import { getWbot } from "../../../../../providers/whatsapp-web/wpp-web/Wpp-web.js";
+
 interface ResultadoExame {
   cd_procedimento: number;
   bb_preparo: string | null;

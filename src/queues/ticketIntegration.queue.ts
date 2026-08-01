@@ -1,7 +1,7 @@
 // queues/ticketIntegration.queue.ts
 import { Queue } from "bullmq";
 import { redisConnection } from "../config/redis.js";
-import { TicketResponseStatus } from "../modules/externals/Helpers/checkIntegration.js";
+import { TicketResponseStatus } from "../integrations/genesis/services/scheduling_api/Helpers/checkIntegration.js";
 import { Ticket } from "@prisma/client";
 
 export interface TicketIntegrationJobData {

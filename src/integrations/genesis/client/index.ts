@@ -1,5 +1,7 @@
 // lib/externalApi/clients.ts
+
 import { ExternalApiClient } from "./ExternalApiClient.js";
+
 
 // Map garante uma instância por integração — sem login duplicado
 const clientPool = new Map<string, ExternalApiClient>();
