@@ -13,10 +13,10 @@ export async function laudos(context: any) {
             route: "output_2", // ex: volta pro fluxo de identificação
         };
     }
-    const data  = await buscarAtendimento({ cd_paciente: sessao.cd_paciente, ds_token: sessao.ds_token })
-    
-    if(!data.length) {
-         return {
+    const data = await buscarAtendimento({ cd_paciente: sessao.cd_paciente, ds_token: sessao.ds_token })
+
+    if (!data.length) {
+        return {
             ...context,
             route: "output_3",
         };
@@ -28,19 +28,20 @@ export async function laudos(context: any) {
             const dateA = new Date(a.dt_data.split("/").reverse().join("-"));
             const dateB = new Date(b.dt_data.split("/").reverse().join("-"));
             return dateB.getTime() - dateA.getTime();
-        }).slice(0,5)
+        }).slice(0, 5)
     const laudosDisponiveis = laudosPaciente.map((l: any, i: number) => ({
-    indice: i + 1,
-    procedimento: l.ds_procedimento,
-    data: l.dt_data,
-    nr_laudo: l.nr_laudo,
-    cd_exame: l.cd_exame,
-    cd_paciente: l.cd_paciente
-  }));
+        indice: i + 1,
+        procedimento: l.ds_procedimento,
+        data: l.dt_data,
+        nr_laudo: l.nr_laudo,
+        cd_exame: l.cd_exame,
+        cd_paciente: l.cd_paciente
+    }));
+
     return {
         ...context,
         laudosDisponiveis,
-        route: "output_1" 
+        route: "output_1"
     }
 
 }
