@@ -76,7 +76,6 @@ export class ExternalApiClient {
     retry = true,
   ): Promise<T> {
     const token = options?.tokenPaciente ?? await this.getToken();
-
     const isForm = options?.formEncoded;
 
     const headers: Record<string, string> = {
@@ -99,8 +98,7 @@ export class ExternalApiClient {
       headers,
       body: encodedBody,
     });
-    console.log(token)
-    console.log(url)
+
     if (response.status === 401 && retry) {
       await this.redis.del(this.cacheKey);
       return this.request<T>(method, path, body, options, false);

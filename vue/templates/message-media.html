@@ -20,7 +20,7 @@
 </template>
 
 <template
-  v-else-if="['application/zip','application/pdf','application/x-zip-compressed','document','txt','documentMessage','application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(msg.mediaType)">
+  v-else-if="['application/zip','text/html','application/pdf','application/x-zip-compressed','document','txt','documentMessage','application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(msg.mediaType)">
   <div style="display: flex; align-items: center; gap: 10px; background: #1e1e1e; padding: 10px; border-radius: 8px;">
     <div style="font-size: 30px;">📄</div>
     <div style="flex: 1;">

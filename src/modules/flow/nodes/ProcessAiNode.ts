@@ -139,7 +139,7 @@ export const ProcessAiNode = {
       ),
     };
     let etapaConcluidaFinal = dadosExtraidos?.concluido === true;
-    console.log(escopo)
+    
 
     if (escopo === "laudos") {
       const indiceEscolhido = dadosAcumulados?.indice_escolhido;

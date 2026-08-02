@@ -49,7 +49,7 @@ export const SendMessageWppWebChannel = async (
       // await wbot.sendFile(to, fileData, hasMedia.filename);
       await wbot.sendFile(to, fileData, {
         filename: hasMedia.filename,
-        caption: body || hasMedia.filename,
+        caption: hasMedia.filename || body,
       });
     }
   } else {

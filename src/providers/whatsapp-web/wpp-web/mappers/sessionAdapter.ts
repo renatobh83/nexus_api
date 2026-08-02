@@ -78,13 +78,14 @@ export const toInternalSession = (session: Session): SessionInternal => ({
 
   downloadMedia: async (message: any): Promise<string> => {
     const media = await session.downloadMedia(message.messageId);
+    
     const matches = media.match(/^data:(.+);base64,(.+)$/);
     const base64Data = matches ? matches[2] : media;
 
     const fileData = Buffer.from(base64Data, "base64");
 
     let ext = getSafeExtension(message.caption!, message.mimetype);
-
+    
     const filename = buildFilename(message, ext);
     if (media) {
       await writeFileAsync(join(PUBLIC_DIR, filename), fileData);

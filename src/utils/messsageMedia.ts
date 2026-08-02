@@ -4,8 +4,9 @@ import fs from "fs/promises";
 
 export function getSafeExtension(filename: string, mimetype: any) {
   // 1️⃣ tenta extrair da extensão original (ex: ".jpg", ".xlsx")
-
+ 
   const ext = filename ? path.extname(filename) : "";
+
   if (ext) return ext;
 
   // 2️⃣ se não tiver, tenta deduzir do mimetype
@@ -81,6 +82,7 @@ export function getSafeExtension(filename: string, mimetype: any) {
     "application/x-tar": ".tar",
     "application/x-bzip2": ".bz2",
     "application/octet-stream": ".bin",
+
   } as any;
 
   return mimeMap[mimetype] || "";
@@ -89,6 +91,7 @@ export function getSafeExtension(filename: string, mimetype: any) {
 export function buildFilename(msg: any, ext: any) {
   const baseName = msg.fileName || `media-${new Date().getTime()}`;
   // Remove extensão duplicada se já existir no nome original
+
   const nameWithoutExt = path.basename(baseName, path.extname(baseName));
   const finalName = `${nameWithoutExt}${ext}`;
 
@@ -112,9 +115,9 @@ export async function transformFile(file: {
 
   // Detecta mimetype pela extensão
   const mimetype = mime.lookup(ext) || "application/octet-stream";
-
+  
   return {
-    filename: newFilename,
+    filename: `${newFilename}${ext}`,
     mimetype,
     buffer,
   };

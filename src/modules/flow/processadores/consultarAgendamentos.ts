@@ -80,7 +80,8 @@ export async function consultarAgendamentos(context: any) {
         data: l.dt_data,
         hora: l.dt_hora,
         cd_atendimento: l.cd_atendimento,
-        cd_paciente: l.cd_paciente
+        cd_paciente: l.cd_paciente,
+        cd_procedimento: l.cd_procedimento
     }));
     
      return {

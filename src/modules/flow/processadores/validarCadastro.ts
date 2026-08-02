@@ -24,7 +24,7 @@ export async function validarCadastro(context: any) {
       cd_funcionario: paciente.cd_funcionario,
     });
     
-    console.log(paciente)
+    
   return {
     ...context,
     clienteEncontrado: encontrado,
