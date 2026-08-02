@@ -57,7 +57,7 @@ export const ProcessAiNode = {
     const systemMessage = {
       role: "system",
       content: (promptAgent?.content || "default")
-        .replace("{{nome_completo}}", context.dados_identificacao?.nome_completo ?? "")
+        .replace("{{nome_completo}}", context.nome_completo ?? "")
         .replace("{{lista_laudos}}", listaLaudosTexto),
     };
 
@@ -96,10 +96,7 @@ export const ProcessAiNode = {
       };
     }
     const raw = choice.message.content as string;
-    console.log({
-      raw,
-      usage,
-    });
+ 
     const semThought = stripThought(raw);
     const dadosExtraidos = extractDados(semThought); // só então procura ###DADOS###
     const clean = extractFinalResponse(semThought); // e só então monta o texto final
