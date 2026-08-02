@@ -1,5 +1,5 @@
-import { buscarCadastro } from "../../../integrations/genesis/services/autoatendimento/index.js";
-import { SessaoPacienteService } from "../../../integrations/genesis/services/autoatendimento/SessaoPacienteService.js";
+import { buscarCadastro } from "../../../../integrations/genesis/services/autoatendimento/index.js";
+import { SessaoPacienteService } from "../../../../integrations/genesis/services/autoatendimento/SessaoPacienteService.js";
 
 export async function validarCadastro(context: any) {
   const dados = context.dados_identificacao ?? {};

@@ -1,7 +1,7 @@
-import { buscarPreparo } from "../../../integrations/genesis/services/autoatendimento/index.js";
-import { SessaoPacienteService } from "../../../integrations/genesis/services/autoatendimento/SessaoPacienteService.js";
-import { ChannelService } from "../../channels/channel.service.js";
-import { handleSendMessage } from "../../messages/handlers/handleSendMessage.js";
+import { buscarPreparo } from "../../../../integrations/genesis/services/autoatendimento/index.js";
+import { SessaoPacienteService } from "../../../../integrations/genesis/services/autoatendimento/SessaoPacienteService.js";
+import { ChannelService } from "../../../channels/channel.service.js";
+import { handleSendMessage } from "../../../messages/handlers/handleSendMessage.js";
 const channelService = new ChannelService();
 
 export async function preparoExame(context: any) {

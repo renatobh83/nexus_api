@@ -1,5 +1,6 @@
-import { buscarAtendimento } from "../../../integrations/genesis/services/autoatendimento/index.js";
-import { SessaoPacienteService } from "../../../integrations/genesis/services/autoatendimento/SessaoPacienteService.js";
+import { buscarAtendimento } from "../../../../integrations/genesis/services/autoatendimento/index.js";
+import { SessaoPacienteService } from "../../../../integrations/genesis/services/autoatendimento/SessaoPacienteService.js";
+
 
 export async function laudos(context: any) {
 

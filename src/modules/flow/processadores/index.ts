@@ -1,11 +1,12 @@
 type ProcessadorHandler = (context: any) => Promise<any>;
-import { baixarEEnviarLaudo } from "./baixarEEnviarLaudo.js";
-import { consultarAgendamentos } from "./consultarAgendamentos.js";
-import {  laudos } from "./laudos.js";
-import { preparoExame } from "./preparoExame.js";
-import { processarAcaoAgendamento } from "./processarAcaoAgendamento.js";
+import { baixarEEnviarLaudo } from "./apiAutoatendimento/baixarEEnviarLaudo.js";
+import { consultarAgendamentos } from "./apiAutoatendimento/consultarAgendamentos.js";
+import { laudos } from "./apiAutoatendimento/laudos.js";
+import { preparoExame } from "./apiAutoatendimento/preparoExame.js";
+import { processarAcaoAgendamento } from "./apiAutoatendimento/processarAcaoAgendamento.js";
+import { validarCadastro } from "./apiAutoatendimento/validarCadastro.js";
 import { rotearAtendimento } from "./rotearAtendimento.js";
-import { validarCadastro } from "./validarCadastro.js";
+
 
 export const processadores: Record<string, ProcessadorHandler> = {
   validarCadastro,
