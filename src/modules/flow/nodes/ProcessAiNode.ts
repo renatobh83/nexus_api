@@ -11,7 +11,12 @@ export function clearAiHistory(ticketId: string | number) {
 
 function formatarListaLaudos(laudos: any[]): string {
   return laudos
-    .map((l) => `${l.indice}. ${l.procedimento} — ${l.data}`)
+    .map((l) => {
+      const nome = l.procedimento.length > 40
+        ? l.procedimento.slice(0, 40) + "..."
+        : l.procedimento;
+      return `${l.indice}. ${nome} — ${l.data}`;
+    })
     .join("\n");
 }
 const flowService = new FlowsService();
@@ -76,6 +81,7 @@ export const ProcessAiNode = {
     const usage = data.usage;
     const choice = data.choices[0];
     const finishReason = choice.finish_reason;
+    console.log(choice)
     if (finishReason === "length") {
       console.warn(
         `[AI][ticket=${ticketId}] Resposta truncada por limite de tokens.`,
@@ -120,19 +126,22 @@ export const ProcessAiNode = {
         ),
       ),
     };
-    const indiceEscolhido = dadosAcumulados?.indice_escolhido;
-   
-    const laudoValido =
-      indiceEscolhido != null &&
-      Number.isInteger(Number(indiceEscolhido)) &&
-      Number(indiceEscolhido) >= 1 &&
-      Number(indiceEscolhido) <= (context.laudosDisponiveis?.length ?? 0);
-      console.log(laudoValido)
-    
+    let etapaConcluidaFinal = dadosExtraidos?.concluido === true;
+
+    if (escopo === "laudos") {
+      const indiceEscolhido = dadosAcumulados?.indice_escolhido;
+      const laudoValido =
+        indiceEscolhido != null &&
+        Number.isInteger(Number(indiceEscolhido)) &&
+        Number(indiceEscolhido) >= 1 &&
+        Number(indiceEscolhido) <= (context.laudosDisponiveis?.length ?? 0);
+
+      etapaConcluidaFinal = etapaConcluidaFinal && laudoValido;
+    }
     return {
       ...context,
       [chaveDados]: dadosAcumulados,
-      [chaveEtapa]: dadosExtraidos?.concluido === true,
+      [chaveEtapa]: etapaConcluidaFinal,
       output: {
         type: "mensagem",
         data: `🤖 ${respostaFinal}`,

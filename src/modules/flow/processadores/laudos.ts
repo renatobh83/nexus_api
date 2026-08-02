@@ -34,7 +34,8 @@ export async function laudos(context: any) {
     procedimento: l.ds_procedimento,
     data: l.dt_data,
     nr_laudo: l.nr_laudo,
-    cd_exame: l.cd_exame
+    cd_exame: l.cd_exame,
+    cd_paciente: l.cd_paciente
   }));
     return {
         ...context,

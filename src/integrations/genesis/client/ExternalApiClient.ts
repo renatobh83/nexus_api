@@ -60,17 +60,22 @@ export class ExternalApiClient {
   // ── HTTP ─────────────────────────────────────────────────────────────────
   private buildUrl(path: string, stripSe1?: boolean): string {
     const fullPath = `${this.config.baseUrl}${path}`;
-    return stripSe1 ? fullPath.replace("se1/", "") : fullPath;
+    return stripSe1 ? fullPath.replace("testeportal/dwserver_30910.fcgi/se1/", "") : fullPath;
   }
 
   private async request<T>(
     method: string,
     path: string,
     body?: unknown,
-    options?: { formEncoded?: boolean; stripSe1?: boolean }, // ← nova opção
+    options?: {
+      formEncoded?: boolean; stripSe1?: boolean,
+      accept?: string;       // ← novo: permite sobrescrever o Accept
+      responseType?: "json" | "stream" | "arrayBuffer"; // ← novo
+      tokenPaciente?: string
+    }, // ← nova opção
     retry = true,
   ): Promise<T> {
-    const token = await this.getToken();
+    const token = options?.tokenPaciente ?? await this.getToken();
 
     const isForm = options?.formEncoded;
 
@@ -79,6 +84,7 @@ export class ExternalApiClient {
       "Content-Type": isForm
         ? "application/x-www-form-urlencoded"
         : "application/json",
+      Accept: options?.accept ?? "application/json",
     };
 
     const encodedBody = isForm
@@ -93,7 +99,8 @@ export class ExternalApiClient {
       headers,
       body: encodedBody,
     });
-
+console.log(token)
+console.log(url)
     if (response.status === 401 && retry) {
       await this.redis.del(this.cacheKey);
       return this.request<T>(method, path, body, options, false);
@@ -104,10 +111,26 @@ export class ExternalApiClient {
         `[${method} ${path}] ${response.status}: ${await response.text()}`,
       );
     }
-
+    if (options?.responseType === "arrayBuffer") {
+      return response.arrayBuffer() as Promise<T>;
+    }
+    if (options?.responseType === "stream") {
+      return response.body as unknown as T; // ReadableStream (fetch nativo do Node 18+)
+    }
     return response.json() as Promise<T>;
   }
   // ── Métodos públicos ──────────────────────────────────────────────────────
+
+  async getBinary(
+    path: string,
+    options?: { stripSe1?: boolean; accept?: string, tokenPaciente?: string },
+  ): Promise<ArrayBuffer> {
+    return this.request<ArrayBuffer>("GET", path, undefined, {
+      ...options,
+      accept: options?.accept ?? "application/pdf",
+      responseType: "arrayBuffer",
+    });
+  }
 
   async get<T>(path: string, options?: { stripSe1?: boolean }): Promise<T> {
     return this.request<T>("GET", path, undefined, options);

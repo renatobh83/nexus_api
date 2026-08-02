@@ -1,8 +1,13 @@
 import { baixarLaudo } from "../../../integrations/genesis/services/autoatendimento/index.js";
 import { SessaoPacienteService } from "../../../integrations/genesis/services/autoatendimento/SessaoPacienteService.js";
+import { ChannelService } from "../../channels/channel.service.js";
+import { handleSendMessage } from "../../messages/handlers/handleSendMessage.js";
+
+
+const channelService = new ChannelService();
 
 export async function baixarEEnviarLaudo(context: any) {
-    const escopo = "consultar_laudos";
+    const escopo = "laudos";
     const indice = Number(context[`dados_${escopo}`]?.indice_escolhido);
 
     const laudoEscolhido = context.laudosDisponiveis?.find((l: any) => l.indice === indice);
@@ -17,8 +22,20 @@ export async function baixarEEnviarLaudo(context: any) {
     if (!sessao) {
         return { ...context, route: "output_2" }; // sessão expirou nesse meio tempo
     }
-    console.log(laudoEscolhido)
-    console.log(context)
-    // const data = await baixarLaudo({})
+
+    const data = await baixarLaudo({ cd_paciente: laudoEscolhido.cd_paciente, cd_exame: laudoEscolhido.cd_exame, token: sessao.ds_token })
+    const pdfBuffer = Buffer.from(await data);
+    const contato = context.ticket.contato;
+
+    const channelId = context.ticket.channelId;
+
+    const channel = await channelService.findChannelOrThrow(channelId);
+
+    await handleSendMessage(channel, contato, "Segue laudo", {
+        path: null,
+        filename: "laudo.pdf",
+        buffer: pdfBuffer
+    });
+    return { ...context, route: "output_1" };
 
 }

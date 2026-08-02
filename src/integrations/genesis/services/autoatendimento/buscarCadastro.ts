@@ -8,13 +8,13 @@ export async function buscarCadastro(
   client: ExternalApiClient,
   documento: ofDocumento
 ): Promise<any> {
-  const url = "doPacienteLogin";
+  const url = "dwrisold/se1/doPacienteLogin";
   const body = new URLSearchParams();
     body.append("id", documento.cpf);
     body.append("pw", documento.senha);
 
   return client.post(url,
     body,
-    { formEncoded: true },
+    { formEncoded: true , stripSe1: true},
   );
 }
