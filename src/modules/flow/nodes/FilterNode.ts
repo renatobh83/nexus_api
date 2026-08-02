@@ -13,7 +13,7 @@ export const FilterNode = {
     )?.v;
 
     const value = getNestedValue(context, field);
-
+console.log('Filter node', context)
     // Função que converte o valor esperado para o tipo do valor original
     const coerceExpectedToValueType = (value: any, expected: any) => {
       // Se o valor for null ou undefined, retorna o expected como está

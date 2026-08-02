@@ -1,8 +1,12 @@
-import { IntegracaoService } from '../../../../modules/externals/integrationConfig.service.js';
 import { getExternalApiClient } from '../../client/index.js';
+import { IntegracaoService } from '../../../../modules/externals/integrationConfig.service.js';
+
+
 import { buscarCadastro as _buscarCadastro } from './buscarCadastro.js';
 import { buscarAtendimento as _buscarAtendimento } from './buscarAtendimento.js';
 import { baixarEEnviarLaudo as _baixarEEnvarLaudo } from './baixarEEnviarLaudo.js';
+import { buscarAgendamentos  as _buscarAgendamentos} from './buscarAgendamentos.js';
+
 
 
 // ─── INICIALIZAÇÃO ASSÍNCRONA ───
@@ -42,3 +46,7 @@ export const baixarLaudo = async (documento: any) => {
   return _baixarEEnvarLaudo(client, documento);
 };
 
+export const buscarAgendamentos= async(document:any) => {
+  const client = await getClient()
+  return _buscarAgendamentos(client, document)
+}

@@ -99,8 +99,8 @@ export class ExternalApiClient {
       headers,
       body: encodedBody,
     });
-console.log(token)
-console.log(url)
+    console.log(token)
+    console.log(url)
     if (response.status === 401 && retry) {
       await this.redis.del(this.cacheKey);
       return this.request<T>(method, path, body, options, false);
@@ -139,7 +139,7 @@ console.log(url)
   async post<T>(
     path: string,
     body: unknown,
-    options?: { formEncoded?: boolean; stripSe1?: boolean },
+    options?: { formEncoded?: boolean; stripSe1?: boolean, tokenPaciente?: string },
   ): Promise<T> {
     return this.request<T>("POST", path, body, options);
   }

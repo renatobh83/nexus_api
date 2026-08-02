@@ -19,6 +19,16 @@ function formatarListaLaudos(laudos: any[]): string {
     })
     .join("\n");
 }
+function formatarListaAgendamento(agendamentos: any[]): string {
+  return agendamentos
+    .map((l) => {
+      const nome = l.modalidade.length > 40
+        ? l.modalidade.slice(0, 40) + "..."
+        : l.modalidade;
+      return `${l.indice}. ${nome} — ${l.data} - ${l.hora}`;
+    })
+    .join("\n");
+}
 const flowService = new FlowsService();
 export const ProcessAiNode = {
   async execute(node: any, context: any) {
@@ -54,11 +64,16 @@ export const ProcessAiNode = {
       ? formatarListaLaudos(context.laudosDisponiveis)
       : "Nenhum laudo disponível no momento.";
 
+    const listaAgedamentosTexto = context.listaAgendamentos
+      ? formatarListaAgendamento(context.listaAgendamentos)
+      : "Nenhum agendamento disponível no momento.";
+
     const systemMessage = {
       role: "system",
       content: (promptAgent?.content || "default")
         .replace("{{nome_completo}}", context.nome_completo ?? "")
-        .replace("{{lista_laudos}}", listaLaudosTexto),
+        .replace("{{lista_laudos}}", listaLaudosTexto)
+        .replace("{{lista_agendamentos}}", listaAgedamentosTexto),
     };
 
     const messages = [
@@ -81,7 +96,7 @@ export const ProcessAiNode = {
     const usage = data.usage;
     const choice = data.choices[0];
     const finishReason = choice.finish_reason;
-    console.log(choice)
+
     if (finishReason === "length") {
       console.warn(
         `[AI][ticket=${ticketId}] Resposta truncada por limite de tokens.`,
@@ -96,7 +111,7 @@ export const ProcessAiNode = {
       };
     }
     const raw = choice.message.content as string;
- 
+
     const semThought = stripThought(raw);
     const dadosExtraidos = extractDados(semThought); // só então procura ###DADOS###
     const clean = extractFinalResponse(semThought); // e só então monta o texto final
@@ -124,6 +139,7 @@ export const ProcessAiNode = {
       ),
     };
     let etapaConcluidaFinal = dadosExtraidos?.concluido === true;
+    console.log(escopo)
 
     if (escopo === "laudos") {
       const indiceEscolhido = dadosAcumulados?.indice_escolhido;
@@ -134,6 +150,20 @@ export const ProcessAiNode = {
         Number(indiceEscolhido) <= (context.laudosDisponiveis?.length ?? 0);
 
       etapaConcluidaFinal = etapaConcluidaFinal && laudoValido;
+    }
+
+    if (escopo === "consultaAgendamentos") {
+      const indiceEscolhido = dadosAcumulados?.indice_agendamento; // nome certo
+      const acao = dadosAcumulados?.acao;
+      const agendamentoValido =
+        indiceEscolhido != null &&
+        Number.isInteger(Number(indiceEscolhido)) &&
+        Number(indiceEscolhido) >= 1 &&
+        Number(indiceEscolhido) <= (context.listaAgendamentos?.length ?? 0); // confirma o nome certo aqui também
+
+      const acaoValida = acao != null && ["confirmar", "cancelar", "preparo"].includes(acao);
+
+      etapaConcluidaFinal = etapaConcluidaFinal && agendamentoValido && acaoValida;
     }
     return {
       ...context,

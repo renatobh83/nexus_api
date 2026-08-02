@@ -9,6 +9,7 @@ export async function buscarCadastro(
   documento: ofDocumento
 ): Promise<any> {
   const url = "dwrisold/se1/doPacienteLogin";
+  
   const body = new URLSearchParams();
     body.append("id", documento.cpf);
     body.append("pw", documento.senha);
