@@ -36,7 +36,7 @@ export async function preparoExame(context: any) {
     const channelId = context.ticket.channelId;
 
     const channel = await channelService.findChannelOrThrow(channelId);
-    console.log(context)
+    
     await handleSendMessage(channel, contato,
         `Olá ${context.nome_completo ?? ""}! Segue em anexo o preparo do exame que você escolheu.`, {
         path: null,
