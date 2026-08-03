@@ -49,7 +49,7 @@ export class ServiceHoursService {
       where: { id: queueId },
       select: { hasHuman: true },
     });
-
+    
     if (!queue?.hasHuman) return { withinHours: true, reason: "no_human" };
 
     const hours = await this.repo.findEffective(queueId);
