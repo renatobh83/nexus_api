@@ -37,6 +37,7 @@
     "jsonwebtoken": "^9.0.3",
     "luxon": "^3.7.2",
     "mime-types": "^3.0.2",
+    "nanoid": "^6.0.1",
     "pg": "^8.21.0",
     "socket.io": "^4.8.3",
     "teleproto": "1.225.3",

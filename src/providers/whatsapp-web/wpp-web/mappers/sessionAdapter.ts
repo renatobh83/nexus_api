@@ -18,18 +18,16 @@ import { PUBLIC_DIR } from "../../../../config/env.js";
 import { Message, Wid } from "@wppconnect-team/wppconnect";
 
 // Função auxiliar para normalizar o Wid para string
-const resolveId = (id: string | Wid): string => {
+export const resolveId = (id: string | Wid): string => {
   if (typeof id === "string") return id;
   return id._serialized;
 };
 
+
+
 export const toInternalMessage = (msg: Message): MessageInternal => ({
   body: msg.body || msg.caption || "",
-  messageId:
-    msg.id ||
-    (msg.fromMe
-      ? `true_${msg.author}_${uuidV4()}`
-      : `false_${resolveId(msg.chatId)}_${uuidV4()}`),
+  messageId: msg.id ,
   fromMe: msg.fromMe,
   isGroupMsg: msg.isGroupMsg,
   type: msg.type,
@@ -77,6 +75,7 @@ export const toInternalSession = (session: Session): SessionInternal => ({
   },
 
   downloadMedia: async (message: any): Promise<string> => {
+    
     const media = await session.downloadMedia(message.messageId);
     
     const matches = media.match(/^data:(.+);base64,(.+)$/);

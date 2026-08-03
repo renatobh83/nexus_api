@@ -93,12 +93,14 @@ export class ExternalApiClient {
         : undefined;
 
     const url = this.buildUrl(path, options?.stripSe1);
+  
     const response = await fetch(url, {
       method,
       headers,
       body: encodedBody,
     });
 
+   
     if (response.status === 401 && retry) {
       await this.redis.del(this.cacheKey);
       return this.request<T>(method, path, body, options, false);

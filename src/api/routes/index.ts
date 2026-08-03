@@ -9,6 +9,7 @@ import { authController } from "../../modules/auth/auth.controller.js";
 import { chatWebController } from "../../modules/chatWeb/chatWeb.controller.js";
 import { flowController } from "../../modules/flow/flow.controller.js";
 import { serviceHoursRoutes } from "./serviceHours.routes.js";
+import { apiExternalRoutes } from "./apiExternal.routes.js";
 declare module "fastify" {
   interface FastifyInstance {
     authenticate: any;
@@ -23,6 +24,7 @@ async function apiV1Routes(fastify: FastifyInstance) {
   // fastify.register(integrationController, { prefix: "/apiext" });
 
   fastify.register(authController, { prefix: "/auth" });
+  fastify.register(apiExternalRoutes)
 
   fastify.register(async (privateScope) => {
     privateScope.addHook("preHandler", fastify.authenticate);

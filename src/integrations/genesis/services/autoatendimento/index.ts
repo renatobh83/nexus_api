@@ -7,6 +7,9 @@ import { buscarAtendimento as _buscarAtendimento } from './buscarAtendimento.js'
 import { baixarEEnviarLaudo as _baixarEEnvarLaudo } from './baixarEEnviarLaudo.js';
 import { buscarAgendamentos  as _buscarAgendamentos} from './buscarAgendamentos.js';
 import { buscarPreparo as _buscarPreparo } from './buscarPreparo.js';
+import { confirmarAgendamento as _confirmarAgendamento} from './confirmarAgendamento.js';
+import { cancelarAgendamento as _cancelarAgendamento } from './ cancelarAgendamento.js';
+import { cadastrarSenha  as _cadastrarSenha} from './recuperarECadastrar.js';
 
 
 
@@ -56,4 +59,19 @@ export const buscarAgendamentos = async(document:any) => {
 export const buscarPreparo = async(document:any) => {
   const client = await getClient()
   return _buscarPreparo(client, document)
+}
+export const agendamentoConfirma = async(document:any) => {
+  const client = await getClient()
+  return _confirmarAgendamento(client, document)
+}
+
+export const agendamentoCancela = async(document: any)=>{
+  const client = await getClient()
+  return _cancelarAgendamento(client, document)
+}
+
+export const cadastrarSenha = async(document: any)=>{
+  const client = await getClient()
+  
+  return _cadastrarSenha(client, document)
 }

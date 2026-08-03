@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro</title>
+    <style>
+        :root {
+            --bg: #0b0f14;
+            --bg-root: #0d0d0d;
+            --bg-primary: #141414;
+            --bg-surface: #1e1e1e;
+            --bg-hover: #252525;
+            --surface: #111820;
+            --surface2: #162030;
+            --border: #2a2a2a;
+            --border-bright: #2a4060;
+            --border-md: #333333;
+            --text-1: #f0f0f0;
+            --text-2: #a0a0a0;
+            --text-3: #606060;
+            --accent-lt: #0a7566;
+            --accent: #00d4ff;
+            --accent2: #ff6b35;
+            --accent3: #7fff6b;
+            --text: #d0e8ff;
+            --text-muted: #5a7a9a;
+            --text-dim: #3a5070;
+            --danger: #ff4466;
+            --danger-dim: #2a0f18;
+            --success: #00cc88;
+            --radius: 8px;
+            --mono: "DM Mono", monospace;
+            --sans: "Sora", sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--sans);
+            background: var(--bg-root);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--text-1);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--bg-primary);
+            padding: 60px 80px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .card-title {
+            text-align: center;
+            font-size: 38px;
+            font-weight: 600;
+            margin-bottom: 48px;
+            color: var(--text-1);
+            letter-spacing: -0.5px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px 32px;
+        }
+
+        .form-group {
+            margin-bottom: 0;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-2);
+            letter-spacing: 0.3px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 16px 20px;
+            font-size: 16px;
+            font-family: var(--sans);
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            transition: all 0.3s ease;
+            color: var(--text-1);
+        }
+
+        .form-control::placeholder {
+            color: var(--text-3);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+        }
+
+        .form-control:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .form-control.error {
+            border-color: var(--danger);
+        }
+
+        .form-control.error:focus {
+            border-color: var(--danger);
+            box-shadow: 0 0 0 3px rgba(255, 68, 102, 0.1);
+        }
+
+        .date-input-wrapper {
+            position: relative;
+        }
+
+        .date-input-wrapper input[type="date"] {
+            width: 100%;
+            padding: 16px 20px;
+            font-size: 16px;
+            font-family: var(--sans);
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            transition: all 0.3s ease;
+            color: var(--text-1);
+            cursor: pointer;
+        }
+
+        .date-input-wrapper input[type="date"]:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+        }
+
+        .date-input-wrapper input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(0.8);
+            padding: 4px;
+            cursor: pointer;
+        }
+
+        .date-input-wrapper input[type="date"]::-webkit-datetime-edit {
+            color: var(--text-1);
+        }
+
+        .date-input-wrapper input[type="date"]:invalid::-webkit-datetime-edit {
+            color: var(--text-3);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 18px;
+            font-size: 18px;
+            font-weight: 600;
+            font-family: var(--sans);
+            color: var(--bg);
+            background: var(--accent);
+            border: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 16px;
+            letter-spacing: 0.5px;
+            grid-column: 1 / -1;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
+            background: #00d4ff;
+        }
+
+        .btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: var(--bg);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #00d4ff;
+            box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .toast {
+            padding: 14px 20px;
+            border-radius: var(--radius);
+            margin-bottom: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+            font-family: var(--sans);
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid transparent;
+        }
+
+        .toast.error {
+            background: var(--danger-dim);
+            color: var(--danger);
+            border-color: var(--danger);
+        }
+
+        .toast.success {
+            background: rgba(0, 204, 136, 0.1);
+            color: var(--success);
+            border-color: var(--success);
+        }
+
+        .toast.info {
+            background: rgba(0, 212, 255, 0.1);
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .validation-message {
+            text-align: center;
+            padding: 60px 20px;
+            font-size: 18px;
+            color: var(--text-1);
+            background: var(--bg-primary);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+        }
+
+        .validation-message.error {
+            color: var(--danger);
+            border-color: var(--danger);
+            background: var(--danger-dim);
+        }
+
+        .validation-message .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Desktop */
+        @media (min-width: 1024px) {
+            body {
+                padding: 40px;
+            }
+
+            .container {
+                max-width: 1000px;
+            }
+
+            .card {
+                padding: 64px 80px;
+                border-radius: 12px;
+            }
+
+            .card-title {
+                font-size: 40px;
+                margin-bottom: 48px;
+            }
+
+            .form-grid {
+                gap: 28px 40px;
+            }
+
+            .form-group label {
+                font-size: 16px;
+                margin-bottom: 10px;
+            }
+
+            .form-control,
+            .date-input-wrapper input[type="date"] {
+                padding: 18px 24px;
+                font-size: 17px;
+                border-radius: 10px;
+            }
+
+            .btn {
+                padding: 20px;
+                font-size: 19px;
+                border-radius: 10px;
+                margin-top: 20px;
+            }
+
+            .btn:hover:not(:disabled) {
+                transform: translateY(-3px);
+            }
+        }
+
+        /* Tablet */
+        @media (min-width: 769px) and (max-width: 1023px) {
+            .container {
+                max-width: 750px;
+            }
+
+            .card {
+                padding: 48px 56px;
+            }
+
+            .card-title {
+                font-size: 32px;
+                margin-bottom: 36px;
+            }
+
+            .form-grid {
+                gap: 20px 28px;
+            }
+
+            .form-control,
+            .date-input-wrapper input[type="date"] {
+                padding: 14px 18px;
+                font-size: 16px;
+            }
+
+            .btn {
+                padding: 16px;
+                font-size: 17px;
+            }
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            body {
+                padding: 16px;
+                align-items: flex-start;
+                padding-top: 30px;
+            }
+
+            .container {
+                max-width: 100%;
+            }
+
+            .card {
+                padding: 28px 24px;
+                border-radius: var(--radius);
+            }
+
+            .card-title {
+                font-size: 26px;
+                margin-bottom: 28px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            .form-group.full-width {
+                grid-column: 1;
+            }
+
+            .btn {
+                grid-column: 1;
+            }
+
+            .form-group {
+                margin-bottom: 0;
+            }
+
+            .form-group label {
+                font-size: 14px;
+                margin-bottom: 6px;
+            }
+
+            .form-control,
+            .date-input-wrapper input[type="date"] {
+                font-size: 16px;
+                padding: 12px 14px;
+            }
+
+            .btn {
+                padding: 14px;
+                font-size: 16px;
+                margin-top: 8px;
+            }
+
+            .toast-container {
+                max-width: 90%;
+                right: 5%;
+                top: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 12px;
+                padding-top: 20px;
+            }
+
+            .card {
+                padding: 20px 16px;
+            }
+
+            .card-title {
+                font-size: 22px;
+                margin-bottom: 24px;
+            }
+
+            .form-grid {
+                gap: 14px;
+            }
+
+            .form-group label {
+                font-size: 13px;
+            }
+
+            .form-control,
+            .date-input-wrapper input[type="date"] {
+                font-size: 15px;
+                padding: 10px 12px;
+            }
+
+            .btn {
+                padding: 12px;
+                font-size: 15px;
+            }
+
+            .validation-message {
+                padding: 40px 16px;
+                font-size: 16px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .card {
+                padding: 16px 12px;
+            }
+
+            .card-title {
+                font-size: 20px;
+            }
+
+            .form-control,
+            .date-input-wrapper input[type="date"] {
+                font-size: 14px;
+                padding: 8px 10px;
+            }
+
+            .btn {
+                font-size: 14px;
+                padding: 10px;
+            }
+        }
+
+        /* Modo de alto contraste */
+        @media (prefers-contrast: high) {
+
+            .form-control,
+            .date-input-wrapper input[type="date"] {
+                border-width: 2px;
+            }
+        }
+
+        /* Redução de movimento */
+        @media (prefers-reduced-motion: reduce) {
+
+            .btn,
+            .toast {
+                animation: none;
+                transition: none;
+            }
+
+            .toast {
+                animation: none;
+            }
+
+            .validation-message .spinner {
+                animation: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div class="container">
+            <!-- Toast Container -->
+            <div class="toast-container" v-if="toasts.length > 0">
+                <div v-for="(toast, index) in toasts" :key="index" class="toast" :class="toast.type">
+                    {{ toast.message }}
+                </div>
+            </div>
+
+            <!-- Validation State -->
+            <div v-if="isValidating" class="validation-message">
+                <div class="spinner"></div>
+                <div>Validando...</div>
+            </div>
+
+            <div v-else-if="!isValid" class="validation-message error">
+                Token inválido ou expirado.
+            </div>
+
+            <!-- Registration Form -->
+            <div v-else class="card">
+                <h1 class="card-title">Cadastro</h1>
+
+                <form @submit.prevent="handleSubmit" novalidate>
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label for="nome">Nome completo</label>
+                            <input id="nome" type="text" class="form-control" v-model="form.nome" required
+                                placeholder="Digite seu nome completo" />
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="email">Email</label>
+                            <input id="email" type="email" class="form-control" v-model="form.email" required
+                                placeholder="exemplo@email.com" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="cpf">CPF</label>
+                            <input id="cpf" type="text" class="form-control" v-model="form.cpf" maxlength="11" required
+                                placeholder="Digite apenas números" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="birthDate">Data de nascimento</label>
+                            <div class="date-input-wrapper">
+                                <input id="birthDate" type="date" v-model="birthDate" required />
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" :disabled="loading">
+                            {{ loading ? 'Cadastrando...' : 'Cadastrar' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script>
+        const { createApp, ref, reactive, onMounted } = Vue;
+        const API_BASE_URL = 'http://localhost:3000/api/v1'; // Substitua pela URL da sua API
+        // Simulação das funções de API
+        const apiService = {
+            validateRegistrationToken: async (token) => {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/validate-registration-token`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(token),
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw {
+                            response: {
+                                data: errorData,
+                                status: response.status
+                            }
+                        };
+                    }
+
+                    const data = await response.json();
+
+                    // Verifica se o token é válido
+                    if (data.valid === true) {
+                        return { valid: true };
+                    } else {
+                        throw {
+                            response: {
+                                data: { error: 'Token inválido' },
+                                status: 400
+                            }
+                        };
+                    }
+                } catch (error) {
+                    // Se for erro de rede ou outro erro
+                    if (!error.response) {
+                        throw {
+                            response: {
+                                data: { error: 'Erro de conexão com o servidor' },
+                                status: 500
+                            }
+                        };
+                    }
+                    throw error;
+                }
+            },
+
+            InsertApiRegister: async(data) => {
+                try {
+                    const {token, formData} = data
+                    const response = await fetch(`${API_BASE_URL}/register`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            token,
+                            ...formData
+                        }),
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw {
+                            response: {
+                                data: errorData,
+                                status: response.status
+                            }
+                        };
+                    }
+
+                    return await response.json();
+                } catch (error) {
+                    console.log(error)
+                    if (!error.response) {
+                        throw {
+                            response: {
+                                data: { error: 'Erro de conexão com o servidor' },
+                                status: 500
+                            }
+                        };
+                    }
+                    throw error;
+                }
+            },
+
+            CompleteRegistration: (data) => {
+                return new Promise((resolve) => {
+                    setTimeout(() => {
+                        resolve({ success: true });
+                    }, 500);
+                });
+            }
+        };
+
+        const app = createApp({
+            setup() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const token = urlParams.get('token');
+
+                const isValid = ref(false);
+                const isValidating = ref(true);
+                const loading = ref(false);
+                const form = reactive({
+                    nome: '',
+                    email: '',
+                    cpf: ''
+                });
+                const birthDate = ref('');
+                const toasts = ref([]);
+
+                // Validação do token
+                const validateToken = async () => {
+                    if (!token) {
+                        isValid.value = false;
+                        isValidating.value = false;
+                        return;
+                    }
+
+                    try {
+                        await apiService.validateRegistrationToken({ token });
+                        isValid.value = true;
+                    } catch (err) {
+                        isValid.value = false;
+                        const error = err.response?.data?.error || 'Erro na validação';
+                        alert(error);
+                    } finally {
+                        isValidating.value = false;
+                    }
+                };
+
+                // Sistema de Toast
+                const showToast = (message, type = 'info') => {
+                    toasts.value.push({ message, type });
+                    setTimeout(() => {
+                        toasts.value.shift();
+                    }, 4000);
+                };
+
+                // Formatação de data para DD/MM/YYYY
+                const formatDate = (dateStr) => {
+                    if (!dateStr) return '';
+                    const [year, month, day] = dateStr.split('-');
+                    return `${day}/${month}/${year}`;
+                };
+
+                // Handle submit
+                const handleSubmit = async (e) => {
+                    e.preventDefault();
+
+                    if (!form.nome || !form.email || !form.cpf || !birthDate.value) {
+                        showToast('Por favor, preencha todos os campos.', 'info');
+                        return;
+                    }
+
+                    const dataFormatada = formatDate(birthDate.value);
+
+                    const formData = {
+                        ds_paciente: form.nome.trim(),
+                        ds_email: form.email.trim(),
+                        ds_cpf: form.cpf.trim(),
+                        dt_nascimento: dataFormatada,
+                    };
+
+                    loading.value = true;
+
+                    const dataToPost = {
+                        token,
+                        formData,
+                    };
+
+                    try {
+                        
+                        await apiService.InsertApiRegister(dataToPost);
+                        // await apiService.CompleteRegistration({ token });
+
+                        showToast(
+                            'Cadastro efetuado com sucesso, favor acessar seu e-mail para completar o cadastro.',
+                            'success'
+                        );
+
+                        form.nome = '';
+                        form.email = '';
+                        form.cpf = '';
+                        birthDate.value = '';
+                    } catch (error) {
+                        const errosmsg = error.response?.data?.error || 'Erro ao cadastrar';
+                        showToast(errosmsg, 'error');
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+
+                // Inicialização
+                onMounted(() => {
+                    validateToken();
+                });
+
+                return {
+                    isValid,
+                    isValidating,
+                    loading,
+                    form,
+                    birthDate,
+                    toasts,
+                    handleSubmit
+                };
+            }
+        });
+
+        app.mount('#app');
+    </script>
+</body>
+
+</html>

@@ -28,7 +28,7 @@ export async function processarAcaoAgendamento(context: any) {
 
     const route = rotas[acao] ?? "output_4";
 
-    console.log(`[processarAcaoAgendamento] agendamento=${agendamentoEscolhido.nr_agendamento} acao=${acao} route=${route}`);
+    console.log(`[processarAcaoAgendamento] agendamento=${agendamentoEscolhido.cd_atendimento} acao=${acao} route=${route}`);
 
     return {
         ...context,
