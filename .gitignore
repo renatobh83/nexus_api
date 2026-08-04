@@ -1,6 +1,5 @@
 node_modules
 .env
-pnpm-lock.*
 /src/generated/prisma
 userDataDir
 

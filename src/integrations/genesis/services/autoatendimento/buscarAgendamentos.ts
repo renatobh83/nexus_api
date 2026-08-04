@@ -8,12 +8,18 @@ export async function buscarAgendamentos(
     client: ExternalApiClient,
     documento: ofDocumento
 ): Promise<any> {
-    const url = "dwrisold/se1/doListaAgendamento";
+    try {
 
-    const body = new URLSearchParams();
-    body.append("cd_paciente", documento.cd_paciente);
+        const url = "dwrisold/se1/doListaAgendamento";
 
-    return client.post(url, body,
-        { stripSe1: true, tokenPaciente: documento.token, formEncoded: true },
-    );
+        const body = new URLSearchParams();
+        body.append("cd_paciente", documento.cd_paciente);
+
+        return client.post(url, body,
+            { stripSe1: true, tokenPaciente: documento.token, formEncoded: true },
+        );
+    } catch (error) {
+        console.error(error)
+        throw error;
+    }
 }

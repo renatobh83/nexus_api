@@ -40,6 +40,7 @@ export async function cadastrarSenha(
       { formEncoded: true }
     );
   } catch (error) {
+    console.error(error)
     throw error;
   }
 

@@ -14,7 +14,7 @@ export const generateRegistrationLink = async (
   const token = jwt.sign(
     payload,
     "78591a1f59eda6e939d7a7752412b364a5218eef12a839616af49080860273c7",
-    { expiresIn: "65m" }
+    { expiresIn: "15m" }
   );
 
   // Link original com o token

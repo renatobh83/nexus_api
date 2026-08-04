@@ -49,7 +49,7 @@ export async function apiExternalRoutes(app: FastifyInstance) {
       
       const data = await cadastrarSenha(formData)
       
-      // await CadastroPaciente({ token: decode, formdata: formData });
+      
       return reply.code(200).send({ success: true });
     } catch (error) {
       console.log(error)

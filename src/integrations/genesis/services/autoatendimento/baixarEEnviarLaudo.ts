@@ -9,10 +9,13 @@ export async function baixarEEnviarLaudo(
     client: ExternalApiClient,
     documento: ofDocumento
 ): Promise<any> {
-    const url = `dwrisold/www/doLaudoDownload?cd_exame=${documento.cd_exame}&cd_paciente=${documento.cd_paciente}&cd_funcionario=1&sn_entrega=false`;
-
-
-    return client.getBinary(url,
-        {   stripSe1: true, tokenPaciente: documento.token  },
-    );
+    try {
+        const url = `dwrisold/www/doLaudoDownload?cd_exame=${documento.cd_exame}&cd_paciente=${documento.cd_paciente}&cd_funcionario=1&sn_entrega=false`;
+        return client.getBinary(url,
+            { stripSe1: true, tokenPaciente: documento.token },
+        );
+    } catch (error) {
+        console.error(error)
+        throw error;
+    }
 }

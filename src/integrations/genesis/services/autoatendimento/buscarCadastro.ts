@@ -1,6 +1,6 @@
 import { ExternalApiClient } from "../../client/ExternalApiClient.js";
 
-type ofDocumento= {
+type ofDocumento = {
   cpf: string,
   senha: string
 }
@@ -10,7 +10,7 @@ export async function buscarCadastro(
   documento: ofDocumento
 ): Promise<any> {
   const url = "dwrisold/se1/doPacienteLogin";
-  
+
   const body = new URLSearchParams();
   body.append("id", documento.cpf);
   body.append("pw", documento.senha);
@@ -23,6 +23,7 @@ export async function buscarCadastro(
       // Tratamento específico para senha inválida
       throw new Error('Credenciais inválidas. Verifique seu CPF e senha.');
     }
+    console.error(error)
     throw error;
   }
 }

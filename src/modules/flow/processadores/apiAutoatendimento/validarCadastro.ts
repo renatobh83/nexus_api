@@ -65,7 +65,7 @@ export async function validarCadastro(context: any) {
     
    return { ...context, clienteEncontrado: false,output: {
         type: "mensagem",
-        data: `Não localizamos seu cadastro em nossa base. 📋\n\nEnviamos abaixo o link para você se cadastrar e continuar o atendimento.\n${link}`
+        data: `Não localizamos seu cadastro em nossa base. 📋\n\nEnviamos abaixo o link para você se cadastrar e continuar o atendimento.\n\n${link}\n\nO link irá expirar em 15minutos.\nEsse atendimento sera encerrado.`
       }, route: "output_2"
      };
   }
