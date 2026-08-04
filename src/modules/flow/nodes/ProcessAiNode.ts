@@ -6,7 +6,9 @@ const conversationHistories = new Map<
 >();
 
 export function clearAiHistory(ticketId: string | number) {
+  console.log(conversationHistories.get(String(ticketId)))
   conversationHistories.delete(String(ticketId));
+  console.log(conversationHistories.get(String(ticketId)))
 }
 
 function formatarListaLaudos(laudos: any[]): string {
@@ -57,7 +59,7 @@ export const ProcessAiNode = {
       conversationHistories.set(ticketId, []);
     }
     const history = conversationHistories.get(ticketId)!;
-
+    console.log(history)
     history.push({ role: "user", content: prompt });
 
     const listaLaudosTexto = context.laudosDisponiveis
