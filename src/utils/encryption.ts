@@ -71,6 +71,6 @@ export const decrypt = (text: string): string => {
     return decrypted.toString();
   } catch (error: any) {
     console.error("Erro ao descriptografar:", error.message);
-    return null; // Ou relance o erro, dependendo da sua política de tratamento de erros
+    return 'null'; // Ou relance o erro, dependendo da sua política de tratamento de erros
   }
 };
