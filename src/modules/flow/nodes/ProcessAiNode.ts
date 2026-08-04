@@ -1,3 +1,4 @@
+import { hi } from "date-fns/locale";
 import { FlowsService } from "../flow.service.js";
 
 const conversationHistories = new Map<
@@ -53,13 +54,13 @@ export const ProcessAiNode = {
     const prompt = context.mensagem;
     const promptAgent = await flowService.findAiPrompt(promptData);
 
-    const ticketId = String(context.ticketId ?? context.ticket_id ?? "default");
+    const ticketId = String(context.ticket.id ?? context.ticket_id ?? "default");
 
     if (!conversationHistories.has(ticketId)) {
       conversationHistories.set(ticketId, []);
     }
     const history = conversationHistories.get(ticketId)!;
-    console.log(history)
+    console.log("History", history)
     history.push({ role: "user", content: prompt });
 
     const listaLaudosTexto = context.laudosDisponiveis
