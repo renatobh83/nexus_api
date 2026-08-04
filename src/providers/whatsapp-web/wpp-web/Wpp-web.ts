@@ -1,3 +1,6 @@
+import fs from 'fs';
+import path from 'path';
+
 import { create, Whatsapp } from "@wppconnect-team/wppconnect";
 import { Prisma, Channel } from "@prisma/client";
 import { ChannelService } from "../../../modules/channels/channel.service.js";
@@ -17,6 +20,17 @@ export interface Session extends Whatsapp {
 
 const sessions: Session[] = [];
 
+function limparLockChromium(userDataDir: string) {
+  const lockFiles = ['SingletonLock', 'SingletonSocket', 'SingletonCookie'];
+  for (const file of lockFiles) {
+    const lockPath = path.join(userDataDir, file);
+    if (fs.existsSync(lockPath)) {
+      fs.unlinkSync(lockPath);
+    }
+  }
+}
+
+
 /**
  * Inicializa sessão
  */
@@ -26,6 +40,7 @@ export const initWppWeb = async (
 ): Promise<Session> => {
   try {
     // let wbot: Session;
+    limparLockChromium( "./userDataDir/" + channel.name)
     let sessionStarted = false;
     const wbotRef: { current?: Session } = {};
 
