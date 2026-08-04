@@ -96,7 +96,7 @@ export const ProcessAiNode = {
     const usage = data.usage;
     const choice = data.choices[0];
     const finishReason = choice.finish_reason;
-
+    console.log(choice)
     if (finishReason === "length") {
       console.warn(
         `[AI][ticket=${ticketId}] Resposta truncada por limite de tokens.`,
@@ -139,7 +139,7 @@ export const ProcessAiNode = {
       ),
     };
     let etapaConcluidaFinal = dadosExtraidos?.concluido === true;
-    
+
 
     if (escopo === "laudos") {
       const indiceEscolhido = dadosAcumulados?.indice_escolhido;
@@ -193,6 +193,7 @@ async function fetchWithRetry(
 ): Promise<Response> {
   const response = await fetch(
     "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+    
     {
       method: "POST",
       headers: {
@@ -203,7 +204,9 @@ async function fetchWithRetry(
         model: `models/${model}`,
         messages,
         temperature,
+        top_p: 0.9,
         max_tokens: tokens,
+       
       }),
     },
   );
