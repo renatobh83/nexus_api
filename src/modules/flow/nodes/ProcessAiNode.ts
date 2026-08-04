@@ -54,7 +54,7 @@ export const ProcessAiNode = {
     const prompt = context.mensagem;
     const promptAgent = await flowService.findAiPrompt(promptData);
 
-    const ticketId = String(context.ticket.id ?? context.ticket_id ?? "default");
+    const ticketId = String(context.ticket.id ?? context.ticket.id ?? "default");
 
     if (!conversationHistories.has(ticketId)) {
       conversationHistories.set(ticketId, []);
