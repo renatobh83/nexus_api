@@ -195,8 +195,8 @@ async function fetchWithRetry(
   tokens = 500,
 ): Promise<Response> {
   const response = await fetch(
-    "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-    
+    // "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",/
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-2:embedContent",
     {
       method: "POST",
       headers: {
