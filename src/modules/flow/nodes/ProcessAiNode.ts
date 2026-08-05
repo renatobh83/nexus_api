@@ -206,7 +206,7 @@ async function fetchWithRetry(
       },
       body: JSON.stringify({
         model: `models/${model}`,
-        contents: messages,
+        content: messages,
         // temperature,
         // max_tokens: tokens,
        
