@@ -196,17 +196,21 @@ async function fetchWithRetry(
 ): Promise<Response> {
   const response = await fetch(
     // "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",/
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-2:embedContent",
+  //  "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-2:embedContent",
+    `https://generativelanguage.googleapis.com/v1beta/${model}:embedContent?key=${process.env.GEMINI_API_KEY}`,
     {
       method: "POST",
       headers: {
         // Authorization: `Bearer ${process.env.GEMINI_API_KEY}`,
-        "x-goog-api-key" : String(process.env.GEMINI_API_KEY)!,
+        //"x-goog-api-key" : String(process.env.GEMINI_API_KEY)!,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         model: `models/${model}`,
-        content: messages,
+        content: {
+        parts: [{ text: messages }]
+        }
+       // content: messages,
         // temperature,
         // max_tokens: tokens,
        
