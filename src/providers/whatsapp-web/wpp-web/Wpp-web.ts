@@ -43,7 +43,7 @@ export const initWppWeb = async (
     limparLockChromium( "./userDataDir/" + channel.name)
     let sessionStarted = false;
     const wbotRef: { current?: Session } = {};
-
+    console.log(channel)
     const options = {
       logQR: true,
       phoneNumber: channel.pairingCodeEnabled ? channel.wppUser! : undefined,
@@ -67,8 +67,8 @@ export const initWppWeb = async (
 
         // Memória / estabilidade
         "--disable-dev-shm-usage",
-        "--memory-pressure-off",
         "--disable-ipc-flooding-protection",
+        "--js-flags=--max-old-space-size=256",
 
         // Background / throttling
         "--disable-background-timer-throttling",
@@ -287,6 +287,100 @@ export const getWbot = (channelId: number): Session => {
   return session;
 };
 
+/**
+ * Fecha o Chrome da sessão e reinicia, reaproveitando o userDataDir
+ * (mesma sessão do WhatsApp, sem precisar escanear QR de novo).
+ */
+export const restartWppWeb = async (
+  channel: Channel,
+  channelService: ChannelService,
+): Promise<Session> => {
+  const index = sessions.findIndex((s) => s.id === channel.id);
+  const current = index !== -1 ? sessions[index] : undefined;
+
+  if (current) {
+    try {
+      logger.info(`Reiniciando Chrome da sessão ${channel.name} para liberar memória...`);
+      await current.close();
+    } catch (error) {
+      console.error(`Erro ao fechar sessão ${channel.name} (seguindo mesmo assim):`, error);
+    }
+    // remove do array pra evitar getWbot() retornar um client morto
+    // enquanto o novo ainda não terminou de subir
+    sessions.splice(index, 1);
+  }
+
+  // pequena pausa pra garantir que o processo antigo do Chrome encerrou
+  await sleep(3000);
+
+  return initWppWeb(channel, channelService);
+};
+
+/**
+ * Lê o consumo de memória (RSS, em MB) do processo do Chrome
+ * atrelado a uma sessão, direto do /proc (Linux).
+ */
+ async function getChromeMemoryMB(client: Session): Promise<number | null> {
+  try {
+    const browser = (client as any)?.page?.browser?.();
+    const pid = browser?.process?.()?.pid;
+    if (!pid) return null;
+
+    const status = await fs.promises.readFile(`/proc/${pid}/status`, "utf-8");
+    const match = status.match(/VmRSS:\s+(\d+)\s+kB/);
+    if (!match) return null;
+
+    return Math.round(parseInt(match[1], 10) / 1024);
+  } catch {
+    return null; // processo pode não existir mais, ou não estar em Linux
+  }
+}
+
+/**
+ * Monitora periodicamente a memória do Chrome de uma sessão e
+ * reinicia automaticamente se ultrapassar o limite definido.
+ */
+export const monitorSessionMemory = (
+  channel: Channel,
+  channelService: ChannelService,
+  { limitMB = 500, intervalMs = 5 * 60 * 1000 } = {},
+) => {
+  const interval = setInterval(async () => {
+    const session = sessions.find((s) => s.id === channel.id);
+    if (!session) return; // sessão não existe mais (removida/parada)
+
+    const memMB = await getChromeMemoryMB(session);
+    if (memMB === null) return;
+
+    logger.info(`[memória] Sessão ${channel.name}: ${memMB}MB (limite ${limitMB}MB)`);
+
+    if (memMB > limitMB) {
+      await restartWppWeb(channel, channelService);
+    }
+  }, intervalMs);
+
+  return () => clearInterval(interval); // permite cancelar o monitoramento se precisar
+};
+
+/**
+ * Retorna o status/memória de uma sessão específica, sem lançar erro
+ * se ela ainda não estiver inicializada (útil pra rota HTTP de status).
+ */
+export const getSessionMemoryInfo = async (channelId: number) => {
+  const session = sessions.find((s) => s.id === Number(channelId));
+
+  if (!session) {
+    return { online: false, memMB: null, started: false };
+  }
+
+  const memMB = await getChromeMemoryMB(session);
+
+  return {
+    online: true,
+    started: !!session.started,
+    memMB,
+  };
+};
 const triggerStart = async (
   service: ChannelService,
   channel: Channel,
