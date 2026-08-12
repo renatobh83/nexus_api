@@ -43,9 +43,9 @@ export const wbotWebListener = async (wbot: Session): Promise<void> => {
     console.log("Escultando evento onAnyMessage");
   }, 60000);
   wbot.onAnyMessage(async (message: Message) => {
-    // if (isSyncing) {
-    //   return;
-    // }
+    if (isSyncing) {
+      return;
+    }
 
     if (message.chatId === "status@broadcast") return;
     if (message.type === "list_response" && !message.fromMe) {
