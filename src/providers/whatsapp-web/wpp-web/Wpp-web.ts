@@ -43,7 +43,7 @@ export const initWppWeb = async (
     limparLockChromium( "./userDataDir/" + channel.name)
     let sessionStarted = false;
     const wbotRef: { current?: Session } = {};
-    console.log(channel)
+
     const options = {
       logQR: true,
       phoneNumber: channel.pairingCodeEnabled ? channel.wppUser! : undefined,
