@@ -44,7 +44,8 @@ const wppSessionRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) =>
 
         // ajuste o método abaixo conforme o que existir no seu ChannelService
         // (ex: findById, findOne, getById...)
-        const channel = await (channelService as any).findById(channelId);
+        
+        const channel = await (channelService as any).findChannelOrThrow(channelId);
 
         if (!channel) {
           return reply.status(404).send({ error: "Canal não encontrado" });
