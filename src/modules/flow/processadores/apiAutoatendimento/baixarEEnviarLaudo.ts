@@ -49,6 +49,7 @@ export async function baixarEEnviarLaudo(context: any) {
         ...context, 
         dados_laudos: {},                    // limpa a intenção anterior ("laudos")
         etapaConcluida_laudos: false,
+        dados_atendimento: {}, 
         mensagem: "__VOLTAR_MENU__", 
         route: "output_1"
     };

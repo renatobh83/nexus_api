@@ -84,7 +84,8 @@ export async function consultarAgendamentos(context: any) {
       cd_paciente: l.cd_paciente,
       cd_procedimento: l.cd_procedimento
     }));
-
+  console.log(listaAgendamentos)
+  console.log(listaAgendamentos.length)
   if (!listaAgendamentos.length) {
     return {
       ...context,
