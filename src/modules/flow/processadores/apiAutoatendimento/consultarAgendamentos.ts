@@ -19,12 +19,16 @@ export async function consultarAgendamentos(context: any) {
   })
   console.log(data)
   if (!data.length) {
-    return {
+     return {
       ...context,
+      output: {
+        type: "mensagem",
+        data: `🤖 Não encontrei nenhum agendamento para os dados informados.`,
+      },
       mensagem: "__VOLTAR_MENU__",
       etapaConcluida_atendimento: false,
-      route: "output_2", // ex: volta pro fluxo de identificação
-    };
+      route: "output_2"
+    }
   }
   const listaAgendamentos = data
     .filter(
