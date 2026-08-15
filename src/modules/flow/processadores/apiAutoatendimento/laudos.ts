@@ -38,7 +38,12 @@ export async function laudos(context: any) {
         cd_exame: l.cd_exame,
         cd_paciente: l.cd_paciente
     }));
-
+   if (!laudosDisponiveis.length) {
+        return {
+            ...context,
+            route: "output_3",
+        };
+    }
     return {
         ...context,
         laudosDisponiveis,
