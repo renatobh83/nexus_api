@@ -47,8 +47,8 @@ export async function baixarEEnviarLaudo(context: any) {
     });
     return {
         ...context, 
-        dados_atendimento: {},                    // limpa a intenção anterior ("laudos")
-        etapaConcluida_atendimento: false,
+        dados_laudos: {},                    // limpa a intenção anterior ("laudos")
+        etapaConcluida_laudos: false,
         mensagem: "__VOLTAR_MENU__", 
         route: "output_1"
     };
