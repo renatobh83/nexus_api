@@ -21,6 +21,8 @@ export async function consultarAgendamentos(context: any) {
   if (!data.length) {
     return {
       ...context,
+      mensagem: "__VOLTAR_MENU__",
+      etapaConcluida_atendimento: false,
       route: "output_2", // ex: volta pro fluxo de identificação
     };
   }
@@ -84,8 +86,7 @@ export async function consultarAgendamentos(context: any) {
       cd_paciente: l.cd_paciente,
       cd_procedimento: l.cd_procedimento
     }));
-  console.log(listaAgendamentos)
-  console.log(listaAgendamentos.length)
+
   if (!listaAgendamentos.length) {
     return {
       ...context,
@@ -94,6 +95,7 @@ export async function consultarAgendamentos(context: any) {
         data: `🤖 Não encontrei nenhum agendamento para os dados informados.`,
       },
       mensagem: "__VOLTAR_MENU__",
+      etapaConcluida_atendimento: false,
       route: "output_2"
     }
   }
