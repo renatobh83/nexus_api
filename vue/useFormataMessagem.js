@@ -1,76 +1,87 @@
-(function (global) { 
+(function (global) {
+  /** Escapa caracteres que poderiam ser interpretados como HTML pelo v-html. */
+  const escapeHtml = (value) =>
+    String(value ?? "").replace(/[&<>"']/g, (character) => {
+      const entities = {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      };
+      return entities[character];
+    });
 
-const formatarMensagem = (body) => {
- if (!body) return;
-  let format = body;
-
-  function is_aplhanumeric(c) {
-    const x = c.charCodeAt();
-    return !!(
-      (x >= 65 && x <= 90) ||
-      (x >= 97 && x <= 122) ||
-      (x >= 48 && x <= 57)
+  /** Identifica caracteres alfanuméricos para preservar a sintaxe de formatação do WhatsApp. */
+  const isAlphanumeric = (character) => {
+    if (!character) return false;
+    const code = character.charCodeAt(0);
+    return (
+      (code >= 65 && code <= 90) ||
+      (code >= 97 && code <= 122) ||
+      (code >= 48 && code <= 57)
     );
-  }
-  function hyperlinkify(text) {
+  };
+
+  /** Converte URLs HTTP(S) em links sem inserir esquemas executáveis ou atributos não escapados. */
+  const hyperlinkify = (text) => {
     const urlRegex =
-      /(\b(https?|ftp):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/gi;
+      /(\bhttps?:\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/gi;
+
     return text.replace(urlRegex, (url) => {
       const href = url.startsWith("http") ? url : `http://${url}`;
       return `<a href="${href}" target="_blank" rel="noopener noreferrer">${url}</a>`;
     });
-  }
-  function whatsappStyles(
-    format,
-    wildcard,
-    opTag,
-    clTag
-  ) {
-    const indices = [];
+  };
 
-    const chars = [...format]; // Transforma string em array de caracteres
-    for (let i = 0; i < chars.length; i++) {
-      if (chars[i] === wildcard) {
-        // Lógica para determinar os índices
-        if (indices.length % 2) {
-          // indices.push(i);
-          format[i - 1] == " "
-            ? null
-            : typeof format[i + 1] == "undefined"
-              ? indices.push(i)
-              : is_aplhanumeric(format[i + 1] )
-                ? null
-                : indices.push(i);
-        } else {
-          typeof format[i + 1] == "undefined"
-            ? null
-            : format[i + 1] == " "
-              ? null
-              : typeof format[i - 1] == "undefined"
-                ? indices.push(i)
-                : is_aplhanumeric(format[i - 1] )
-                  ? null
-                  : indices.push(i);
-        }
+  /** Aplica uma marca de formatação somente depois que o texto foi escapado. */
+  const whatsappStyles = (value, wildcard, openingTag, closingTag) => {
+    const indices = [];
+    const characters = [...value];
+
+    for (let index = 0; index < characters.length; index += 1) {
+      if (characters[index] !== wildcard) continue;
+
+      if (indices.length % 2) {
+        const previous = characters[index - 1];
+        const next = characters[index + 1];
+        if (previous === " ") continue;
+        if (next === undefined || !isAlphanumeric(next)) indices.push(index);
+      } else {
+        const previous = characters[index - 1];
+        const next = characters[index + 1];
+        if (next === undefined || next === " ") continue;
+        if (previous === undefined || !isAlphanumeric(previous)) indices.push(index);
       }
     }
-    indices.length % 2 && indices.pop(); // Remove último índice se for ímpar
 
-    let e = 0;
-    indices.forEach((v, i) => {
-      const t = i % 2 ? clTag : opTag;
-      format = format.slice(0, v + e) + t + format.slice(v + e + 1);
-      e += t.length - 1;
+    if (indices.length % 2) indices.pop();
+
+    let result = value;
+    let offset = 0;
+    indices.forEach((position, index) => {
+      const tag = index % 2 ? closingTag : openingTag;
+      result =
+        result.slice(0, position + offset) +
+        tag +
+        result.slice(position + offset + 1);
+      offset += tag.length - 1;
     });
-    return format;
-  }
-  format = whatsappStyles(format, "_", "<i>", "</i>");
-  format = whatsappStyles(format, "*", "<b>", "</b>");
-  format = whatsappStyles(format, "~", "<s>", "</s>");
-  format = format.replace(/\n/gi, "<br>");
-  format = hyperlinkify(format);
 
-  return format;
-};
-global.formatarMensagem = formatarMensagem
+    return result;
+  };
+
+  /** Formata texto WhatsApp com HTML seguro para os pontos legados que usam v-html. */
+  const formatarMensagem = (body) => {
+    if (body === null || body === undefined || body === "") return "";
+
+    let format = escapeHtml(body);
+    format = whatsappStyles(format, "_", "<i>", "</i>");
+    format = whatsappStyles(format, "*", "<b>", "</b>");
+    format = whatsappStyles(format, "~", "<s>", "</s>");
+    format = format.replace(/\n/gi, "<br>");
+    return hyperlinkify(format);
+  };
+
+  global.formatarMensagem = formatarMensagem;
 })(window);

@@ -1,8 +1,15 @@
-import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import {
+  FastifyInstance,
+  FastifyReply,
+  FastifyRequest,
+} from "fastify";
 import { signChatToken } from "../auth/jwt.js";
 import { saveFile } from "../../utils/saveFile.js";
 import { PUBLIC_DIR } from "../../config/env.js";
-import { buildPublicMediaUrl, getMediaBaseUrl } from "../../config/media.js";
+import {
+  buildPublicMediaUrl,
+  getMediaBaseUrl,
+} from "../../config/media.js";
 import { randomUUID } from "node:crypto";
 import {
   getChatTokenRateLimitConfig,
@@ -13,18 +20,16 @@ export async function chatWebController(fastify: FastifyInstance) {
   fastify.get(
     "/chat-widget.js",
     async (request: FastifyRequest, reply: FastifyReply) => {
-      return (
-        reply
-          .type("application/javascript")
-          // O widget é servido pelo backend e carregado por uma página externa.
-          // O Helmet usa CORP `same-origin` por padrão, o que faria o navegador
-          // bloquear este script mesmo com CORS configurado corretamente.
-          // A exceção fica restrita a este recurso público, não à API inteira.
-          .header("Cross-Origin-Resource-Policy", "cross-origin")
-          .header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-          .header("Cache-Control", "no-store")
-          .sendFile("chat-widget.js")
-      );
+      return reply
+        .type("application/javascript")
+        // O widget é servido pelo backend e carregado por uma página externa.
+        // O Helmet usa CORP `same-origin` por padrão, o que faria o navegador
+        // bloquear este script mesmo com CORS configurado corretamente.
+        // A exceção fica restrita a este recurso público, não à API inteira.
+        .header("Cross-Origin-Resource-Policy", "cross-origin")
+        .header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        .header("Cache-Control", "no-store")
+        .sendFile("chat-widget.js");
     },
   );
   fastify.post(

@@ -69,7 +69,8 @@
     </div>
 
     <!-- Mensagens -->
-    <div class="messages-area" ref="messageAreaRef" id="messages-area">
+    <div class="messages-area" ref="messageAreaRef" id="messages-area" @scroll="handleMessagesScroll">
+      <div v-if="loadingMoreMessages" class="loading-state">Carregando mensagens anteriores...</div>
       <div v-if="loadingMessages" class="loading-state">
         <div class="spinner"></div>Carregando...
       </div>
@@ -87,7 +88,7 @@
           <!-- Conteúdo normal -->
 
           <div v-else>
-            <div v-show="msg.isGroupMsg" class="sender" v-html="msg.sender"></div>
+            <div v-show="msg.isGroupMsg" class="sender">{{ msg.sender }}</div>
 
             <message-media :msg="msg"></message-media>
           </div>

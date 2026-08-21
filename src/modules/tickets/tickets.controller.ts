@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { TicketService } from "./tickets.service.js";
 import {
@@ -5,13 +6,17 @@ import {
   getAuthenticatedSubject,
   isAdministrator,
 } from "../auth/authorization.js";
+import {
+  parseTicketId,
+  parseTicketStatus,
+  parseTicketUpdateBody,
+} from "./ticket.security.js";
 
 const service = new TicketService();
 
-function parseTicketId(value: unknown): number | undefined {
-  const ticketId = Number(value);
-  return Number.isInteger(ticketId) && ticketId > 0 ? ticketId : undefined;
-}
+type TicketParams = { ticketId: string };
+type LegacyTicketParams = { ticketid: string };
+type TicketUpdateBody = { id?: unknown; status?: unknown };
 
 export async function ticketController(fastify: FastifyInstance) {
   fastify.get("/", async (request: FastifyRequest, reply: FastifyReply) => {
@@ -36,8 +41,11 @@ export async function ticketController(fastify: FastifyInstance) {
 
   fastify.get(
     "/:ticketId",
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const ticketId = parseTicketId((request.params as any).ticketId);
+    async (
+      request: FastifyRequest<{ Params: TicketParams }>,
+      reply: FastifyReply,
+    ) => {
+      const ticketId = parseTicketId(request.params.ticketId);
 
       if (!ticketId) {
         return reply.status(400).send({ message: "Invalid ticket id" });
@@ -61,11 +69,17 @@ export async function ticketController(fastify: FastifyInstance) {
 
   fastify.put(
     "/:ticketid/flow",
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const ticketId = parseTicketId((request.params as any).ticketid);
-      const { status } = (request.body as any) || {};
+    async (
+      request: FastifyRequest<{
+        Params: LegacyTicketParams;
+        Body: TicketUpdateBody;
+      }>,
+      reply: FastifyReply,
+    ) => {
+      const ticketId = parseTicketId(request.params.ticketid);
+      const status = parseTicketStatus(request.body?.status);
 
-      if (!ticketId || typeof status !== "string" || !status.trim()) {
+      if (!ticketId || !status) {
         return reply.status(400).send({ message: "Invalid ticket update" });
       }
 
@@ -87,12 +101,17 @@ export async function ticketController(fastify: FastifyInstance) {
 
   fastify.put(
     "/:ticketid",
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const ticketId = parseTicketId((request.params as any).ticketid);
-      const body = (request.body as any) || {};
-      const { id, status } = body;
+    async (
+      request: FastifyRequest<{
+        Params: LegacyTicketParams;
+        Body: TicketUpdateBody;
+      }>,
+      reply: FastifyReply,
+    ) => {
+      const ticketId = parseTicketId(request.params.ticketid);
+      const parsedBody = parseTicketUpdateBody(request.body);
 
-      if (!ticketId || typeof status !== "string" || !status.trim()) {
+      if (!ticketId || !parsedBody) {
         return reply.status(400).send({ message: "Invalid ticket update" });
       }
 
@@ -108,14 +127,17 @@ export async function ticketController(fastify: FastifyInstance) {
       }
 
       const subject = getAuthenticatedSubject(request.user);
-      const assignedUserId = isAdministrator(request.user) ? id : subject;
+      const assignedUserId = isAdministrator(request.user)
+        ? parsedBody.assignedUserId
+        : subject;
 
-      const dataForUpdate: any = { status };
-      if (status !== "pending") {
-        if (assignedUserId === undefined || assignedUserId === null) {
-          return reply
-            .status(401)
-            .send({ message: "Invalid authenticated user" });
+      const dataForUpdate: Prisma.TicketUpdateInput = {
+        status: parsedBody.status,
+      };
+
+      if (parsedBody.status !== "pending") {
+        if (!assignedUserId) {
+          return reply.status(401).send({ message: "Invalid authenticated user" });
         }
 
         dataForUpdate.user = {

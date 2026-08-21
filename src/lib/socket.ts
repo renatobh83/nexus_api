@@ -1,4 +1,8 @@
-import { Namespace, Server as SocketIOServer, ServerOptions } from "socket.io";
+import {
+  Namespace,
+  Server as SocketIOServer,
+  ServerOptions,
+} from "socket.io";
 import { Server } from "node:http";
 import { HandleMessageChatWeb } from "../modules/chatWeb/helpers/HandleMessageChatWeb.js";
 import {
@@ -8,6 +12,7 @@ import {
   verifyChatToken,
   verifyUserToken,
 } from "../modules/auth/jwt.js";
+import { isTokenRevoked } from "../modules/auth/tokenRevocation.js";
 import { canAccessTicket } from "../modules/auth/authorization.js";
 import { TicketsRepository } from "../modules/tickets/tickets.repository.js";
 import { getAllowedCorsOrigins } from "../config/cors.js";
@@ -31,8 +36,9 @@ function authenticateNamespace(
   namespace: ReturnType<SocketIOServer["of"]>,
   verifier: (token: string) => AuthClaims,
   validateClaims: (claims: AuthClaims) => boolean,
+  checkRevocation = false,
 ): void {
-  namespace.use((socket, next) => {
+  namespace.use(async (socket, next) => {
     const token = getSocketToken(socket.handshake.auth?.token);
 
     if (!token) {
@@ -43,6 +49,10 @@ function authenticateNamespace(
       const claims = verifier(token);
 
       if (!validateClaims(claims)) {
+        return next(new Error("invalid token"));
+      }
+
+      if (checkRevocation && (await isTokenRevoked(claims))) {
         return next(new Error("invalid token"));
       }
 
@@ -82,8 +92,11 @@ export const initSocket = (server: Server): SocketIOServer => {
   io = new SocketIOServer(server, socketOptions);
 
   const clientNamespace = io.of("/client");
-  authenticateNamespace(clientNamespace, verifyUserToken, (claims) =>
-    Boolean(getClaimSubject(claims)),
+  authenticateNamespace(
+    clientNamespace,
+    verifyUserToken,
+    (claims) => Boolean(getClaimSubject(claims)),
+    true,
   );
 
   clientNamespace.on("connection", (socket) => {
@@ -152,6 +165,24 @@ export const initSocket = (server: Server): SocketIOServer => {
 
   return io;
 };
+
+/**
+ * Encerra somente as conexões internas pertencentes ao usuário informado.
+ *
+ * A função é deliberadamente tolerante quando o Socket.IO ainda não foi
+ * inicializado, pois o logout HTTP continua válido sem depender do namespace.
+ */
+export function disconnectUserSockets(userId: string): void {
+  const clientNamespace = io?.of("/client");
+  if (!clientNamespace) return;
+
+  for (const socket of clientNamespace.sockets.values()) {
+    const claims = socket.data.auth as AuthClaims | undefined;
+    if (getClaimSubject(claims ?? {}) === userId) {
+      socket.disconnect(true);
+    }
+  }
+}
 
 export const waitForSocket = (): Promise<SocketIOServer> => {
   if (io) {

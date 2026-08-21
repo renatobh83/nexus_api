@@ -1,6 +1,8 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { AppError } from "../../utils/AppError.js";
+import { getAuthenticatedSubject } from "../auth/authorization.js";
 import {
+  canDeactivateUser,
   parseUserEmail,
   parseUserId,
   parseUserWriteData,
@@ -66,6 +68,29 @@ export async function usersController(fastify: FastifyInstance) {
 
       const user = await usersService.updateUser(userId, userData);
       reply.status(200).send(toPublicUser(user));
+    },
+  );
+
+  fastify.delete(
+    "/:userId",
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const userId = parseUserId((request.params as UserParams).userId);
+      const actorSubject = getAuthenticatedSubject(request.user);
+
+      if (!userId) {
+        throw new AppError("ID de usuário inválido", 400);
+      }
+
+      if (!canDeactivateUser(actorSubject, userId)) {
+        throw new AppError("Não é permitido desativar o próprio usuário", 409);
+      }
+
+      const result = await usersService.deactivateUser(userId);
+      if (result.count === 0) {
+        throw new AppError("Usuário não encontrado", 404);
+      }
+
+      return reply.status(204).send();
     },
   );
 }

@@ -11,6 +11,16 @@ export class UsersRepository {
   updateUser(id: string, data: Prisma.UserUpdateInput) {
     return prisma.user.update({ where: { id: id }, data });
   }
+  deactivateUser(id: string) {
+    return prisma.user.updateMany({
+      where: { id },
+      data: {
+        isActive: false,
+        isOnline: false,
+        lastLogout: new Date(),
+      },
+    });
+  }
   listaAll() {
     return prisma.user.findMany({
       select: {

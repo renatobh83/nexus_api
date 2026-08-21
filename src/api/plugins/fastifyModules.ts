@@ -7,10 +7,10 @@ import multipart from "@fastify/multipart";
 import rateLimit from "@fastify/rate-limit";
 import fastifyStatic from "@fastify/static";
 import path from "node:path";
-import { randomBytes } from "node:crypto";
 import xss from "xss";
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { PUBLIC_DIR } from "../../config/env.js";
+import { AppConfig, loadAppConfig } from "../../config/appConfig.js";
 import {
   getAllowedCorsOrigins,
   isAllowedCorsOrigin,
@@ -19,32 +19,35 @@ import {
   MAX_MULTIPART_FILE_BYTES,
   MAX_MULTIPART_FILES,
 } from "../../utils/readMultipart.js";
+import { getContentSecurityPolicy } from "../../config/securityHeaders.js";
 
-const fastifyModule = fp(async (fastify: FastifyInstance) => {
+type FastifyModuleOptions = Readonly<{
+  appConfig?: AppConfig;
+}>;
+
+const fastifyModule = fp(
+  async (
+    fastify: FastifyInstance,
+    options: FastifyModuleOptions = {},
+  ) => {
+  const appConfig = options.appConfig ?? loadAppConfig();
   fastify.log.info(
     "🔐 Registrando módulo de segurança e middlewares essenciais...",
   );
 
   // --- 1. Segurança de Cabeçalhos (Helmet & CSP) ---
   await fastify.register(helmet, {
-    contentSecurityPolicy:
-      process.env.NODE_ENV === "production"
-        ? {
-            directives: {
-              defaultSrc: ["'self'"],
-              styleSrc: ["'self'", "'unsafe-inline'"],
-              scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-              imgSrc: ["'self'", "data:", "https:"],
-            },
-          }
-        : false,
+    contentSecurityPolicy: getContentSecurityPolicy(),
     xPoweredBy: false,
   });
 
   // --- 2. CORS configurado a partir do ambiente ---
   const allowedOrigins = getAllowedCorsOrigins();
 
-  fastify.log.info({ allowedOrigins }, "Origens CORS HTTP autorizadas");
+  fastify.log.info(
+    { allowedOrigins },
+    "Origens CORS HTTP autorizadas",
+  );
 
   await fastify.register(cors, {
     origin: (origin, cb) => {
@@ -65,9 +68,7 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
       "Content-Type",
       "Authorization",
       "x-csrf-token",
-      "X-API-Key",
     ],
-    exposedHeaders: ["X-API-Key"],
     credentials: true,
     preflightContinue: false,
     optionsSuccessStatus: 204,
@@ -98,35 +99,8 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
   });
 
   // --- 5. Parsing de Cookies, Formulários e Compressão ---
-  const cookieSecret = process.env.COOKIE_SECRET?.trim();
-  const nodeEnvironment = process.env.NODE_ENV?.trim().toLowerCase();
-  const isDevelopment =
-    !nodeEnvironment ||
-    nodeEnvironment === "development" ||
-    nodeEnvironment === "test";
-
-  if (cookieSecret && cookieSecret.length < 32) {
-    throw new Error("COOKIE_SECRET deve conter pelo menos 32 caracteres.");
-  }
-
-  if (!cookieSecret && !isDevelopment) {
-    throw new Error(
-      "COOKIE_SECRET é obrigatório fora do ambiente de desenvolvimento.",
-    );
-  }
-
-  // Em desenvolvimento, o segredo efêmero evita um valor previsível. Cookies
-  // assinados serão invalidados ao reiniciar o processo se o env não for usado.
-  const effectiveCookieSecret = cookieSecret ?? randomBytes(32).toString("hex");
-
-  if (!cookieSecret) {
-    fastify.log.warn(
-      "COOKIE_SECRET não definido; usando segredo efêmero apenas em desenvolvimento.",
-    );
-  }
-
   await fastify.register(cookie, {
-    secret: effectiveCookieSecret,
+    secret: appConfig.cookieSecret,
   });
 
   await fastify.register(formbody);
@@ -180,6 +154,7 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
   // --- 8. Hook para log de respostas (debug) ---
 
   fastify.log.info("✅ Módulo de segurança carregado com sucesso!");
-});
+  },
+);
 
 export default fastifyModule;

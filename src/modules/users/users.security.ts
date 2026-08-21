@@ -1,5 +1,4 @@
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ALLOWED_ROLES = new Set(["administrador", "atendente"]);
 const MAX_NAME_LENGTH = 120;
@@ -108,9 +107,16 @@ export function parseUserWriteData(
 }
 
 /**
- * Converte um registro interno em resposta segura. Campos de autenticação,
- * presença e timestamps nunca são enviados pelos endpoints administrativos.
+ * Permite a desativação administrativa somente quando o alvo é diferente do
+ * sujeito autenticado, evitando que o administrador se bloqueie por acidente.
  */
+export function canDeactivateUser(
+  actorSubject: string | undefined,
+  targetUserId: string,
+): boolean {
+  return Boolean(actorSubject && actorSubject !== targetUserId);
+}
+
 export function toPublicUser(user: {
   id: string;
   name: string;
@@ -138,17 +144,12 @@ function isRecord(value: unknown): value is UnknownRecord {
 /**
  * Normaliza texto editável e aplica o limite de tamanho antes da persistência.
  */
-function readOptionalText(
-  value: unknown,
-  maxLength: number,
-): string | null | undefined {
+function readOptionalText(value: unknown, maxLength: number): string | null | undefined {
   if (value === undefined) return undefined;
   if (typeof value !== "string") return null;
 
   const normalized = value.trim();
-  return normalized.length > 0 && normalized.length <= maxLength
-    ? normalized
-    : null;
+  return normalized.length > 0 && normalized.length <= maxLength ? normalized : null;
 }
 
 /**

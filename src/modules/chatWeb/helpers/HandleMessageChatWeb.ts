@@ -7,6 +7,7 @@ import { v4 as uuidV4 } from "uuid";
 import { ChannelService } from "../../channels/channel.service.js";
 import { ContactInternal } from "../../../providers/session.types.js";
 import { handleMessage } from "../../messages/handlers/handleMessage.js";
+import { emitChatWebClosedToTicket } from "../chatWebClose.security.js";
 import { getClientIONamespace } from "../../../lib/socket.js";
 
 const channelService = new ChannelService();
@@ -46,9 +47,24 @@ Conte rapidamente o que precisa para que eu possa transferir seu atendimento.`,
     const messageForTicket = ticket.messages;
     socket.emit("chat:previousMessages", messageForTicket);
   }
-  socket.on("ChatWebFechado", (data) => {
-    const clientNamespace = getClientIONamespace();
-    clientNamespace.emit("ChatWebFechado", data);
+  socket.on("ChatWebFechado", async (data: unknown) => {
+    try {
+      // O ticket é resolvido pelo socket e pela sessão assinada; o ticketId
+      // enviado pelo widget nunca é usado como autorização.
+      const currentTicket = await channelService.findTicketWebChat(
+        socket.id,
+        payload.sessionId,
+      );
+      if (!currentTicket) return;
+
+      emitChatWebClosedToTicket(
+        getClientIONamespace(),
+        currentTicket.id,
+        data,
+      );
+    } catch (error) {
+      console.error("Erro ao notificar fechamento do chat web", error);
+    }
   });
 
   socket.on("chat:message", async (data) => {

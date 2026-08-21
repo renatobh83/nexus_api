@@ -1,5 +1,4 @@
-import fs from 'fs';
-import path from 'path';
+import fs from "node:fs";
 
 import { create, Whatsapp } from "@wppconnect-team/wppconnect";
 import { Prisma, Channel } from "@prisma/client";
@@ -7,6 +6,14 @@ import { ChannelService } from "../../../modules/channels/channel.service.js";
 import { wbotWebListener } from "./wppWebListener.js";
 import { defaultOptions } from "@wppconnect-team/wppconnect/dist/config/create-config.js";
 import { logger } from "../../../modules/tickets/Helpers/CreateTicket.js";
+import {
+  buildWppBrowserArgs,
+  getWppWebLockFileNames,
+  readWppWebRuntimeConfig,
+  resolveWppWebSessionDir,
+  waitForWppProfile,
+  WppSessionOperationGate,
+} from "./wppWeb.security.js"
 
 function extractQrCode(url: string): string | null {
   if (!url) return null;
@@ -19,13 +26,19 @@ export interface Session extends Whatsapp {
 }
 
 const sessions: Session[] = [];
+const restartGate = new WppSessionOperationGate();
 
-function limparLockChromium(userDataDir: string) {
-  const lockFiles = ['SingletonLock', 'SingletonSocket', 'SingletonCookie'];
-  for (const file of lockFiles) {
-    const lockPath = path.join(userDataDir, file);
-    if (fs.existsSync(lockPath)) {
-      fs.unlinkSync(lockPath);
+async function limparLockChromium(userDataDir: string): Promise<void> {
+  for (const file of getWppWebLockFileNames()) {
+    const lockPath = `${userDataDir}/${file}`;
+
+    try {
+      await fs.promises.unlink(lockPath);
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code !== "ENOENT") {
+        throw error;
+      }
     }
   }
 }
@@ -39,8 +52,9 @@ export const initWppWeb = async (
   channelService: ChannelService,
 ): Promise<Session> => {
   try {
-    // let wbot: Session;
-    limparLockChromium( "./userDataDir/" + channel.name)
+    const runtimeConfig = readWppWebRuntimeConfig();
+    const userDataDir = resolveWppWebSessionDir(channel.name);
+    await limparLockChromium(userDataDir);
     let sessionStarted = false;
     const wbotRef: { current?: Session } = {};
 
@@ -51,52 +65,10 @@ export const initWppWeb = async (
       poweredBy: "RenatoDEV",
       disableWelcome: true,
 
-      browserArgs: [
-        // Sandbox / segurança (necessário em VPS/Docker)
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--ignore-certificate-errors",
-        "--ignore-ssl-errors",
-
-        // GPU / renderização (headless sem display)
-        "--disable-gpu",
-        "--disable-accelerated-2d-canvas",
-        "--disable-accelerated-video-decode",
-        "--disable-software-rasterizer",
-        "--disable-accelerated-d-canvas", // mantido por compatibilidade
-
-        // Memória / estabilidade
-        "--disable-dev-shm-usage",
-        "--disable-ipc-flooding-protection",
-        "--js-flags=--max-old-space-size=256",
-
-        // Background / throttling
-        "--disable-background-timer-throttling",
-        "--disable-backgrounding-occluded-windows",
-        "--disable-renderer-backgrounding",
-
-        // Features desnecessárias
-        "--disable-extensions",
-        "--disable-background-networking",
-        "--disable-default-apps",
-        "--disable-sync",
-        "--disable-notifications",
-        "--disable-remote-fonts",
-        "--disable-breakpad",
-        "--disable-component-update",
-        "--disable-hang-monitor",
-        "--disable-features=TranslateUI", // corrigido o typo
-
-        // Inicialização
-        "--no-first-run",
-        "--metrics-recording-only",
-
-        // Janela
-        "--window-size=760,468", // corrigido separador (vírgula, não x)
-      ],
+      browserArgs: buildWppBrowserArgs(runtimeConfig),
 
       puppeteerOptions: {
-        userDataDir: "./userDataDir/" + channel.name,
+        userDataDir,
       },
     };
 
@@ -155,9 +127,6 @@ export const initWppWeb = async (
     wbotRef.current = instance as Session;
     const wbot = wbotRef.current;
 
-    if (!wbot) {
-      console.log("⚠️ wbot ainda não inicializado");
-    }
     wbot.id = channel.id;
     wbot.started = false;
     triggerStart(channelService, channel, () => {
@@ -203,7 +172,7 @@ const start = async (
     onStarted();
     console.log("🚀 Iniciando sessão...");
 
-    const profileSession: any = await waitForApiValue(client);
+    const profileSession = await waitForWppProfile(client);
 
     try {
       await service.update(channel.id, {
@@ -225,53 +194,17 @@ const start = async (
 };
 
 /**
- * Aguarda dados do perfil
- */
-async function waitForApiValue(client: Session, interval = 1000) {
-  return new Promise((resolve, reject) => {
-    const check = async () => {
-      try {
-        const profileSession = await client.getProfileName();
-        const wbotVersion = await client.getWAVersion();
-        const number = await client.getWid();
-
-        if (profileSession) {
-          resolve({
-            profileSession,
-            wbotVersion,
-            number,
-          });
-        } else {
-          setTimeout(check, interval);
-        }
-      } catch (error) {
-        reject(error);
-      }
-    };
-
-    check();
-  });
-}
-
-/**
  * Remove sessão local
  */
-export async function removeSession(session: string) {
+export async function removeSession(session: string): Promise<void> {
   try {
-    // const sessionPath = path.join(
-    //   __dirname,
-    //   "..",
-    //   "..",
-    //   "..",
-    //   "..",
-    //   "userDataDir",
-    //   session,
-    // );
-    // await new Promise((resolve) => setTimeout(resolve, 2000));
-    // await promises.access(sessionPath);
-    // fs.rmSync(sessionPath, { recursive: true, force: true });
+    const sessionPath = resolveWppWebSessionDir(session);
+    await fs.promises.rm(sessionPath, { recursive: true, force: true });
   } catch (error) {
-    console.log("Erro ao remover sessão:", error);
+    logger.warn("Erro ao remover dados da sessão WhatsApp", {
+      session,
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 }
 
@@ -294,27 +227,32 @@ export const getWbot = (channelId: number): Session => {
 export const restartWppWeb = async (
   channel: Channel,
   channelService: ChannelService,
-): Promise<Session> => {
-  const index = sessions.findIndex((s) => s.id === channel.id);
-  const current = index !== -1 ? sessions[index] : undefined;
+): Promise<Session> =>
+  restartGate.run(channel.id, async () => {
+    const index = sessions.findIndex((s) => s.id === channel.id);
+    const current = index !== -1 ? sessions[index] : undefined;
 
-  if (current) {
-    try {
-      logger.info(`Reiniciando Chrome da sessão ${channel.name} para liberar memória...`);
-      await current.close();
-    } catch (error) {
-      console.error(`Erro ao fechar sessão ${channel.name} (seguindo mesmo assim):`, error);
+    if (current) {
+      try {
+        logger.info(
+          `Reiniciando Chrome da sessão ${channel.name} para liberar memória...`,
+        );
+        await current.close();
+      } catch (error) {
+        logger.warn(`Erro ao fechar sessão ${channel.name}; seguindo mesmo assim`, {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+      // Remove o cliente morto antes de iniciar o novo para que getWbot não
+      // devolva uma instância fechada durante a janela de reinicialização.
+      sessions.splice(index, 1);
     }
-    // remove do array pra evitar getWbot() retornar um client morto
-    // enquanto o novo ainda não terminou de subir
-    sessions.splice(index, 1);
-  }
 
-  // pequena pausa pra garantir que o processo antigo do Chrome encerrou
-  await sleep(3000);
+    // Pequena pausa para garantir que o processo antigo do Chrome encerrou.
+    await sleep(3000);
 
-  return initWppWeb(channel, channelService);
-};
+    return initWppWeb(channel, channelService);
+  });
 
 /**
  * Lê o consumo de memória (RSS, em MB) do processo do Chrome

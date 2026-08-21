@@ -19,6 +19,7 @@ import { initSocket } from "../lib/socket.js";
 import { errorHandler } from "../utils/errorHandler.js";
 import { AppError } from "../utils/AppError.js";
 import { loadAppConfig } from "../config/appConfig.js";
+import { isTokenRevoked } from "../modules/auth/tokenRevocation.js";
 
 let io: SocketIOServer | null = null;
 
@@ -37,9 +38,10 @@ declare module "fastify" {
       request: FastifyRequest,
       reply: FastifyReply,
     ) => Promise<void>;
-    authorizeRoles: (
-      ...roles: string[]
-    ) => (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+    authorizeRoles: (...roles: string[]) => (
+      request: FastifyRequest,
+      reply: FastifyReply,
+    ) => Promise<void>;
   }
 }
 let fastifyApp: FastifyInstance;
@@ -85,10 +87,7 @@ async function buildServer(): Promise<FastifyInstance> {
           item.toLowerCase(),
         );
 
-        if (
-          !normalizedRole ||
-          !normalizedAllowedRoles.includes(normalizedRole)
-        ) {
+        if (!normalizedRole || !normalizedAllowedRoles.includes(normalizedRole)) {
           throw new AppError("Insufficient permissions", 403);
         }
       },
@@ -123,8 +122,14 @@ async function buildServer(): Promise<FastifyInstance> {
 
       try {
         const claims = verifyUserToken(token);
+        if (await isTokenRevoked(claims)) {
+          throw new AppError("Invalid token", 401);
+        }
 
-        if (claims.service === "flow-executor" && claims.role === "internal") {
+        if (
+          claims.service === "flow-executor" &&
+          claims.role === "internal"
+        ) {
           request.isInternalFlow = true;
         }
 

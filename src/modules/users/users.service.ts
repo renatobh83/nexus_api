@@ -38,6 +38,10 @@ export class UsersService {
     return await this.usersRepository.updateUser(userId, userData);
   };
 
+  /** Desativa a conta sem excluir tickets ou mensagens históricas. */
+  deactivateUser = async (userId: string) =>
+    await this.usersRepository.deactivateUser(userId);
+
   loadUsers = async () => await this.usersRepository.listaAll();
 
   findByEmail = async (email: string) => {

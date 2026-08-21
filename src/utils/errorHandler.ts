@@ -19,7 +19,7 @@ export async function errorHandler(
   const statusCode = resolveStatusCode(error);
   const isClientError = statusCode >= 400 && statusCode < 500;
   const message = isClientError
-    ? error.message || "Requisição inválida"
+    ? getPublicErrorMessage(error)
     : "Erro interno do servidor";
 
   request.log.error(
@@ -41,12 +41,24 @@ export async function errorHandler(
 }
 
 /**
+ * Retorna mensagens públicas somente para erros de aplicação criados pelo
+ * backend. Mensagens de bibliotecas, banco de dados e provedores externos não
+ * são contratos da API e podem revelar detalhes internos.
+ */
+function getPublicErrorMessage(error: FastifyErrorLike): string {
+  if (!(error instanceof AppError)) return "Requisição inválida";
+
+  return error.message || "Requisição inválida";
+}
+
+/**
  * Prioriza o status explícito de `AppError` e dos erros do Fastify, mas impede
  * que valores inválidos façam a API responder com um status fora do intervalo.
  */
 function resolveStatusCode(error: FastifyErrorLike): number {
-  const statusCode =
-    error instanceof AppError ? error.statusCode : (error.statusCode ?? 500);
+  const statusCode = error instanceof AppError
+    ? error.statusCode
+    : error.statusCode ?? 500;
 
   return Number.isInteger(statusCode) && statusCode >= 400 && statusCode <= 599
     ? statusCode

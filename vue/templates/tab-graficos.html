@@ -8,7 +8,7 @@
       <label for="input-data-fim" class="filter-label">Até</label>
       <input type="date" name="input-data-fim" v-model="dataFim" id="input-data-fim" class="filter-input">
     </div>
-    <span class="status-msg" v-html="statusMsg"></span>
+    <span class="status-msg">{{ statusMsg }}</span>
     <button class="btn-primary" @click="consultar">Consultar</button>
   </div>
 

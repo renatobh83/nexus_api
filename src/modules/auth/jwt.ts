@@ -1,4 +1,6 @@
+import { randomUUID } from "node:crypto";
 import jwt, { JwtPayload, VerifyOptions } from "jsonwebtoken";
+import { assertRevocableIdentity } from "./tokenRevocation.security.js";
 
 export type AuthTokenType = "user" | "chat-client" | "internal";
 
@@ -19,9 +21,7 @@ export function getRequiredEnv(name: string): string {
   const value = process.env[name]?.trim();
 
   if (!value) {
-    throw new Error(
-      `Variável de ambiente obrigatória não configurada: ${name}`,
-    );
+    throw new Error(`Variável de ambiente obrigatória não configurada: ${name}`);
   }
 
   return value;
@@ -56,6 +56,8 @@ export function verifyUserToken(token: string): AuthClaims {
     issuer: process.env.JWT_ISSUER || undefined,
     audience: process.env.JWT_AUDIENCE || undefined,
   });
+
+  assertRevocableIdentity(claims);
 
   if (claims.type === "chat-client" || claims.role === "guest") {
     throw new Error("Token de chat não pode autenticar usuário interno");
@@ -97,6 +99,7 @@ export function signUserToken(payload: Record<string, unknown>): string {
   const options: jwt.SignOptions = {
     algorithm: "HS256",
     expiresIn: "7d",
+    jwtid: randomUUID(),
   };
 
   if (process.env.JWT_ISSUER) options.issuer = process.env.JWT_ISSUER;
@@ -105,9 +108,7 @@ export function signUserToken(payload: Record<string, unknown>): string {
   return jwt.sign(payload, getRequiredEnv("JWT_SECRET"), options);
 }
 
-export function signRegistrationToken(
-  payload: Record<string, unknown>,
-): string {
+export function signRegistrationToken(payload: Record<string, unknown>): string {
   const options: jwt.SignOptions = {
     algorithm: "HS256",
     expiresIn: "15m",
@@ -138,9 +139,7 @@ export function signChatToken(payload: Record<string, unknown>): string {
 
 export function getClaimSubject(claims: AuthClaims): string | undefined {
   const subject = claims.sub ?? claims.id;
-  return subject === undefined || subject === null
-    ? undefined
-    : String(subject);
+  return subject === undefined || subject === null ? undefined : String(subject);
 }
 
 export function getClaimRole(claims: AuthClaims): string | undefined {

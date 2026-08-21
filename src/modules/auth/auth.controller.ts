@@ -1,6 +1,8 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { AuthService } from "./auth.service.js";
 import { signUserToken, verifyUserToken } from "./jwt.js";
+import { isTokenRevoked, revokeToken } from "./tokenRevocation.js";
+import { disconnectUserSockets } from "../../lib/socket.js";
 const authService = new AuthService();
 export async function authController(fastify: FastifyInstance) {
   fastify.post(
@@ -35,13 +37,21 @@ export async function authController(fastify: FastifyInstance) {
     "/logout",
     { preHandler: fastify.authenticate },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const email = request.user?.email;
+      const claims = request.user;
+      const email = claims?.email;
 
-      if (!email) {
+      if (!claims || !email) {
         return reply.code(401).send({ message: "Invalid authenticated user" });
       }
 
+      // Revoga primeiro: se o Redis falhar, o usuário não recebe um logout
+      // parcialmente concluído com o JWT ainda utilizável.
+      await revokeToken(claims);
       const user = await authService.logout(email);
+      const userId = claims.sub ?? (claims.id === undefined ? undefined : String(claims.id));
+      if (userId) {
+        disconnectUserSockets(userId);
+      }
       reply.status(200).send({
         sucess: true,
         name: user.name,
@@ -58,6 +68,9 @@ export async function authController(fastify: FastifyInstance) {
       }
       try {
         const decoded = verifyUserToken(token);
+        if (await isTokenRevoked(decoded)) {
+          return reply.status(200).send({ valid: false });
+        }
         return reply.status(200).send({ valid: true, user: decoded });
       } catch {
         return reply.status(200).send({ valid: false });

@@ -72,6 +72,49 @@
   const hostScript = document.currentScript;
   const scriptConfig = hostScript?.dataset || {};
   const runtimeConfig = window.NEXUS_CHAT_CONFIG || {};
+  const CHAT_TOKEN_STORAGE_KEY = "chat_token";
+  const SOCKET_IO_SCRIPT = {
+    src: "https://cdn.socket.io/4.8.3/socket.io.min.js",
+    integrity:
+      "sha384-kzavj5fiMwLKzzD1f8S7TeoVIEi7uKHvbTA3ueZkrzYq75pNQUiUi6Dy98Q3fxb0",
+  };
+
+  let memoryChatToken = null;
+
+  function readChatToken() {
+    try {
+      return window.sessionStorage.getItem(CHAT_TOKEN_STORAGE_KEY) || null;
+    } catch {
+      return memoryChatToken;
+    }
+  }
+
+  function writeChatToken(token) {
+    const normalizedToken = typeof token === "string" ? token.trim() : "";
+    if (!normalizedToken) return;
+
+    memoryChatToken = normalizedToken;
+    try {
+      window.sessionStorage.setItem(CHAT_TOKEN_STORAGE_KEY, normalizedToken);
+    } catch {
+      // O token permanece somente em memória quando o armazenamento é bloqueado.
+    }
+  }
+
+  function clearChatToken() {
+    memoryChatToken = null;
+    try {
+      window.sessionStorage.removeItem(CHAT_TOKEN_STORAGE_KEY);
+    } catch {
+      // Não há ação adicional quando o armazenamento é bloqueado.
+    }
+  }
+
+  /**
+   * O token do visitante fica restrito à aba atual e não sobrevive ao fechamento
+   * do navegador. O fallback em memória mantém o fluxo funcional quando políticas
+   * de privacidade bloqueiam o Web Storage, sem reintroduzir armazenamento persistente.
+   */
 
   function normalizeOrigin(value, fallback) {
     try {
@@ -83,24 +126,23 @@
 
   const defaultOrigin = (() => {
     try {
-      return hostScript
-        ? new URL(hostScript.src).origin
-        : window.location.origin;
+      return hostScript ? new URL(hostScript.src).origin : window.location.origin;
     } catch {
       return window.location.origin;
     }
   })();
 
-  const loadScript = (src, callback) => {
+  const loadScript = (scriptConfig, callback) => {
     const script = document.createElement("script");
-    script.src = src;
+    script.src = scriptConfig.src;
+    script.integrity = scriptConfig.integrity;
+    script.crossOrigin = "anonymous";
     script.onload = callback;
-    script.onerror = () =>
-      console.error("Não foi possível carregar o Socket.IO");
+    script.onerror = () => console.error("Não foi possível carregar o Socket.IO");
     document.head.appendChild(script);
   };
 
-  loadScript("https://cdn.socket.io/4.8.3/socket.io.min.js", () => {
+  loadScript(SOCKET_IO_SCRIPT, () => {
     injectStyles();
 
     const API_URL = normalizeOrigin(
@@ -119,7 +161,7 @@
 
     let socket;
     let chatVisible = false;
-    let chatToken = localStorage.getItem("chat_token");
+    let chatToken = readChatToken();
     let formContainer = null;
     let chatMessages = null;
     let loadingOlder = false;
@@ -264,7 +306,7 @@
               "success",
             );
             chatToken = token;
-            localStorage.setItem("chat_token", token);
+            writeChatToken(token);
             formContainer.remove();
             formContainer = null;
             connectSocket();
@@ -357,7 +399,7 @@
       socket.on("chat:closedTicket", (msg) => {
         showToast(msg, "success");
         socket.disconnect();
-        localStorage.removeItem("chat_token");
+        clearChatToken();
         if (formContainer) {
           formContainer.remove();
           formContainer = null;
@@ -372,7 +414,7 @@
         console.error("Erro de conexão:", err.message);
         if (err.message.includes("invalid token")) {
           showToast("Sessão expirada. Recarregue e inicie novamente.", "error");
-          localStorage.removeItem("chat_token");
+          clearChatToken();
           chatToken = null;
         }
       });
@@ -445,7 +487,7 @@
             socket: socket.id,
           });
           socket.disconnect();
-          localStorage.removeItem("chat_token");
+          clearChatToken();
           formContainer.remove();
           formContainer = null;
           chatMessages = null;
@@ -614,9 +656,7 @@
         const data = await res.json().catch(() => ({}));
 
         if (!res.ok) {
-          throw new Error(
-            data.message || data.error || `Upload falhou (${res.status})`,
-          );
+          throw new Error(data.message || data.error || `Upload falhou (${res.status})`);
         }
 
         const mediaUrl = normalizeMediaUrl(data.mediaUrl || data.url);
