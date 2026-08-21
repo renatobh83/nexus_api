@@ -27,7 +27,6 @@ declare module "fastify" {
     io: SocketIOServer | null; // ✅ aceita null
   }
   interface FastifyRequest {
-    apiKey?: string;
     user?: AuthClaims;
     chatUser?: AuthClaims;
     isInternalFlow?: boolean;
@@ -40,10 +39,6 @@ declare module "fastify" {
     authorizeRoles: (
       ...roles: string[]
     ) => (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
-    verifyApiKey: (
-      request: FastifyRequest,
-      reply: FastifyReply,
-    ) => Promise<void>;
   }
 }
 let fastifyApp: FastifyInstance;

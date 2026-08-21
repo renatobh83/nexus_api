@@ -4,6 +4,7 @@ import { saveFile } from "../../utils/saveFile.js";
 import { PUBLIC_DIR } from "../../config/env.js";
 import { buildPublicMediaUrl, getMediaBaseUrl } from "../../config/media.js";
 import { randomUUID } from "node:crypto";
+import { getChatTokenRateLimitConfig } from "./chatWeb.security.js";
 
 export async function chatWebController(fastify: FastifyInstance) {
   fastify.get(
@@ -25,6 +26,11 @@ export async function chatWebController(fastify: FastifyInstance) {
   );
   fastify.post(
     "/chatClient/token",
+    {
+      config: {
+        rateLimit: getChatTokenRateLimitConfig(),
+      },
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { email, name, identifier } = request.body as any;
 
