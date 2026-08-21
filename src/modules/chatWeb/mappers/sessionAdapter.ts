@@ -30,6 +30,7 @@ export const toInternalMessageChatWeb = async (
   chatId: "",
   sender: null,
   socketId: msg.socket,
+  chatSessionId: msg.chatSessionId,
 });
 
 export const toInternalSessionChatWeb = (session: any): SessionInternal => ({

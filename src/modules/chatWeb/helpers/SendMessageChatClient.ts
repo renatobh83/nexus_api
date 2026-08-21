@@ -16,6 +16,8 @@ import { buildPublicMediaUrl, getMediaBaseUrl } from "../../../config/media.js";
 import { PUBLIC_DIR } from "../../../config/env.js";
 import { saveBufferedImage } from "../../../utils/saveFile.js";
 
+const ticketService = new TicketService();
+
 export const SendMessageChatClient = async (
   messageData: any,
   ticket: Ticket,
@@ -24,8 +26,26 @@ export const SendMessageChatClient = async (
   let link = "";
   const chatNamespace = getChatWebNamespace();
   const socket = chatNamespace.sockets.get(ticket.socketId!);
+  const chatSessionId =
+    typeof socket?.data?.auth?.sub === "string"
+      ? socket.data.auth.sub
+      : undefined;
 
   if (socket && socket.connected) {
+    if (chatSessionId) {
+      const metadata =
+        ticket.metadata &&
+        typeof ticket.metadata === "object" &&
+        !Array.isArray(ticket.metadata)
+          ? (ticket.metadata as Record<string, unknown>)
+          : {};
+
+      if (metadata.chatSessionId !== chatSessionId) {
+        await ticketService.updateTicket(ticket.id, {
+          metadata: { ...metadata, chatSessionId },
+        });
+      }
+    }
     if (hasMedia) {
       // O buffer recebido pela aplicação ainda não está em `public`. Persistimos
       // primeiro e somente depois enviamos a URL ao cliente web.
@@ -63,6 +83,7 @@ export const SendMessageChatClient = async (
       from: "",
       fromMe: true,
       socket: ticket.socketId,
+      chatSessionId,
       mediaUrl: hasMedia ? link : undefined,
       mediaType: hasMedia?.mimetype,
     };

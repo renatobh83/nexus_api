@@ -14,6 +14,8 @@ interface CreateTicketInput {
   isInteraction?: boolean;
   socketId?: string;
   chatClient?: boolean;
+  /** Identificador aleatório do token autenticado do chat web. */
+  chatSessionId?: string;
   status?: string;
   isFlow?: boolean;
   ObjMessage?: any;
@@ -37,6 +39,23 @@ const resolveOwnerName = (
   owner: ContactInternal,
   contato = "Desconhecido",
 ): string => owner.name || owner.pushname || owner.shortName || contato;
+
+const mergeChatSessionMetadata = (
+  metadata: unknown,
+  chatSessionId: string | undefined,
+): Prisma.InputJsonObject | undefined => {
+  if (!chatSessionId) return undefined;
+
+  const currentMetadata =
+    metadata && typeof metadata === "object" && !Array.isArray(metadata)
+      ? (metadata as Prisma.InputJsonObject)
+      : {};
+
+  return {
+    ...currentMetadata,
+    chatSessionId,
+  };
+};
 
 // 3. Monta os campos compartilhados entre create e update
 const buildSharedFields = (input: CreateTicketInput, now: number) => ({
@@ -71,15 +90,26 @@ export const createTicket = async (
     channel: { connect: { id: channelId } },
     isFlow: !ticketGroup,
     isBot: !ticketGroup,
+    metadata: mergeChatSessionMetadata(undefined, input.chatSessionId),
   };
   createPayload.queue = {
     connect: { id: process.env.BOT_QUEUE_ID },
   };
-  // 5. Usando upsert do Prisma em vez de find → create/update manual
-  const existingTicket = await ticketService.findTicket({
+  // 5. O chat web só pode reutilizar um ticket pertencente à mesma sessão.
+  const ticketWhere: Prisma.TicketWhereInput = {
     contato,
     status: { in: ["pending", "open"] },
-  });
+    ...(input.chatSessionId
+      ? {
+          chatClient: true,
+          metadata: {
+            path: ["chatSessionId"],
+            equals: input.chatSessionId,
+          },
+        }
+      : {}),
+  };
+  const existingTicket = await ticketService.findTicket(ticketWhere);
 
   if (!existingTicket) {
     logger.info("Criando novo ticket");
@@ -92,12 +122,7 @@ export const createTicket = async (
           contato,
         });
 
-        const ticket = await ticketService.findTicket({
-          contato,
-          status: {
-            in: ["pending", "open"],
-          },
-        });
+        const ticket = await ticketService.findTicket(ticketWhere);
 
         if (!ticket) {
           throw error;
@@ -134,9 +159,20 @@ export const createTicket = async (
   logger.info("Ticket já existente, atualizando", {
     ticketId: existingTicket.id,
   });
+  const updateFields: Prisma.TicketUpdateInput = {
+    ...sharedFields,
+    ...(input.chatSessionId
+      ? {
+          metadata: mergeChatSessionMetadata(
+            existingTicket.metadata,
+            input.chatSessionId,
+          ),
+        }
+      : {}),
+  };
   const ticket = await ticketService.updateTicket(
     existingTicket.id,
-    sharedFields,
+    updateFields,
   );
   return { ticket, isNew: false };
 };

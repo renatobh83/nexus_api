@@ -47,6 +47,7 @@ export const handleMessage = async (
       unreadMessages: 0,
       chatClient: message.socketId ? true : false,
       socketId: message.socketId,
+      chatSessionId: message.chatSessionId,
       ObjMessage: message,
     });
 

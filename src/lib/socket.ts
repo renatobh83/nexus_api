@@ -138,7 +138,9 @@ export const initSocket = (server: Server): SocketIOServer => {
       claims.type === "chat-client" &&
       claims.role === "guest" &&
       typeof claims.email === "string" &&
-      typeof claims.name === "string",
+      typeof claims.name === "string" &&
+      typeof claims.sub === "string" &&
+      claims.sub.length > 0,
   );
 
   chatNamespace.on("connection", (socket) => {
@@ -146,6 +148,7 @@ export const initSocket = (server: Server): SocketIOServer => {
     void HandleMessageChatWeb(socket, {
       name: claims.name as string,
       email: claims.email as string,
+      sessionId: claims.sub as string,
     });
   });
 

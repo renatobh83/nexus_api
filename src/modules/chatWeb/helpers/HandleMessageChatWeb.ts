@@ -13,9 +13,9 @@ const channelService = new ChannelService();
 
 export const HandleMessageChatWeb = async (
   socket: Socket,
-  payload: { name: string; email: string },
+  payload: { name: string; email: string; sessionId: string },
 ) => {
-  const channelId = (await channelService.listaAllChannels()).find(
+  const channelId = (await channelService.findAll()).find(
     (ch) => ch.type === "web",
   );
 
@@ -30,6 +30,7 @@ export const HandleMessageChatWeb = async (
   const ticket = await channelService.findTicketWebChat(
     payload.email,
     socket.id,
+    payload.sessionId,
   );
   if (!ticket) {
     socket.emit(
@@ -64,6 +65,7 @@ Conte rapidamente o que precisa para que eu possa transferir seu atendimento.`,
       media: undefined,
       from: payload.email,
       socket: socket.id,
+      chatSessionId: payload.sessionId,
       mediaUrl: mediaUrl,
       mediaType: mediaType,
     };

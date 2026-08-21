@@ -86,6 +86,10 @@ export function verifyChatToken(token: string): AuthClaims {
     throw new Error("Token de chat sem nome");
   }
 
+  if (typeof claims.sub !== "string" || !claims.sub.trim()) {
+    throw new Error("Token de chat sem sessão");
+  }
+
   return claims;
 }
 

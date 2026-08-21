@@ -58,6 +58,8 @@ export interface MessageInternal {
   sender: string | null;
   reactionFromMe?: string | null | undefined;
   socketId?: string;
+  /** Identifica a sessão autenticada do chat web quando aplicável. */
+  chatSessionId?: string;
   sendType?:
     | "campaign"
     | "external"

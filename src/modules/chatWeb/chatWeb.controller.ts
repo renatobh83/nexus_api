@@ -3,6 +3,8 @@ import { signChatToken } from "../auth/jwt.js";
 import { saveFile } from "../../utils/saveFile.js";
 import { PUBLIC_DIR } from "../../config/env.js";
 import { buildPublicMediaUrl, getMediaBaseUrl } from "../../config/media.js";
+import { randomUUID } from "node:crypto";
+
 export async function chatWebController(fastify: FastifyInstance) {
   fastify.get(
     "/chat-widget.js",
@@ -39,6 +41,9 @@ export async function chatWebController(fastify: FastifyInstance) {
       }
 
       const token = signChatToken({
+        // O subject identifica esta sessão do navegador; não reutilizamos o
+        // email como chave de rebind de um ticket existente.
+        sub: randomUUID(),
         name: name.trim(),
         email: email.trim().toLowerCase(),
         identifier:

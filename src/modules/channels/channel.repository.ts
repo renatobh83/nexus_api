@@ -72,7 +72,11 @@ export class ChannelsRepository {
     });
   }
 
-  async findTicketForChatWeb(contato: string, scoketId: string) {
+  async findTicketForChatWeb(
+    contato: string,
+    scoketId: string,
+    chatSessionId: string,
+  ) {
     const ticket = await prisma.ticket.findFirst({
       where: {
         contato,
@@ -80,6 +84,13 @@ export class ChannelsRepository {
         status: {
           notIn: ["closed"],
         },
+        metadata: {
+          path: ["chatSessionId"],
+          equals: chatSessionId,
+        },
+      },
+      orderBy: {
+        updatedAt: "desc",
       },
     });
     if (!ticket) return null;
