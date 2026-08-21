@@ -18,6 +18,7 @@ import fastifyModule from "./plugins/fastifyModules.js";
 import { initSocket } from "../lib/socket.js";
 import { errorHandler } from "../utils/errorHandler.js";
 import { AppError } from "../utils/AppError.js";
+import { loadAppConfig } from "../config/appConfig.js";
 
 let io: SocketIOServer | null = null;
 
@@ -49,6 +50,9 @@ let fastifyApp: FastifyInstance;
  * @returns {Promise<FastifyInstance>} Uma Promise que resolve para o objeto do FastifyInstance
  */
 async function buildServer(): Promise<FastifyInstance> {
+  // Falha antes de plugins e rotas quando um segredo ou conexão obrigatória
+  // está ausente ou malformado.
+  const appConfig = loadAppConfig();
   const server = fastify({
     logger: true, // habilita logs bonitos
     // bodyLimit: 10485760, // 10MB
@@ -69,7 +73,7 @@ async function buildServer(): Promise<FastifyInstance> {
     }
   });
 
-  await server.register(fastifyModule);
+  await server.register(fastifyModule, { appConfig });
 
   server.decorate(
     "authorizeRoles",
