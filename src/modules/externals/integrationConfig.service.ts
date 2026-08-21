@@ -46,10 +46,13 @@ interface UpdateTicketData {
 // ─── Tipos de configuração de integração ─────────────────────────────────────
 
 interface IntegrationSettings {
-  apiKey?: string;
-  webhookSecret?: string;
+  apiKey?: string | null;
+  webhookSecret?: string | null;
   [key: string]: unknown;
 }
+
+const MASKED_SECRET_VALUE = "[REDACTED]";
+const SENSITIVE_SETTINGS_FIELDS = ["apiKey", "webhookSecret"] as const;
 
 interface CreateOrUpdateConfigData {
   integrationName: string;
@@ -98,7 +101,14 @@ export class IntegracaoService {
     if (!settings || typeof settings !== "object") {
       throw new AppError("JSON_INVALID", 400);
     }
-    const encryptedSettings = this.encryptSensitiveFields(settings);
+    const existingConfig =
+      await this.integrationConfigRepository.findIntegracaoConfig({
+        integrationName,
+      });
+    const encryptedSettings = this.encryptSensitiveFields(
+      settings,
+      existingConfig?.settings,
+    );
 
     const data: CreateOrUpdateConfigData = {
       integrationName,
@@ -114,7 +124,7 @@ export class IntegracaoService {
       clientId,
     });
 
-    return config;
+    return this.sanitizeIntegrationConfig(config);
   }
 
   async deleteIntegrationService(id: string) {
@@ -192,7 +202,8 @@ export class IntegracaoService {
     );
   }
   async loadIntegracoes() {
-    return this.integrationConfigRepository.listaAll();
+    const configs = await this.integrationConfigRepository.listaAll();
+    return configs.map((config) => this.sanitizeIntegrationConfig(config));
   }
   async updateTicketIntegration(ticketId: number, data: TicketUpdateData) {
     this.validateRequiredField("ticketId", String(ticketId));
@@ -255,20 +266,86 @@ export class IntegracaoService {
   }
   private encryptSensitiveFields(
     settings: IntegrationSettings,
+    existingSettings?: Prisma.JsonValue,
   ): IntegrationSettings {
     const encrypted = { ...settings };
+    const existing = this.asIntegrationSettings(existingSettings);
 
-    if (encrypted.apiKey) {
-      encrypted.apiKey = this.safeEncrypt(encrypted.apiKey, "apiKey");
-    }
-    if (encrypted.webhookSecret) {
-      encrypted.webhookSecret = this.safeEncrypt(
-        encrypted.webhookSecret,
-        "webhookSecret",
-      );
+    for (const field of SENSITIVE_SETTINGS_FIELDS) {
+      const value = settings[field];
+      const existingValue = existing[field];
+
+      // O painel recebe o segredo mascarado. Nesse caso, mantém o valor
+      // persistido em vez de criptografar o marcador novamente.
+      if (value === MASKED_SECRET_VALUE || value === undefined) {
+        if (typeof existingValue === "string" && existingValue.length > 0) {
+          encrypted[field] = existingValue;
+        } else {
+          delete encrypted[field];
+        }
+        continue;
+      }
+
+      // `null` é o sinal explícito para remover um segredo já salvo.
+      if (value === null) {
+        delete encrypted[field];
+        continue;
+      }
+
+      if (typeof value !== "string") {
+        throw new AppError(`O campo "${field}" deve ser uma string`, 400);
+      }
+
+      if (value.length > 0) {
+        encrypted[field] = this.safeEncrypt(value, field);
+      }
     }
 
     return encrypted;
+  }
+
+  /**
+   * Oculta segredos nas respostas administrativas sem descriptografá-los.
+   */
+  private sanitizeIntegrationConfig<T extends { settings: Prisma.JsonValue }>(
+    config: T,
+  ): Omit<T, "settings"> & { settings: IntegrationSettings } {
+    return {
+      ...config,
+      settings: this.maskSensitiveFields(
+        this.asIntegrationSettings(config.settings),
+      ),
+    };
+  }
+
+  /**
+   * Substitui somente valores existentes dos campos sensíveis por um marcador.
+   */
+  private maskSensitiveFields(
+    settings: IntegrationSettings,
+  ): IntegrationSettings {
+    const masked = { ...settings };
+
+    for (const field of SENSITIVE_SETTINGS_FIELDS) {
+      if (typeof masked[field] === "string" && masked[field]!.length > 0) {
+        masked[field] = MASKED_SECRET_VALUE;
+      }
+    }
+
+    return masked;
+  }
+
+  /**
+   * Converte uma configuração JSON do Prisma para o shape interno esperado.
+   */
+  private asIntegrationSettings(
+    settings: Prisma.JsonValue | undefined,
+  ): IntegrationSettings {
+    if (settings && typeof settings === "object" && !Array.isArray(settings)) {
+      return settings as IntegrationSettings;
+    }
+
+    return {};
   }
 
   private decryptSensitiveFields(

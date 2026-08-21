@@ -26,10 +26,21 @@ export class ChannelService {
     try {
       const clientNamespace = getClientIONamespace();
       const channel = await this.channelsRepository.udpateChannel(id, data);
+      const {
+        session,
+        qrcode,
+        pairingCode,
+        tokenTelegram,
+        phone,
+        wabaBSP,
+        tokenAPI,
+        tokenHook,
+        ...publicData
+      } = data as Record<string, unknown>;
 
       clientNamespace.emit(`channel-update`, {
         id,
-        ...data,
+        ...publicData,
       });
       return channel;
     } catch (error) {

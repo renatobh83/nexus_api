@@ -7,6 +7,7 @@ import multipart from "@fastify/multipart";
 import rateLimit from "@fastify/rate-limit";
 import fastifyStatic from "@fastify/static";
 import path from "node:path";
+import { randomBytes } from "node:crypto";
 import xss from "xss";
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { PUBLIC_DIR } from "../../config/env.js";
@@ -97,14 +98,35 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
   });
 
   // --- 5. Parsing de Cookies, Formulários e Compressão ---
-  // CORREÇÃO: Verificar se o secret existe
-  const cookieSecret = process.env.COOKIE_SECRET;
-  if (!cookieSecret && process.env.NODE_ENV === "production") {
-    fastify.log.warn("⚠️ COOKIE_SECRET não definido no ambiente de produção!");
+  const cookieSecret = process.env.COOKIE_SECRET?.trim();
+  const nodeEnvironment = process.env.NODE_ENV?.trim().toLowerCase();
+  const isDevelopment =
+    !nodeEnvironment ||
+    nodeEnvironment === "development" ||
+    nodeEnvironment === "test";
+
+  if (cookieSecret && cookieSecret.length < 32) {
+    throw new Error("COOKIE_SECRET deve conter pelo menos 32 caracteres.");
+  }
+
+  if (!cookieSecret && !isDevelopment) {
+    throw new Error(
+      "COOKIE_SECRET é obrigatório fora do ambiente de desenvolvimento.",
+    );
+  }
+
+  // Em desenvolvimento, o segredo efêmero evita um valor previsível. Cookies
+  // assinados serão invalidados ao reiniciar o processo se o env não for usado.
+  const effectiveCookieSecret = cookieSecret ?? randomBytes(32).toString("hex");
+
+  if (!cookieSecret) {
+    fastify.log.warn(
+      "COOKIE_SECRET não definido; usando segredo efêmero apenas em desenvolvimento.",
+    );
   }
 
   await fastify.register(cookie, {
-    secret: cookieSecret || "default-secret-key-for-development", // Fallback para dev
+    secret: effectiveCookieSecret,
   });
 
   await fastify.register(formbody);

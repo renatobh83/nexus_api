@@ -1,11 +1,18 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { MessageService } from "./messages.service.js";
 import { TicketService } from "../tickets/tickets.service.js";
+import { canAccessTicket } from "../auth/authorization.js";
 import { readMultipartParts } from "../../utils/readMultipart.js";
 const service = new MessageService();
 const ticketServices = new TicketService();
 const DEFAULT_MESSAGE_LIMIT = 40;
 const MAX_MESSAGE_LIMIT = 100;
+
+/** Converte um identificador de rota em inteiro positivo sem aceitar prefixos inválidos. */
+function parseTicketId(value: unknown): number | undefined {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
+}
 
 function parsePaginationInteger(
   value: unknown,
@@ -22,7 +29,22 @@ export async function messagesController(fastify: FastifyInstance) {
     "/:ticketId",
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { ticketId } = request.params as any;
-      const numberTicket = parseInt(ticketId);
+      const numberTicket = parseTicketId(ticketId);
+      if (!numberTicket) {
+        return reply.status(400).send({ message: "Invalid ticket id" });
+      }
+
+      const ticket = await ticketServices.findTickeWhitoutMessage({
+        id: numberTicket,
+      });
+      if (!ticket) {
+        return reply.status(404).send({ message: "Ticket not found" });
+      }
+
+      if (!canAccessTicket(request.user, ticket)) {
+        return reply.status(403).send({ message: "Insufficient permissions" });
+      }
+
       const query = request.query as {
         limit?: string;
         skip?: string;
@@ -46,13 +68,20 @@ export async function messagesController(fastify: FastifyInstance) {
     "/:ticketId",
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { ticketId } = request.params as any;
-      const numberTicket = parseInt(ticketId);
+      const numberTicket = parseTicketId(ticketId);
+      if (!numberTicket) {
+        return reply.status(400).send({ message: "Invalid ticket id" });
+      }
 
       const ticket = await ticketServices.findTickeWhitoutMessage({
         id: numberTicket,
       });
       if (!ticket) {
         throw new Error("TICKET_NO_FOUND");
+      }
+
+      if (!canAccessTicket(request.user, ticket)) {
+        return reply.status(403).send({ message: "Insufficient permissions" });
       }
 
       let filesArray: Array<{

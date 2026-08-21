@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { ChannelService } from "./channel.service.js";
+import { parseChannelId, toPublicChannel } from "./channel.security.js";
 import { ChannelManager } from "./ChannelManager.js";
 import { handleSendMessage } from "../messages/handlers/handleSendMessage.js";
 import { readMultipartParts } from "../../utils/readMultipart.js";
@@ -10,50 +11,73 @@ const channelManager = new ChannelManager();
 export async function channelController(fastify: FastifyInstance) {
   fastify.get("/", async (request: FastifyRequest, reply: FastifyReply) => {
     const channels = await service.listaAllChannels();
-    reply.status(200).send(channels);
+    reply.status(200).send(channels.map(toPublicChannel));
   });
 
   fastify.get(
     "/:channelId",
+    { preHandler: fastify.authorizeRoles("administrador") },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { channelId } = request.params as any;
-      const id = parseInt(channelId);
+      const id = parseChannelId(channelId);
+      if (!id) {
+        return reply.status(400).send({ message: "Invalid channel id" });
+      }
+
       const channel = await service.findChannel(id);
-      reply.status(200).send(channel);
+      if (!channel) {
+        return reply.status(404).send({ message: "Channel not found" });
+      }
+
+      reply.status(200).send(toPublicChannel(channel));
     },
   );
   // Edita um canal
   fastify.put(
     "/:channelId",
+    { preHandler: fastify.authorizeRoles("administrador") },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { channelId } = request.params as any;
-      const id = parseInt(channelId);
+      const id = parseChannelId(channelId);
+      if (!id) {
+        return reply.status(400).send({ message: "Invalid channel id" });
+      }
+
       const channel = await service.update(id, request.body as any);
-      reply.status(200).send(channel);
+      reply.status(200).send(toPublicChannel(channel));
     },
   );
   /**
    * Cria um novo canal na apliacação
    */
-  fastify.post("/", async (request: FastifyRequest, reply: FastifyReply) => {
-    const payload = {
-      ...(request.body as any),
-      status: "DISCONNECTED",
-    };
+  fastify.post(
+    "/",
+    { preHandler: fastify.authorizeRoles("administrador") },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const payload = {
+        ...(request.body as any),
+        status: "DISCONNECTED",
+      };
 
-    const channel = await service.create(payload);
+      const channel = await service.create(payload);
 
-    reply.status(200).send(channel);
-  });
+      reply.status(200).send(toPublicChannel(channel));
+    },
+  );
 
   // abre a conexao do canal
   fastify.post(
     "/:channelId/connect",
+    { preHandler: fastify.authorizeRoles("administrador") },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { channelId } = request.params as any;
-      const id = parseInt(channelId);
-      const channel = await channelManager.startSession(id);
-      reply.status(200).send(channel);
+      const id = parseChannelId(channelId);
+      if (!id) {
+        return reply.status(400).send({ message: "Invalid channel id" });
+      }
+
+      await channelManager.startSession(id);
+      reply.status(200).send();
     },
   );
 
@@ -62,7 +86,10 @@ export async function channelController(fastify: FastifyInstance) {
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { channelId } = request.params as any;
 
-      const id = parseInt(channelId);
+      const id = parseChannelId(channelId);
+      if (!id) {
+        return reply.status(400).send({ message: "Invalid channel id" });
+      }
 
       let filesArray: Array<{
         filename: string;

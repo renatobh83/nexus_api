@@ -26,6 +26,7 @@ async function apiV1Routes(fastify: FastifyInstance) {
 
   fastify.register(authController, { prefix: "/auth" });
   fastify.register(apiExternalRoutes);
+  fastify.register(wppSessionRoutes);
 
   fastify.register(async (privateScope) => {
     privateScope.addHook("preHandler", fastify.authenticate);
@@ -46,7 +47,6 @@ async function apiV1Routes(fastify: FastifyInstance) {
       adminScope.register(usersController, { prefix: "/users" });
       adminScope.register(flowController, { prefix: "/flows" });
       adminScope.register(serviceHoursRoutes, { prefix: "/service-hours" });
-      adminScope.register(wppSessionRoutes);
     });
   });
 }

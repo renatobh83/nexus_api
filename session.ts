@@ -41,7 +41,7 @@ async function main() {
     });
 
     console.log("✅ Logado com sucesso!");
-  } catch (err) {
+  } catch (err: any) {
     console.error("Erro na autenticação principal:", err.message);
     await client.disconnect();
     return;

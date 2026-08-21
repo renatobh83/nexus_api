@@ -1,67 +1,82 @@
-import { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
+import {
+  FastifyInstance,
+  FastifyPluginAsync,
+  FastifyReply,
+  FastifyRequest,
+} from "fastify";
 
 import { ChannelService } from "../../modules/channels/channel.service.js";
-import { getSessionMemoryInfo, restartWppWeb } from "../../providers/whatsapp-web/wpp-web/Wpp-web.js";
+import {
+  getSessionMemoryInfo,
+  restartWppWeb,
+} from "../../providers/whatsapp-web/wpp-web/Wpp-web.js";
+import { AppError } from "../../utils/AppError.js";
+import { parseChannelId } from "./wppSession.security.js";
 
-
-const channelService = new ChannelService(); // ajuste se você já tiver uma instância compartilhada (DI)
+const channelService = new ChannelService();
 
 interface ChannelIdParams {
   id: string;
 }
 
-const wppSessionRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
+/** Registra operações administrativas de diagnóstico e reinício do WhatsApp Web. */
+const wppSessionRoutes: FastifyPluginAsync = async (
+  fastify: FastifyInstance,
+) => {
   /**
    * GET /channels/:id/wpp-memory
    * Retorna o consumo de memória atual do Chrome daquela sessão.
-   * Front pode chamar isso periodicamente (ex: a cada 30s) pra exibir no dashboard
-   * e decidir se mostra alerta / habilita o botão de restart.
    */
   fastify.get(
     "/channels/:id/wpp-memory",
-    async (request: FastifyRequest<{ Params: ChannelIdParams }>, reply: FastifyReply) => {
-      try {
-        const channelId = Number(request.params.id);
-        const info = await getSessionMemoryInfo(channelId);
-        return reply.send(info);
-      } catch (error) {
-        request.log.error(error, "Erro ao consultar memória da sessão");
-        return reply.status(500).send({ error: "Erro ao consultar memória da sessão" });
+    async (
+      request: FastifyRequest<{ Params: ChannelIdParams }>,
+      reply: FastifyReply,
+    ) => {
+      const channelId = parseChannelId(request.params.id);
+      if (!channelId) {
+        throw new AppError("ID de canal inválido", 400);
       }
+
+      const channel = await channelService.findChannel(channelId);
+      if (!channel) {
+        throw new AppError("Canal não encontrado", 404);
+      }
+
+      const info = await getSessionMemoryInfo(channelId);
+      return reply.send(info);
     },
   );
 
   /**
    * POST /channels/:id/wpp-restart
-   * Fecha o Chrome da sessão e reinicia, reaproveitando o userDataDir
-   * (não pede QR de novo). Use no botão "Reiniciar sessão" do front.
+   * Fecha o Chrome da sessão e reinicia, reaproveitando o userDataDir.
    */
   fastify.post(
     "/channels/:id/wpp-restart",
-    async (request: FastifyRequest<{ Params: ChannelIdParams }>, reply: FastifyReply) => {
-      try {
-        const channelId = Number(request.params.id);
-
-        // ajuste o método abaixo conforme o que existir no seu ChannelService
-        // (ex: findById, findOne, getById...)
-        
-        const channel = await (channelService as any).findChannelOrThrow(channelId);
-
-        if (!channel) {
-          return reply.status(404).send({ error: "Canal não encontrado" });
-        }
-
-        // não espera terminar de subir pra não travar a requisição (create() pode
-        // demorar alguns segundos); responde de imediato e deixa rodando em background
-        restartWppWeb(channel, channelService).catch((error) => {
-          request.log.error(error, `Erro ao reiniciar sessão ${channel.name}`);
-        });
-
-        return reply.status(202).send({ message: "Restart da sessão disparado" });
-      } catch (error) {
-        request.log.error(error, "Erro ao disparar restart da sessão");
-        return reply.status(500).send({ error: "Erro ao disparar restart da sessão" });
+    async (
+      request: FastifyRequest<{ Params: ChannelIdParams }>,
+      reply: FastifyReply,
+    ) => {
+      const channelId = parseChannelId(request.params.id);
+      if (!channelId) {
+        throw new AppError("ID de canal inválido", 400);
       }
+
+      const channel = await channelService.findChannel(channelId);
+      if (!channel) {
+        throw new AppError("Canal não encontrado", 404);
+      }
+
+      // Não espera a inicialização completa para não bloquear a requisição.
+      restartWppWeb(channel, channelService).catch((error) => {
+        request.log.error(
+          { error, channelId },
+          `Erro ao reiniciar sessão ${channel.name}`,
+        );
+      });
+
+      return reply.status(202).send({ message: "Restart da sessão disparado" });
     },
   );
 };
