@@ -1,34 +1,45 @@
 import { Prisma } from "@prisma/client";
 import { hash } from "bcryptjs";
 import { UsersRepository } from "./users.repository.js";
+import { UserCreateData, UserUpdateData } from "./users.security.js";
 
 export class UsersService {
   private usersRepository: UsersRepository;
+
   constructor() {
     this.usersRepository = new UsersRepository();
   }
-  createUser = async (data: Prisma.UserCreateInput) => {
-    try {
-      const userData = { ...data };
-      if (data.passwordHash) {
-        userData.passwordHash = await hash(data.passwordHash, 8);
-      }
-      return await this.usersRepository.create(userData);
-    } catch (error) {
-      throw error;
-    }
+
+  createUser = async (data: UserCreateData) => {
+    const userData: Prisma.UserCreateInput = {
+      name: data.name,
+      email: data.email,
+      role: data.role,
+      ...(data.isActive === undefined ? {} : { isActive: data.isActive }),
+      ...(data.passwordHash === undefined
+        ? {}
+        : { passwordHash: await hash(data.passwordHash, 8) }),
+    };
+
+    return await this.usersRepository.create(userData);
   };
 
-  updateUser = async (userId: string, data: Prisma.UserUpdateInput) => {
-    const userData = { ...data };
-
-    if (typeof data.passwordHash === "string") {
-      userData.passwordHash = await hash(data.passwordHash, 8);
-    }
+  updateUser = async (userId: string, data: UserUpdateData) => {
+    const userData: Prisma.UserUpdateInput = {
+      ...(data.name === undefined ? {} : { name: data.name }),
+      ...(data.email === undefined ? {} : { email: data.email }),
+      ...(data.role === undefined ? {} : { role: data.role }),
+      ...(data.isActive === undefined ? {} : { isActive: data.isActive }),
+      ...(data.passwordHash === undefined
+        ? {}
+        : { passwordHash: await hash(data.passwordHash, 8) }),
+    };
 
     return await this.usersRepository.updateUser(userId, userData);
   };
+
   loadUsers = async () => await this.usersRepository.listaAll();
+
   findByEmail = async (email: string) => {
     return await this.usersRepository.findByEmail(email);
   };

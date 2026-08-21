@@ -54,6 +54,15 @@ export class IntegrationConfigRepository {
     return prisma.integrationConfig.findFirst({ where });
   }
 
+  async updateById(id: string, data: Prisma.IntegrationConfigUpdateInput) {
+    return prisma.integrationConfig.update({
+      where: { id },
+      data,
+    });
+  }
+
+  /** Atualiza exclusivamente o registro identificado pelo UUID administrativo. */
+
   // TicketIntegracao
   async createTicketForIntegration(data: Prisma.TicketCreateInput) {
     return prisma.ticket.create({ data });

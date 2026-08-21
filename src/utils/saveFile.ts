@@ -4,53 +4,74 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
+import {
+  IMAGE_SIGNATURE_BYTES,
+  MAX_CHAT_IMAGE_BYTES,
+  hasValidImageSignature,
+  validateImageBuffer,
+  validateImageUploadMetadata,
+} from "./imageUpload.security.js";
 
-const MAX_CHAT_IMAGE_BYTES = 10 * 1024 * 1024;
-
-const IMAGE_EXTENSIONS: Record<string, string> = {
-  "image/jpeg": ".jpg",
-  "image/png": ".png",
-  "image/gif": ".gif",
-  "image/webp": ".webp",
-  "image/bmp": ".bmp",
-};
-
-function getImageExtension(mimetype: string): string {
-  const extension = IMAGE_EXTENSIONS[mimetype.toLowerCase()];
-
-  if (!extension) {
-    throw new Error("Tipo de imagem não permitido");
-  }
-
-  return extension;
+/**
+ * Gera um nome público imprevisível usando somente uma extensão definida pelo
+ * servidor após a validação do MIME e da assinatura do arquivo.
+ */
+function generateFileName(extension: string): string {
+  return `${randomUUID()}${extension}`;
 }
 
-function generateFileName(mimetype: string): string {
-  return `${randomUUID()}${getImageExtension(mimetype)}`;
-}
-
+/**
+ * Persiste uma imagem multipart em arquivo temporário controlado, validando o
+ * nome original, o tamanho e a assinatura binária antes de concluir a operação.
+ */
 export async function saveFile(file: any, folder: string): Promise<string> {
   if (!file?.file || typeof file.file.pipe !== "function") {
     throw new Error("Arquivo multipart inválido");
   }
 
-  const mimetype = String(file.mimetype || "").toLowerCase();
-  const filename = generateFileName(mimetype);
+  const extension = validateImageUploadMetadata(file.mimetype, file.filename);
+  const mimetype = String(file.mimetype).trim().toLowerCase();
+  const filename = generateFileName(extension);
   const filePath = path.join(folder, filename);
 
   await mkdir(folder, { recursive: true });
 
   let totalBytes = 0;
+  const signatureChunks: Buffer[] = [];
+  let signatureBytes = 0;
   const sizeLimiter = new Transform({
     transform(chunk, _encoding, callback) {
-      totalBytes += chunk.length;
+      const chunkBuffer = Buffer.isBuffer(chunk)
+        ? chunk
+        : Buffer.from(chunk as Uint8Array);
+      totalBytes += chunkBuffer.length;
 
       if (totalBytes > MAX_CHAT_IMAGE_BYTES) {
         callback(new Error("Imagem excede o limite de 10 MB"));
         return;
       }
 
-      callback(null, chunk);
+      if (signatureBytes < IMAGE_SIGNATURE_BYTES) {
+        const bytesToCapture = Math.min(
+          IMAGE_SIGNATURE_BYTES - signatureBytes,
+          chunkBuffer.length,
+        );
+        signatureChunks.push(chunkBuffer.subarray(0, bytesToCapture));
+        signatureBytes += bytesToCapture;
+      }
+
+      callback(null, chunkBuffer);
+    },
+    flush(callback) {
+      const signature = Buffer.concat(signatureChunks, signatureBytes);
+      if (!hasValidImageSignature(mimetype, signature)) {
+        callback(
+          new Error("Conteúdo de imagem não corresponde ao MIME informado"),
+        );
+        return;
+      }
+
+      callback();
     },
   });
 
@@ -68,18 +89,19 @@ export async function saveFile(file: any, folder: string): Promise<string> {
   return filename;
 }
 
+/**
+ * Persiste um buffer de imagem já recebido pela aplicação interna.
+ * O nome original nunca é utilizado no caminho público; o arquivo recebe um
+ * UUID e é salvo no mesmo diretório usado pelo servidor estático.
+ */
 export async function saveBufferedImage(
   file: { buffer?: Buffer; mimetype?: string },
   folder: string,
 ): Promise<string> {
-  if (!file?.buffer || !Buffer.isBuffer(file.buffer)) {
-    throw new Error("Buffer de imagem inválido");
-  }
+  validateImageBuffer(file?.mimetype, file?.buffer);
+  const extension = validateImageUploadMetadata(file.mimetype);
 
-  const mimetype = String(file.mimetype || "").toLowerCase();
-  const extension = getImageExtension(mimetype);
-
-  if (file.buffer.length === 0 || file.buffer.length > MAX_CHAT_IMAGE_BYTES) {
+  if (file.buffer.length > MAX_CHAT_IMAGE_BYTES) {
     throw new Error("Imagem vazia ou maior que 10 MB");
   }
 
@@ -91,19 +113,3 @@ export async function saveBufferedImage(
 
   return filename;
 }
-
-/**
- * Persiste um buffer de imagem já recebido pela aplicação interna.
- * O nome original nunca é utilizado no caminho público; o arquivo recebe um
- * UUID e é salvo no mesmo diretório usado pelo servidor estático.
- */
-
-/**
- * Persiste somente imagens recebidas pelo multipart do chat web.
- *
- * O nome original do upload não é reutilizado: um UUID reduz colisões,
- * impede traversal por nome de arquivo e evita que nomes controlados pelo
- * cliente sejam usados diretamente no caminho público. O limite específico
- * do chat é menor que o limite multipart global da API para reduzir abuso de
- * memória, armazenamento e tráfego.
- */

@@ -104,7 +104,10 @@ export async function chatWebController(fastify: FastifyInstance) {
         const message = error instanceof Error ? error.message : "";
         const isClientError =
           message.includes("Tipo de imagem") ||
+          message.includes("Extensão de imagem") ||
+          message.includes("Conteúdo de imagem") ||
           message.includes("Imagem excede") ||
+          message.includes("Imagem vazia") ||
           message.includes("multipart");
 
         return reply.code(isClientError ? 400 : 500).send({

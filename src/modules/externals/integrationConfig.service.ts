@@ -127,6 +127,45 @@ export class IntegracaoService {
     return this.sanitizeIntegrationConfig(config);
   }
 
+  async updateIntegrationConfigById(
+    id: string,
+    integrationName: string,
+    settings: IntegrationSettings,
+    clientId: string | null = null,
+    isActive = true,
+  ) {
+    this.validateRequiredField("integracaoId", id);
+    this.validateRequiredField("integrationName", integrationName);
+
+    if (typeof settings === "string") {
+      settings = JSON.parse(settings);
+    }
+    if (!settings || typeof settings !== "object") {
+      throw new AppError("JSON_INVALID", 400);
+    }
+
+    const existingConfig =
+      await this.integrationConfigRepository.findIntegracaoConfig({ id });
+    if (!existingConfig) {
+      throw new AppError("Configuração de integração não encontrada", 404);
+    }
+
+    const encryptedSettings = this.encryptSensitiveFields(
+      settings,
+      existingConfig.settings,
+    );
+    const config = await this.integrationConfigRepository.updateById(id, {
+      integrationName,
+      clientId,
+      settings: encryptedSettings as unknown as Prisma.InputJsonValue,
+      isActive,
+    });
+
+    return this.sanitizeIntegrationConfig(config);
+  }
+
+  // Atualiza o registro indicado pelo path e devolve somente a forma
+  // administrativa sanitizada, sem expor os valores descriptografados.
   async deleteIntegrationService(id: string) {
     return await this.integrationConfigRepository.deteleIntegracao(id);
   }

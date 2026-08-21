@@ -1,4 +1,9 @@
 import { Prisma } from "@prisma/client";
+import type {
+  AiPromptCreateData,
+  AiPromptUpdateData,
+  FlowWriteData,
+} from "./flow.security.js";
 import { FlowsRepository } from "./flow.repository.js";
 
 export class FlowsService {
@@ -15,7 +20,7 @@ export class FlowsService {
   async findFirst() {
     return await this.flowsRepository.findFirst();
   }
-  async createOrUpdate(data: Prisma.flowsCreateInput) {
+  async createOrUpdate(data: FlowWriteData) {
     return await this.flowsRepository.createOrUpdate(data);
   }
 
@@ -41,13 +46,19 @@ export class FlowsService {
   async listAiPrompt() {
     return await this.flowsRepository.listAIPromptRepo();
   }
-  async createAiPrompt(data: any) {
+  async createAiPrompt(data: AiPromptCreateData) {
     return await this.flowsRepository.createAiPrompt(data);
   }
-  async updateAiPrompt(id: string, data: any) {
+  async updateAiPrompt(id: string, data: AiPromptUpdateData) {
     return await this.flowsRepository.updateAiPrompt(id, data);
   }
   async deleteAiPrompt(id: string) {
     return await this.flowsRepository.delteAiPrompt(id);
   }
 }
+
+/**
+ * O service recebe somente DTOs produzidos pelos parsers da camada HTTP para
+ * as operações administrativas; os tipos Prisma continuam reservados ao
+ * estado interno de execução dos flows.
+ */

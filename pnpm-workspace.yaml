@@ -4,14 +4,17 @@ onlyBuiltDependencies:
 
 overrides:
   basic-ftp: 5.3.1
-  ip-address: 10.5.0
-  engine.io: 6.6.9
-  form-data: 4.0.6
-  js-yaml: 4.3.1
-  fast-uri: 3.1.5
+  brace-expansion@^1.1.0: 1.1.18
+  brace-expansion@^5.0.0: 5.0.9
   deepmerge-ts: 8.0.2
+  engine.io: 6.6.9
   esbuild: 0.28.2
+  fast-uri: 3.1.5
+  form-data: 4.0.6
+  ip-address: 10.5.0
+  js-yaml: 4.3.1
   socket.io-parser: 4.2.7
   ws: 8.21.3
-  "brace-expansion@^1.1.0": 1.1.18
-  "brace-expansion@^5.0.0": 5.0.9
+
+patchedDependencies:
+  extract-zip@2.0.1: patches/extract-zip@2.0.1.patch

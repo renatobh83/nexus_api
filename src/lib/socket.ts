@@ -4,11 +4,11 @@ import { HandleMessageChatWeb } from "../modules/chatWeb/helpers/HandleMessageCh
 import {
   AuthClaims,
   extractBearerToken,
-  getClaimRole,
   getClaimSubject,
   verifyChatToken,
   verifyUserToken,
 } from "../modules/auth/jwt.js";
+import { canAccessTicket } from "../modules/auth/authorization.js";
 import { TicketsRepository } from "../modules/tickets/tickets.repository.js";
 import { getAllowedCorsOrigins } from "../config/cors.js";
 
@@ -16,7 +16,6 @@ let io: SocketIOServer | null = null;
 let waitForInitPromise: Promise<SocketIOServer> | null = null;
 
 const ticketsRepository = new TicketsRepository();
-const staffRoles = new Set(["administrador", "atendente"]);
 
 function getSocketToken(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
@@ -58,18 +57,15 @@ async function canJoinTicket(
   claims: AuthClaims,
   ticketId: number,
 ): Promise<boolean> {
-  const role = getClaimRole(claims);
-
-  if (role && staffRoles.has(role.toLowerCase())) {
-    return true;
-  }
-
-  const subject = getClaimSubject(claims);
-  if (!subject) return false;
-
   const ticket = await ticketsRepository.findTicket({ id: ticketId });
-  return Boolean(ticket?.userId && String(ticket.userId) === subject);
+  return canAccessTicket(claims, ticket);
 }
+
+/**
+ * A sala só é liberada depois que o ticket é consultado no servidor e passa
+ * pela mesma política usada pelos endpoints HTTP. Assim, o papel do usuário
+ * não concede acesso irrestrito a tickets fora da fila ou de outro atendente.
+ */
 
 export const initSocket = (server: Server): SocketIOServer => {
   if (io) return io;

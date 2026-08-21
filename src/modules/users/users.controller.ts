@@ -1,34 +1,71 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { AppError } from "../../utils/AppError.js";
+import {
+  parseUserEmail,
+  parseUserId,
+  parseUserWriteData,
+  toPublicUser,
+} from "./users.security.js";
 import { UsersService } from "./users.service.js";
+
 const usersService = new UsersService();
 
+interface UserParams {
+  userId?: unknown;
+  email?: unknown;
+}
+
+/**
+ * Registra os endpoints administrativos de usuários com validação explícita
+ * dos identificadores e dos campos que podem ser persistidos.
+ */
 export async function usersController(fastify: FastifyInstance) {
-  fastify.get("/", async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.get("/", async (_request: FastifyRequest, reply: FastifyReply) => {
     const users = await usersService.loadUsers();
-    reply.status(200).send(users);
+    reply.status(200).send(users.map(toPublicUser));
   });
+
   fastify.post("/", async (request: FastifyRequest, reply: FastifyReply) => {
-    const { id, status, ...userData } = request.body as any;
+    const userData = parseUserWriteData(request.body, "create");
+
+    if (!userData) {
+      throw new AppError("Dados de usuário inválidos", 400);
+    }
 
     const user = await usersService.createUser(userData);
-    reply.status(200).send(user);
+    reply.status(200).send(toPublicUser(user));
   });
+
   fastify.get(
     "/:email",
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const { email } = request.params as any;
+      const email = parseUserEmail((request.params as UserParams).email);
+
+      if (!email) {
+        throw new AppError("Email de usuário inválido", 400);
+      }
+
       const user = await usersService.findByEmail(email);
-      reply.status(200).send(user);
+      reply.status(200).send(user ? toPublicUser(user) : null);
     },
   );
+
   fastify.put(
     "/:userId",
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const { userId } = request.params as any;
-      const userData = request.body as any;
+      const userId = parseUserId((request.params as UserParams).userId);
+      const userData = parseUserWriteData(request.body, "update");
+
+      if (!userId) {
+        throw new AppError("ID de usuário inválido", 400);
+      }
+
+      if (!userData) {
+        throw new AppError("Dados de usuário inválidos", 400);
+      }
 
       const user = await usersService.updateUser(userId, userData);
-      reply.status(200).send(user);
+      reply.status(200).send(toPublicUser(user));
     },
   );
 }

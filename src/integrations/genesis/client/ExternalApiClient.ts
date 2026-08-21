@@ -1,5 +1,13 @@
 import { Redis } from "ioredis";
 import { redisConnection } from "../../../config/redisConnection.js";
+import {
+  limitResponseStream,
+  normalizeExternalBaseUrl,
+  normalizeMaxResponseBytes,
+  parseAllowedHosts,
+  readResponseBodyWithLimit,
+} from "./externalApi.security.js";
+
 const DEFAULT_EXTERNAL_API_TIMEOUT_MS = 30_000;
 const MAX_EXTERNAL_API_TIMEOUT_MS = 120_000;
 
@@ -21,6 +29,9 @@ export interface ExternalApiConfig {
   password: string;
   tokenTTLSeconds?: number; // padrão: 55min
   requestTimeoutMs?: number;
+  maxResponseBytes?: number;
+  allowedHosts?: readonly string[];
+  allowPrivateNetworks?: boolean;
 }
 
 export interface ExternalApiTokenStore {
@@ -34,15 +45,29 @@ type UnauthorizedResult = {
 };
 
 export class ExternalApiClient {
+  private readonly config: ExternalApiConfig;
   private redis: ExternalApiTokenStore;
   private cacheKey: string;
   private tokenTTL: number;
   private requestTimeoutMs: number;
+  private maxResponseBytes: number;
 
-  constructor(
-    private config: ExternalApiConfig,
-    redis?: ExternalApiTokenStore,
-  ) {
+  constructor(config: ExternalApiConfig, redis?: ExternalApiTokenStore) {
+    const allowedHosts =
+      config.allowedHosts ??
+      parseAllowedHosts(process.env.GENESIS_ALLOWED_HOSTS);
+    const allowPrivateNetworks =
+      config.allowPrivateNetworks ??
+      process.env.GENESIS_ALLOW_PRIVATE_NETWORKS === "true";
+
+    this.config = {
+      ...config,
+      baseUrl: normalizeExternalBaseUrl(config.baseUrl, {
+        allowedHosts,
+        allowPrivateNetworks,
+      }),
+    };
+
     const redisClient = redis ?? new Redis(redisConnection);
     if (redisClient instanceof Redis) {
       redisClient.on("error", (error) => {
@@ -54,9 +79,12 @@ export class ExternalApiClient {
 
     this.redis = redisClient;
     // chave única por baseUrl — suporta múltiplas integrações
-    this.cacheKey = `external_api_token:${Buffer.from(config.baseUrl).toString("base64")}`;
-    this.tokenTTL = config.tokenTTLSeconds ?? 3300; // 55 minutos
-    this.requestTimeoutMs = normalizeTimeout(config.requestTimeoutMs);
+    this.cacheKey = `external_api_token:${Buffer.from(this.config.baseUrl).toString("base64")}`;
+    this.tokenTTL = this.config.tokenTTLSeconds ?? 3300; // 55 minutos
+    this.requestTimeoutMs = normalizeTimeout(this.config.requestTimeoutMs);
+    this.maxResponseBytes = normalizeMaxResponseBytes(
+      this.config.maxResponseBytes ?? process.env.GENESIS_MAX_RESPONSE_BYTES,
+    );
   }
 
   // ── Controle de timeout ───────────────────────────────────────────────────
@@ -111,6 +139,7 @@ export class ExternalApiClient {
     const token = await this.withTimeout(
       "POST doFuncionarioLogin",
       async (signal) => {
+        const operation = "POST doFuncionarioLogin";
         const response = await fetch(
           `${this.config.baseUrl}doFuncionarioLogin`,
           {
@@ -130,7 +159,15 @@ export class ExternalApiClient {
           );
         }
 
-        const data = (await response.json()) as Array<{ ds_token?: unknown }>;
+        const data = JSON.parse(
+          new TextDecoder().decode(
+            await readResponseBodyWithLimit(
+              response,
+              this.maxResponseBytes,
+              operation,
+            ),
+          ),
+        ) as Array<{ ds_token?: unknown }>;
         const receivedToken = data?.[0]?.ds_token;
         if (typeof receivedToken !== "string" || receivedToken.length === 0) {
           throw new Error("Login falhou: resposta sem token válido");
@@ -152,7 +189,8 @@ export class ExternalApiClient {
    * Monta a URL final mantendo o tratamento legado do caminho `se1`.
    */
   private buildUrl(path: string, stripSe1?: boolean): string {
-    const fullPath = `${this.config.baseUrl}${path}`;
+    const normalizedPath = path.replace(/^\/+/, "");
+    const fullPath = `${this.config.baseUrl}${normalizedPath}`;
     return stripSe1
       ? fullPath.replace("testeportal/dwserver_30910.fcgi/se1/", "")
       : fullPath;
@@ -202,17 +240,39 @@ export class ExternalApiClient {
         }
 
         if (!response.ok) {
+          const errorBody = await readResponseBodyWithLimit(
+            response,
+            this.maxResponseBytes,
+            `${method} ${path}`,
+          );
           throw new Error(
-            `[${method} ${path}] ${response.status}: ${await response.text()}`,
+            `[${method} ${path}] ${response.status}: ${new TextDecoder().decode(errorBody)}`,
           );
         }
         if (options?.responseType === "arrayBuffer") {
-          return response.arrayBuffer() as Promise<T>;
+          const responseBody = await readResponseBodyWithLimit(
+            response,
+            this.maxResponseBytes,
+            `${method} ${path}`,
+          );
+          return responseBody.buffer.slice(
+            responseBody.byteOffset,
+            responseBody.byteOffset + responseBody.byteLength,
+          ) as T;
         }
         if (options?.responseType === "stream") {
-          return response.body as unknown as T;
+          return limitResponseStream(
+            response,
+            this.maxResponseBytes,
+            `${method} ${path}`,
+          ) as unknown as T;
         }
-        return response.json() as Promise<T>;
+        const responseBody = await readResponseBodyWithLimit(
+          response,
+          this.maxResponseBytes,
+          `${method} ${path}`,
+        );
+        return JSON.parse(new TextDecoder().decode(responseBody)) as T;
       },
     );
 
