@@ -1,0 +1,109 @@
+diff --git a/index.js b/index.js
+index 23384ea16bb848616886f356d8d69f94325535bf..46b59ec1fb15455d63759acb95b0057604cb3005 100644
+--- a/index.js
++++ b/index.js
+@@ -1,7 +1,6 @@
+ const debug = require('debug')('extract-zip')
+ // eslint-disable-next-line node/no-unsupported-features/node-builtins
+ const { createWriteStream, promises: fs } = require('fs')
+-const getStream = require('get-stream')
+ const path = require('path')
+ const { promisify } = require('util')
+ const stream = require('stream')
+@@ -10,6 +9,36 @@ const yauzl = require('yauzl')
+ const openZip = promisify(yauzl.open)
+ const pipeline = promisify(stream.pipeline)
+ 
++function resolveEntryPath (root, entryName) {
++  if (typeof entryName !== 'string' || !entryName || entryName.includes('\\0')) {
++    throw new Error('Invalid zip entry path')
++  }
++
++  // ZIP entries use '/', but normalizing backslashes also protects extraction
++  // when the same archive is processed on Windows.
++  const normalizedName = entryName.replace(/\\/g, '/')
++  const hasWindowsDrivePrefix =
++    normalizedName.length >= 3 &&
++    /^[a-zA-Z]:/.test(normalizedName) &&
++    normalizedName[2] === '/'
++  if (normalizedName.startsWith('/') || hasWindowsDrivePrefix) {
++    throw new Error(`Absolute path "${entryName}" is not allowed in zip entries`)
++  }
++
++  const destination = path.resolve(root, normalizedName)
++  const relativeDestination = path.relative(root, destination)
++  if (
++    !relativeDestination ||
++    relativeDestination === '..' ||
++    relativeDestination.startsWith(`..${path.sep}`) ||
++    path.isAbsolute(relativeDestination)
++  ) {
++    throw new Error(`Out of bound path "${entryName}" found in zip entry`)
++  }
++
++  return destination
++}
++
+ class Extractor {
+   constructor (zipPath, opts) {
+     this.zipPath = zipPath
+@@ -50,15 +79,20 @@ class Extractor {
+           return
+         }
+ 
+-        const destDir = path.dirname(path.join(this.opts.dir, entry.fileName))
+-
++        let destDir
+         try {
++          const destination = resolveEntryPath(this.opts.dir, entry.fileName)
++          destDir = path.dirname(destination)
+           await fs.mkdir(destDir, { recursive: true })
+ 
+           const canonicalDestDir = await fs.realpath(destDir)
+           const relativeDestDir = path.relative(this.opts.dir, canonicalDestDir)
+ 
+-          if (relativeDestDir.split(path.sep).includes('..')) {
++          if (
++            relativeDestDir === '..' ||
++            relativeDestDir.startsWith(`..${path.sep}`) ||
++            path.isAbsolute(relativeDestDir)
++          ) {
+             throw new Error(`Out of bound path "${canonicalDestDir}" found while processing file ${entry.fileName}`)
+           }
+ 
+@@ -85,7 +119,7 @@ class Extractor {
+       this.opts.onEntry(entry, this.zipfile)
+     }
+ 
+-    const dest = path.join(this.opts.dir, entry.fileName)
++    const dest = resolveEntryPath(this.opts.dir, entry.fileName)
+ 
+     // convert external file attr int into a fs stat mode int
+     const mode = (entry.externalFileAttributes >> 16) & 0xFFFF
+@@ -106,6 +140,10 @@ class Extractor {
+     const madeBy = entry.versionMadeBy >> 8
+     if (!isDir) isDir = (madeBy === 0 && entry.externalFileAttributes === 16)
+ 
++    if (symlink) {
++      throw new Error(`Symlink entry "${entry.fileName}" is not allowed`)
++    }
++
+     debug('extracting entry', { filename: entry.fileName, isDir: isDir, isSymlink: symlink })
+ 
+     const procMode = this.getExtractedMode(mode, isDir) & 0o777
+@@ -123,14 +161,7 @@ class Extractor {
+ 
+     debug('opening read stream', dest)
+     const readStream = await promisify(this.zipfile.openReadStream.bind(this.zipfile))(entry)
+-
+-    if (symlink) {
+-      const link = await getStream(readStream)
+-      debug('creating symlink', link, dest)
+-      await fs.symlink(link, dest)
+-    } else {
+-      await pipeline(readStream, createWriteStream(dest, { mode: procMode }))
+-    }
++    await pipeline(readStream, createWriteStream(dest, { mode: procMode }))
+   }
+ 
+   getExtractedMode (entryMode, isDir) {
