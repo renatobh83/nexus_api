@@ -6,7 +6,7 @@ WORKDIR /app
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-
+COPY patches ./patches
 RUN corepack enable && pnpm install --frozen-lockfile
 
 COPY . .
