@@ -1,7 +1,6 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { AuthService } from "./auth.service.js";
-import jwt from "jsonwebtoken";
-const SECRET = process.env.JWT_SECRET as string;
+import { signUserToken, verifyUserToken } from "./jwt.js";
 const authService = new AuthService();
 export async function authController(fastify: FastifyInstance) {
   fastify.post(
@@ -11,16 +10,15 @@ export async function authController(fastify: FastifyInstance) {
 
       const user = await authService.login(email, password);
 
-      const token = jwt.sign(
-        {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          profile: user.role,
-        },
-        SECRET,
-        { expiresIn: "7d" },
-      );
+      const token = signUserToken({
+        sub: String(user.id),
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        profile: user.role,
+        type: "user",
+      });
 
       reply.status(200).send({
         success: true,
@@ -35,8 +33,14 @@ export async function authController(fastify: FastifyInstance) {
   );
   fastify.post(
     "/logout",
+    { preHandler: fastify.authenticate },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const { email } = request.body as any;
+      const email = request.user?.email;
+
+      if (!email) {
+        return reply.code(401).send({ message: "Invalid authenticated user" });
+      }
+
       const user = await authService.logout(email);
       reply.status(200).send({
         sucess: true,
@@ -52,8 +56,12 @@ export async function authController(fastify: FastifyInstance) {
       if (!token) {
         return reply.send({ valid: false });
       }
-      const decoded = jwt.verify(token, SECRET);
-      reply.send({ valid: true, user: decoded }).status(200);
+      try {
+        const decoded = verifyUserToken(token);
+        return reply.status(200).send({ valid: true, user: decoded });
+      } catch {
+        return reply.status(200).send({ valid: false });
+      }
     },
   );
   // fastify.get(

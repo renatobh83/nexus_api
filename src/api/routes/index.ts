@@ -25,18 +25,29 @@ async function apiV1Routes(fastify: FastifyInstance) {
   // fastify.register(integrationController, { prefix: "/apiext" });
 
   fastify.register(authController, { prefix: "/auth" });
-  fastify.register(apiExternalRoutes)
-  fastify.register(wppSessionRoutes);
+  fastify.register(apiExternalRoutes);
 
   fastify.register(async (privateScope) => {
     privateScope.addHook("preHandler", fastify.authenticate);
-    privateScope.register(channelController, { prefix: "/channel" });
-    privateScope.register(messagesController, { prefix: "/messages" });
-    privateScope.register(ticketController, { prefix: "/tickets" });
-    privateScope.register(integrationController, { prefix: "/external" });
-    privateScope.register(usersController, { prefix: "/users" });
-    privateScope.register(flowController, { prefix: "/flows" });
-    privateScope.register(serviceHoursRoutes, { prefix: "/service-hours" });
+
+    privateScope.register(async (staffScope) => {
+      staffScope.addHook(
+        "preHandler",
+        fastify.authorizeRoles("administrador", "atendente"),
+      );
+      staffScope.register(channelController, { prefix: "/channel" });
+      staffScope.register(messagesController, { prefix: "/messages" });
+      staffScope.register(ticketController, { prefix: "/tickets" });
+    });
+
+    privateScope.register(async (adminScope) => {
+      adminScope.addHook("preHandler", fastify.authorizeRoles("administrador"));
+      adminScope.register(integrationController, { prefix: "/external" });
+      adminScope.register(usersController, { prefix: "/users" });
+      adminScope.register(flowController, { prefix: "/flows" });
+      adminScope.register(serviceHoursRoutes, { prefix: "/service-hours" });
+      adminScope.register(wppSessionRoutes);
+    });
   });
 }
 

@@ -1,20 +1,22 @@
 import fastify, {
-  FastifyError,
   FastifyInstance,
   FastifyReply,
   FastifyRequest,
 } from "fastify";
 import { Server as SocketIOServer } from "socket.io";
 import { prisma } from "../lib/prisma.js";
-import jwt from "jsonwebtoken";
+import {
+  AuthClaims,
+  extractBearerToken,
+  verifyChatToken,
+  verifyUserToken,
+} from "../modules/auth/jwt.js";
 import { ChannelManager } from "../modules/channels/ChannelManager.js";
 
 import routes from "./routes/index.js";
 import fastifyModule from "./plugins/fastifyModules.js";
 import { initSocket } from "../lib/socket.js";
 import { errorHandler } from "../utils/errorHandler.js";
-
-const SECRET = process.env.JWT_SECRET as string;
 
 let io: SocketIOServer | null = null;
 
@@ -25,8 +27,18 @@ declare module "fastify" {
   }
   interface FastifyRequest {
     apiKey?: string;
+    user?: AuthClaims;
+    chatUser?: AuthClaims;
+    isInternalFlow?: boolean;
   }
   interface FastifyInstance {
+    authenticateChat: (
+      request: FastifyRequest,
+      reply: FastifyReply,
+    ) => Promise<void>;
+    authorizeRoles: (
+      ...roles: string[]
+    ) => (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
     verifyApiKey: (
       request: FastifyRequest,
       reply: FastifyReply,
@@ -62,51 +74,67 @@ async function buildServer(): Promise<FastifyInstance> {
   });
 
   await server.register(fastifyModule);
-  
+
   server.decorate(
-    "authenticate",
+    "authorizeRoles",
+    (...allowedRoles: string[]) =>
+      async function (request: FastifyRequest, reply: FastifyReply) {
+        const role = request.user?.role ?? request.user?.profile;
+        const normalizedRole = role?.toLowerCase();
+        const normalizedAllowedRoles = allowedRoles.map((item) =>
+          item.toLowerCase(),
+        );
+
+        if (
+          !normalizedRole ||
+          !normalizedAllowedRoles.includes(normalizedRole)
+        ) {
+          return reply.code(403).send({
+            message: "Insufficient permissions",
+          });
+        }
+      },
+  );
+
+  server.decorate(
+    "authenticateChat",
     async function (request: FastifyRequest, reply: FastifyReply) {
-      const auth = request.headers.authorization;
-
-      let token: string | undefined;
-
-      if (auth?.startsWith("Bearer ")) {
-        token = auth.replace("Bearer ", "");
-      }
+      const token = extractBearerToken(request.headers.authorization);
 
       if (!token) {
         return reply.code(401).send({ message: "Not authenticated" });
       }
+
       try {
-        const decoded = jwt.verify(token, SECRET) as any;
-
-        // marca a request como chamada interna do flow, se aplicável
-        if (
-          decoded?.service === "flow-executor" &&
-          decoded?.role === "internal"
-        ) {
-          (request as any).isInternalFlow = true;
-        }
-
-        (request as any).user = decoded; // se você já usa isso em outras rotas
-      } catch (err) {
+        request.chatUser = verifyChatToken(token);
+      } catch (error) {
+        request.log.warn({ error }, "Token de chat inválido");
         return reply.code(401).send({ message: "Invalid token" });
       }
-      // jwt.verify(token, SECRET);
     },
   );
-  server.setErrorHandler(
-    (error: FastifyError, request: FastifyRequest, reply: FastifyReply) => {
-      request.log.error(error);
 
-      if (error.code === "FST_CORS_ERROR") {
-        return reply.status(400).send({ error: "CORS não permitido" });
+  server.decorate(
+    "authenticate",
+    async function (request: FastifyRequest, reply: FastifyReply) {
+      const token = extractBearerToken(request.headers.authorization);
+
+      if (!token) {
+        return reply.code(401).send({ message: "Not authenticated" });
       }
 
-      // Resposta padrão para outros erros
-      return reply.status(error.statusCode || 500).send({
-        error: error.message || "Erro interno no servidor",
-      });
+      try {
+        const claims = verifyUserToken(token);
+
+        if (claims.service === "flow-executor" && claims.role === "internal") {
+          request.isInternalFlow = true;
+        }
+
+        request.user = claims;
+      } catch (error) {
+        request.log.warn({ error }, "Token Bearer inválido");
+        return reply.code(401).send({ message: "Invalid token" });
+      }
     },
   );
   await server.register(routes);
@@ -149,7 +177,7 @@ async function buildServer(): Promise<FastifyInstance> {
  */
 export async function start() {
   const app = await buildServer();
-  
+
   //   const flowServiceToken = jwt.sign(
   //     { service: "flow-executor", role: "internal" },
 

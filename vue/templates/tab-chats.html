@@ -88,7 +88,7 @@
 
           <div v-else>
             <div v-show="msg.isGroupMsg" class="sender" v-html="msg.sender"></div>
-            
+
             <message-media :msg="msg"></message-media>
           </div>
 
@@ -112,7 +112,7 @@
         <div class="message-wrapper sent" :data-temp="message.id">
           <div class="message-bubble" style="opacity: 0.7;">
             <div class="message-body">
-              <img v-if="message.mediaUrl" :src="message.mediaUrl" crossorigin="anonymous" alt="Imagem"
+              <img v-if="message.mediaUrl" :src="message.mediaUrl" alt="Imagem"
                 style="max-width: 250px; max-height: 250px; border-radius: 6px; cursor: pointer;" />
               <div v-if="message.body" style="margin-top: 6px;" v-html="formatMessage(message.body)"></div>
             </div>

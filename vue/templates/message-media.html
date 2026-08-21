@@ -1,19 +1,19 @@
 <template v-if="['image','image/png','jpg','image/jpeg','png','imageMessage','image/webp'].includes(msg.mediaType)">
-  <img :src="getMediaUrl(msg.mediaUrl)" crossorigin="anonymous" alt="Imagem"
+  <img :src="getMediaUrl(msg.mediaUrl)" alt="Imagem"
     style="max-width: 250px; max-height: 250px; border-radius: 6px; cursor: pointer;"
     @click="openInNewTab(getMediaUrl(msg.mediaUrl))" />
   <div v-if="msg.body" style="margin-top: 6px;" v-html="formatMessage(msg.body)"></div>
 </template>
 
 <template v-else-if="['video','videoMessage','video/mp4'].includes(msg.mediaType)">
-  <video controls style="max-width: 250px; border-radius: 6px;" crossorigin="anonymous">
+  <video controls style="max-width: 250px; border-radius: 6px;">
     <source :src="getMediaUrl(msg.mediaUrl)">
   </video>
   <div v-if="msg.body" style="margin-top: 6px;" v-html="formatMessage(msg.body)"></div>
 </template>
 
 <template v-else-if="['audio','audioMessage','audio/ogg; codecs=opus'].includes(msg.mediaType)">
-  <audio controls style="width: 250px;" crossorigin="anonymous">
+  <audio controls style="width: 250px;">
     <source :src="getMediaUrl(msg.mediaUrl)">
   </audio>
   <div v-if="msg.body" style="margin-top: 6px;" v-html="formatMessage(msg.body)"></div>

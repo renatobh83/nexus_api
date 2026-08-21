@@ -6,13 +6,15 @@ import {
 } from "../../../lib/socket.js";
 import { TicketService } from "../../tickets/tickets.service.js";
 import { v4 as uuidV4 } from "uuid";
-import * as mime from "mime-types";
 import { ContactInternal } from "../../../providers/session.types.js";
 import {
   toInternalMessageChatWeb,
   toInternalSessionChatWeb,
 } from "../mappers/sessionAdapter.js";
 import { handleMessage } from "../../messages/handlers/handleMessage.js";
+import { buildPublicMediaUrl, getMediaBaseUrl } from "../../../config/media.js";
+import { PUBLIC_DIR } from "../../../config/env.js";
+import { saveBufferedImage } from "../../../utils/saveFile.js";
 
 export const SendMessageChatClient = async (
   messageData: any,
@@ -25,9 +27,23 @@ export const SendMessageChatClient = async (
 
   if (socket && socket.connected) {
     if (hasMedia) {
-      const extension = mime.extension(hasMedia.mimetype);
-      link = `${process.env.MEDIA_URL}/public/${hasMedia.filename}.${extension}`;
-      socket.emit("chat:image", { url: link });
+      // O buffer recebido pela aplicação ainda não está em `public`. Persistimos
+      // primeiro e somente depois enviamos a URL ao cliente web.
+      const filename = await saveBufferedImage(
+        {
+          buffer: hasMedia.buffer,
+          mimetype: hasMedia.mimetype,
+        },
+        PUBLIC_DIR,
+      );
+
+      link = buildPublicMediaUrl(filename, getMediaBaseUrl());
+      socket.emit("chat:image", {
+        url: link,
+        mediaUrl: link,
+        filename,
+        mediaType: hasMedia.mimetype,
+      });
     }
     socket.emit("chat:reply", messageData);
     const contato: ContactInternal = {
@@ -48,7 +64,7 @@ export const SendMessageChatClient = async (
       fromMe: true,
       socket: ticket.socketId,
       mediaUrl: hasMedia ? link : undefined,
-      mediaType: hasMedia.mimetype,
+      mediaType: hasMedia?.mimetype,
     };
     const messageInternal = await toInternalMessageChatWeb(toInternal);
     await handleMessage(messageInternal, sessionInternal, contato);

@@ -2,8 +2,9 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "../../lib/prisma.js";
 
 export class TicketsRepository {
-  async findAll() {
+  async findAll(where?: Prisma.TicketWhereInput) {
     return await prisma.ticket.findMany({
+      where,
       include: {
         messages: {
           orderBy: {

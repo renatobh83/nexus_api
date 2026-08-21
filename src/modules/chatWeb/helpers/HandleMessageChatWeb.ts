@@ -15,7 +15,7 @@ export const HandleMessageChatWeb = async (
   socket: Socket,
   payload: { name: string; email: string },
 ) => {
-  const channelId = (await channelService.findAll()).find(
+  const channelId = (await channelService.listaAllChannels()).find(
     (ch) => ch.type === "web",
   );
 

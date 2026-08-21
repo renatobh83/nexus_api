@@ -379,12 +379,15 @@ async function initApp() {
         });
 
         socket.on("new-message", async (message) => {
+          // Prisma expõe o campo como `ticketid`, mas algumas respostas
+          // intermediárias podem serializá-lo como string ou `ticketId`.
+          const messageTicketId = Number(message.ticketid ?? message.ticketId);
           const ticket = tickets.allTickets.value.find(
-            (t) => t.id === message.ticketid,
+            (t) => Number(t.id) === messageTicketId,
           );
 
           const ticketName =
-            ticket?.owner || ticket?.name || `Ticket ${message.ticketid}`;
+            ticket?.owner || ticket?.name || `Ticket ${messageTicketId}`;
           const isIncoming =
             !message.fromMe &&
             ticket &&
@@ -408,7 +411,10 @@ async function initApp() {
             ticket.lastMessageAt = message.createdAt;
           }
 
-          if (tickets.currentTicket.value?.id === message.ticketid) {
+          if (
+            tickets.currentTicket.value &&
+            Number(tickets.currentTicket.value.id) === messageTicketId
+          ) {
             await tickets.loadMessages(tickets.currentTicket.value.id);
           }
         });

@@ -22,6 +22,7 @@ export class ChannelService {
   async findChannel(id: number): Promise<Channel | null> {
     return await this.channelsRepository.findById(id);
   }
+
   async update(id: number, data: Prisma.ChannelUpdateInput): Promise<Channel> {
     try {
       const clientNamespace = getClientIONamespace();

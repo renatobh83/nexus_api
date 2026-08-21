@@ -10,6 +10,10 @@ import path from "node:path";
 import xss from "xss";
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { PUBLIC_DIR } from "../../config/env.js";
+import {
+  getAllowedCorsOrigins,
+  isAllowedCorsOrigin,
+} from "../../config/cors.js";
 
 const fastifyModule = fp(async (fastify: FastifyInstance) => {
   fastify.log.info(
@@ -32,23 +36,23 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
     xPoweredBy: false,
   });
 
-  // --- 2. CORS Configurado corretamente ---
-  const allowedOrigins = [
-    "http://127.0.0.1:3000",
-    "http://localhost:51333",
-    "https://atendimento.devrenato.com.br",
-    "https://nexus.devrenato.com.br",
-    "https://renatobh83.github.io",
-    "undefined",
-    "null",
-  ];
+  // --- 2. CORS configurado a partir do ambiente ---
+  const allowedOrigins = getAllowedCorsOrigins();
+
+  fastify.log.info({ allowedOrigins }, "Origens CORS HTTP autorizadas");
 
   await fastify.register(cors, {
     origin: (origin, cb) => {
-      // Importante: em desenvolvimento, origens null/undefined devem ser permitidas
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Requisições sem Origin, como chamadas internas e health checks, não são
+      // requisições cross-origin e não precisam de cabeçalho CORS.
+      if (!origin) {
         return cb(null, true);
       }
+
+      if (isAllowedCorsOrigin(origin)) {
+        return cb(null, true);
+      }
+
       return cb(new Error(`Not allowed by CORS: ${origin}`), false);
     },
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
@@ -66,8 +70,20 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
 
   // --- 3. Servidor de Arquivos Estáticos ---
   await fastify.register(fastifyStatic, {
-    root: path.join(PUBLIC_DIR),
+    root: path.resolve(PUBLIC_DIR),
     prefix: "/public",
+    setHeaders(response) {
+      // As mídias são recursos públicos do chat e precisam poder ser exibidas
+      // tanto pela aplicação interna quanto pelo widget hospedado em outra
+      // origem. A política global do Helmet continua restrita para os demais
+      // recursos da API.
+      response.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+      // O painel Vue usa outra origem e alguns elementos de mídia podem
+      // solicitar leitura CORS. Como esses arquivos são públicos, não há
+      // credencial de usuário envolvida nessa resposta.
+      response.setHeader("Access-Control-Allow-Origin", "*");
+      response.setHeader("Cache-Control", "public, max-age=3600");
+    },
   });
 
   // --- 4. Limitação de Requisições ---

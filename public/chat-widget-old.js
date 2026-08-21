@@ -69,53 +69,18 @@
     document.head.appendChild(style);
   }
 
-  const hostScript = document.currentScript;
-  const scriptConfig = hostScript?.dataset || {};
-  const runtimeConfig = window.NEXUS_CHAT_CONFIG || {};
-
-  function normalizeOrigin(value, fallback) {
-    try {
-      return new URL(value || fallback).origin;
-    } catch {
-      return new URL(fallback).origin;
-    }
-  }
-
-  const defaultOrigin = (() => {
-    try {
-      return hostScript
-        ? new URL(hostScript.src).origin
-        : window.location.origin;
-    } catch {
-      return window.location.origin;
-    }
-  })();
-
   const loadScript = (src, callback) => {
     const script = document.createElement("script");
     script.src = src;
     script.onload = callback;
-    script.onerror = () =>
-      console.error("Não foi possível carregar o Socket.IO");
     document.head.appendChild(script);
   };
 
-  loadScript("https://cdn.socket.io/4.8.3/socket.io.min.js", () => {
+  loadScript("https://cdn.socket.io/4.7.2/socket.io.min.js", () => {
     injectStyles();
 
-    const API_URL = normalizeOrigin(
-      scriptConfig.apiOrigin || runtimeConfig.apiOrigin,
-      defaultOrigin,
-    );
-    const SOCKET_ORIGIN = normalizeOrigin(
-      scriptConfig.socketOrigin || runtimeConfig.socketOrigin,
-      API_URL,
-    );
-    const MEDIA_ORIGIN = normalizeOrigin(
-      scriptConfig.mediaOrigin || runtimeConfig.mediaOrigin,
-      API_URL,
-    );
-    const URL_SOCKET = `${SOCKET_ORIGIN}/chat-web`;
+    const API_URL = "https://nexus.devrenato.com.br";
+    const URL_SOCKET = "https://nexus.devrenato.com.br/chat-web";
 
     let socket;
     let chatVisible = false;
@@ -313,7 +278,7 @@
       });
 
       socket.on("chat:image", (data) => {
-        appendImage(data?.url || data?.mediaUrl, Date.now(), true);
+        appendImage(data.url, Date.now(), true);
       });
 
       socket.on("chat:previousMessages", (messages) => {
@@ -326,8 +291,7 @@
           let el;
 
           if (msg.mediaType === "image") {
-            const link = normalizeMediaUrl(msg.mediaUrl);
-            if (!link) return;
+            const link = `${API_URL}/public/${msg.mediaUrl}`;
             el = createImageElement(link, timestamp, msg.fromMe, msg.id);
           } else {
             if (msg.fromMe) {
@@ -561,6 +525,7 @@
 
       const img = document.createElement("img");
       img.src = url;
+      img.crossOrigin = "anonymous";
       img.style.cssText =
         "max-width:100%;border-radius:8px;margin-top:8px;display:block;";
       img.alt = "Imagem enviada";
@@ -603,7 +568,7 @@
     async function uploadFile(file) {
       if (!file) return;
       const formData = new FormData();
-      formData.append("file", file, file.name || "imagem");
+      formData.append("file", file);
 
       try {
         const res = await fetch(`${API_URL}/api/v1/chatClient/upload`, {
@@ -611,49 +576,16 @@
           headers: { Authorization: `Bearer ${chatToken}` },
           body: formData,
         });
-        const data = await res.json().catch(() => ({}));
-
-        if (!res.ok) {
-          throw new Error(
-            data.message || data.error || `Upload falhou (${res.status})`,
-          );
+        const data = await res.json();
+        if (data.url) {
+          socket.emit("chat:message", { msg: "image", mediaUrl: data.url });
+          appendImage(data.url, Date.now(), "Você", false);
+        } else {
+          showToast("Erro ao enviar imagem.", "error");
         }
-
-        const mediaUrl = normalizeMediaUrl(data.mediaUrl || data.url);
-        if (!mediaUrl) {
-          throw new Error("URL de imagem inválida");
-        }
-
-        socket.emit("chat:message", { msg: "", mediaUrl });
-        appendImage(mediaUrl, Date.now(), false);
       } catch (err) {
         console.error("Erro no upload:", err);
-        showToast(err.message || "Erro ao enviar imagem.", "error");
-      }
-    }
-
-    function normalizeMediaUrl(value) {
-      if (typeof value !== "string" || !value.trim()) return null;
-
-      try {
-        const rawValue = value.trim();
-        const normalizedInput =
-          /^https?:\/\//i.test(rawValue) || rawValue.startsWith("/")
-            ? rawValue
-            : `/public/${encodeURIComponent(rawValue.replace(/^\/+/, ""))}`;
-        const url = new URL(normalizedInput, `${MEDIA_ORIGIN}/`);
-
-        if (
-          !["http:", "https:"].includes(url.protocol) ||
-          url.origin !== MEDIA_ORIGIN ||
-          !url.pathname.startsWith("/public/")
-        ) {
-          return null;
-        }
-
-        return url.toString();
-      } catch {
-        return null;
+        showToast("Erro ao enviar imagem.", "error");
       }
     }
 

@@ -1,72 +1,153 @@
-// src/lib/socket.ts
-import { Namespace, Server as SocketIOServer } from "socket.io";
-import { Server } from "http";
+import { Namespace, Server as SocketIOServer, ServerOptions } from "socket.io";
+import { Server } from "node:http";
 import { HandleMessageChatWeb } from "../modules/chatWeb/helpers/HandleMessageChatWeb.js";
+import {
+  AuthClaims,
+  extractBearerToken,
+  getClaimRole,
+  getClaimSubject,
+  verifyChatToken,
+  verifyUserToken,
+} from "../modules/auth/jwt.js";
+import { TicketsRepository } from "../modules/tickets/tickets.repository.js";
+import { getAllowedCorsOrigins } from "../config/cors.js";
 
-// src/lib/socket.ts
 let io: SocketIOServer | null = null;
 let waitForInitPromise: Promise<SocketIOServer> | null = null;
+
+const ticketsRepository = new TicketsRepository();
+const staffRoles = new Set(["administrador", "atendente"]);
+
+function getSocketToken(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const bearerToken = extractBearerToken(value);
+  if (bearerToken) return bearerToken;
+
+  const rawToken = value.trim();
+  return rawToken || undefined;
+}
+
+function authenticateNamespace(
+  namespace: ReturnType<SocketIOServer["of"]>,
+  verifier: (token: string) => AuthClaims,
+  validateClaims: (claims: AuthClaims) => boolean,
+): void {
+  namespace.use((socket, next) => {
+    const token = getSocketToken(socket.handshake.auth?.token);
+
+    if (!token) {
+      return next(new Error("invalid token"));
+    }
+
+    try {
+      const claims = verifier(token);
+
+      if (!validateClaims(claims)) {
+        return next(new Error("invalid token"));
+      }
+
+      socket.data.auth = claims;
+      return next();
+    } catch {
+      return next(new Error("invalid token"));
+    }
+  });
+}
+
+async function canJoinTicket(
+  claims: AuthClaims,
+  ticketId: number,
+): Promise<boolean> {
+  const role = getClaimRole(claims);
+
+  if (role && staffRoles.has(role.toLowerCase())) {
+    return true;
+  }
+
+  const subject = getClaimSubject(claims);
+  if (!subject) return false;
+
+  const ticket = await ticketsRepository.findTicket({ id: ticketId });
+  return Boolean(ticket?.userId && String(ticket.userId) === subject);
+}
 
 export const initSocket = (server: Server): SocketIOServer => {
   if (io) return io;
 
-  io = new SocketIOServer(server, {
-    cors: { origin: "*" },
-  });
+  const socketOptions: Partial<ServerOptions> = {
+    cors: {
+      origin: getAllowedCorsOrigins(),
+      credentials: true,
+    },
+  };
 
-  // --- NAMESPACE DO CLIENTE ---
-  // Aqui entram as conexões padrão do seu cliente
+  io = new SocketIOServer(server, socketOptions);
+
   const clientNamespace = io.of("/client");
+  authenticateNamespace(clientNamespace, verifyUserToken, (claims) =>
+    Boolean(getClaimSubject(claims)),
+  );
+
   clientNamespace.on("connection", (socket) => {
-    console.log("✅ Cliente conectado ao namespace /client:", socket.id);
-    const { token } = socket.handshake.auth;
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    const userId = payload.id; // Supondo que o ID do usuário está no toke
+    const claims = socket.data.auth as AuthClaims;
+    const userId = getClaimSubject(claims);
+
+    if (!userId) {
+      socket.disconnect(true);
+      return;
+    }
+
     socket.join(`user-${userId}`);
-    console.log(`👤 Usuário ${userId} entrou na sua sala pessoal.`);
 
-    socket.on("join-ticket", (ticketId) => {
-      const room = `ticket-${ticketId}`;
-      socket.join(room);
-      console.log(`🏠 Socket ${socket.id} entrou na sala: ${room}`);
+    socket.on("join-ticket", async (ticketId: unknown) => {
+      const parsedTicketId = Number(ticketId);
+
+      if (!Number.isInteger(parsedTicketId) || parsedTicketId <= 0) {
+        socket.emit("ticket-join-error", "Ticket inválido");
+        return;
+      }
+
+      try {
+        const allowed = await canJoinTicket(claims, parsedTicketId);
+        if (!allowed) {
+          socket.emit("ticket-join-error", "Acesso não autorizado");
+          return;
+        }
+
+        await socket.join(`ticket-${parsedTicketId}`);
+      } catch (error) {
+        socket.emit("ticket-join-error", "Não foi possível acessar o ticket");
+        socket.emit("socket-error", "Erro interno de autorização");
+        console.error("Erro ao autorizar sala de ticket", error);
+      }
     });
-    socket.on("leave-ticket", (ticketId) => {
-      socket.leave(`ticket-${ticketId}`);
-      console.log(`🚪 Socket saiu da sala: ticket-${ticketId}`);
-    });
-    socket.on("disconnect", () => {
-      console.log("❌ Cliente desconectado do namespace /client");
+
+    socket.on("leave-ticket", (ticketId: unknown) => {
+      const parsedTicketId = Number(ticketId);
+      if (Number.isInteger(parsedTicketId) && parsedTicketId > 0) {
+        void socket.leave(`ticket-${parsedTicketId}`);
+      }
     });
   });
-  // --- NAMESPACE DO CHAT WEB ---
-  // Aqui só entram conexões que pedirem explicitamente por "/chat-web"
+
   const chatNamespace = io.of("/chat-web");
+  authenticateNamespace(
+    chatNamespace,
+    verifyChatToken,
+    (claims) =>
+      claims.type === "chat-client" &&
+      claims.role === "guest" &&
+      typeof claims.email === "string" &&
+      typeof claims.name === "string",
+  );
+
   chatNamespace.on("connection", (socket) => {
-    const { token } = socket.handshake.auth;
-    const payload = JSON.parse(atob(token.split(".")[1]));
-
-    HandleMessageChatWeb(socket, payload);
-    console.log("✅ Chat Web conectado ao namespace /chat-web");
+    const claims = socket.data.auth as AuthClaims;
+    void HandleMessageChatWeb(socket, {
+      name: claims.name as string,
+      email: claims.email as string,
+    });
   });
-  // io.on("connection", (socket) => {
-  //   const { token } = socket.handshake.auth;
-  //   const payload = JSON.parse(atob(token.split(".")[1]));
-
-  //   const type = "type" in payload ? payload.type.toString() : "";
-  //   if (type === "chat-client") {
-  //     HandleMessageChatWeb(socket, payload);
-  //     return;
-  //   }
-  //   console.log("cliente conectado:", socket.id);
-  //   socket.on("join-ticket", (ticketId) => {
-  //     socket.join(`ticket-${ticketId}`);
-  //     console.log(`Cliente entrou na sala ticket-${ticketId}`);
-  //   });
-
-  //   socket.on("disconnect", () => {
-  //     console.log("cliente desconectado:", socket.id);
-  //   });
-  // });
 
   return io;
 };
@@ -78,18 +159,18 @@ export const waitForSocket = (): Promise<SocketIOServer> => {
 
   if (!waitForInitPromise) {
     waitForInitPromise = new Promise((resolve) => {
-      // Aguarda até 5 segundos pelo socket
       let attempts = 0;
       const interval = setInterval(() => {
         if (io) {
           clearInterval(interval);
           resolve(io);
+          return;
         }
+
         attempts++;
         if (attempts > 50) {
-          // 5 segundos
           clearInterval(interval);
-          console.warn("⚠️ Timeout aguardando Socket.IO");
+          console.warn("Socket.IO não inicializado dentro do prazo");
           resolve(null as any);
         }
       }, 100);
@@ -107,7 +188,6 @@ export const getIO = (): SocketIOServer => {
 };
 
 export const getClientIONamespace = (): Namespace => {
-  // Mude de SocketIOServer para Namespace
   if (!io) {
     throw new Error("Socket.IO não inicializado");
   }

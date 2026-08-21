@@ -22,8 +22,8 @@ export class TicketService {
   async findTickeWhitoutMessage(where: Prisma.TicketWhereInput) {
     return await this.ticketRepository.findTicket(where);
   }
-  async listTickets() {
-    const tickets = await this.ticketRepository.findAll();
+  async listTickets(where?: Prisma.TicketWhereInput) {
+    const tickets = await this.ticketRepository.findAll(where);
     return tickets;
   }
 

@@ -163,13 +163,41 @@ function useTickets({
   const loadMessages = async (ticketId) => {
     tempMessages.value = [];
     const ticket = allTickets.value.find((t) => t.id === ticketId);
-    if (ticket && ticket.messages) {
-      currentMessages.value = [...ticket.messages].sort(
+
+    try {
+      // O ticket pode ainda conter a lista antiga em memória quando o POST
+      // termina. Buscar o endpoint garante que mediaUrl e mediaType venham do
+      // registro persistido, e não do preview local (blob:).
+      const response = await fetch(`${URL_BASE}/api/v1/messages/${ticketId}`, {
+        headers: { Authorization: `Bearer ${token.value}` },
+      });
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const data = await response.json();
+      const messages = Array.isArray(data.messages)
+        ? data.messages
+        : Array.isArray(data)
+          ? data
+          : [];
+
+      // Mantém o cache na ordem original da API, usada pelo listener
+      // `new-message`; o computed `allMessages` ordena somente a renderização.
+      if (ticket) ticket.messages = [...messages];
+      currentMessages.value = [...messages].sort(
         (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
       );
-    } else {
-      currentMessages.value = [];
+    } catch (error) {
+      // Fallback para o cache existente se a consulta falhar; a tela continua
+      // utilizável e o próximo evento/atualização poderá sincronizar a lista.
+      console.error("Erro ao carregar mensagens do ticket:", error);
+      currentMessages.value = ticket?.messages
+        ? [...ticket.messages].sort(
+            (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+          )
+        : [];
     }
+
     await nextTick();
     scrollToBottom(ticketId);
   };
@@ -185,7 +213,7 @@ function useTickets({
     if (!currentTicket.value) return;
 
     loadingMessages.value = true;
-    loadMessages(ticketId);
+    await loadMessages(ticketId);
     loadingMessages.value = false;
     await nextTick();
     scrollToBottom();
@@ -339,9 +367,30 @@ function useTickets({
   const sendFiles = async () => {
     if (!currentTicket.value || selectedFiles.value.length === 0) return;
 
+    // Copia a fila antes de qualquer atualização reativa. O código anterior
+    // limpava selectedFiles dentro de um forEach assíncrono e perdia a
+    // referência necessária para limpar previews e tratar a resposta.
+    const filesToSend = [...selectedFiles.value];
     const formData = new FormData();
-    selectedFiles.value.forEach(async (item, idx) => {
-      if (item.caption) {
+    const temporaryMessages = filesToSend.map((item) => ({
+      id: "temp_" + Date.now() + "_" + Math.random(),
+      body: item.caption || item.name,
+      fromMe: true,
+      createdAt: new Date().toISOString(),
+      ack: 0,
+      mediaType: item.type.startsWith("image/")
+        ? "image"
+        : item.type.startsWith("video/")
+          ? "video"
+          : item.type.startsWith("audio/")
+            ? "audio"
+            : "document",
+      mediaUrl: item.preview,
+      isDeleted: false,
+    }));
+
+    filesToSend.forEach((item) => {
+      if (item.caption?.trim()) {
         formData.append(
           "body",
           assinarMensagem.value
@@ -349,29 +398,14 @@ function useTickets({
             : item.caption.trim(),
         );
       }
-      formData.append("files", item.file);
-      const temp = {
-        id: "temp_" + Date.now() + "_" + Math.random(),
-        body: item.caption || item.name,
-        fromMe: true,
-        createdAt: new Date().toISOString(),
-        ack: 0,
-        mediaType: item.type.startsWith("image/")
-          ? "image"
-          : item.type.startsWith("video/")
-            ? "video"
-            : item.type.startsWith("audio/")
-              ? "audio"
-              : "document",
-        mediaUrl: item.preview,
-        isDeleted: false,
-      };
-      tempMessages.value.push(temp);
-      selectedFiles.value = [];
-      newMessageText.value = "";
-      await nextTick();
-      scrollToBottom();
+      formData.append("files", item.file, item.name);
     });
+
+    tempMessages.value.push(...temporaryMessages);
+    selectedFiles.value = [];
+    newMessageText.value = "";
+    await nextTick();
+    scrollToBottom();
 
     try {
       const res = await fetch(
@@ -382,23 +416,49 @@ function useTickets({
           headers: { Authorization: `Bearer ${token.value}` },
         },
       );
-      if (res.ok) {
-        selectedFiles.value.forEach(
-          (f) => f.preview && URL.revokeObjectURL(f.preview),
-        );
-        await loadMessages(currentTicket.value.id);
-      } else {
-        alert("Erro ao enviar arquivos. Tente novamente.");
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
       }
-    } catch (err) {
-      console.log("Erro de rede ao enviar arquivos:", err);
-      alert("Erro de rede. Verifique sua conexão e tente novamente.");
+
+      filesToSend.forEach(
+        (item) => item.preview && URL.revokeObjectURL(item.preview),
+      );
+      tempMessages.value = tempMessages.value.filter(
+        (message) => !temporaryMessages.includes(message),
+      );
+
+      // Reconsulta a mensagem persistida. Assim o painel troca o blob: local
+      // pela URL /public/<uuid> criada pelo backend.
+      await loadMessages(currentTicket.value.id);
+    } catch (error) {
+      console.error("Erro ao enviar arquivos:", error);
+      // Restaura a fila para permitir nova tentativa sem perder os arquivos.
+      selectedFiles.value = filesToSend;
+      tempMessages.value = tempMessages.value.filter(
+        (message) => !temporaryMessages.includes(message),
+      );
+      alert("Erro ao enviar arquivos. Tente novamente.");
     }
   };
 
   // --- Helpers de mídia ---
 
-  const getMediaUrl = (mediaUrl) => `${URL_BASE}/public/${mediaUrl}`;
+  const getMediaUrl = (mediaUrl) => {
+    if (!mediaUrl) return "";
+
+    const value = String(mediaUrl).trim();
+    if (/^https?:\/\//i.test(value)) return value;
+
+    const baseUrl = String(URL_BASE || "").replace(/\/+$/, "");
+    if (!baseUrl) return "";
+
+    const publicPath = value.startsWith("/public/")
+      ? value
+      : `/public/${encodeURIComponent(value.replace(/^\/+/, ""))}`;
+
+    return `${baseUrl}${publicPath}`;
+  };
   const openInNewTab = (url) => window.open(url, "_blank");
   const getFileName = (body) => {
     if (!body) return "Documento";
