@@ -1,0 +1,29 @@
+services:
+  app:
+    build: .
+    container_name: nexus_api
+    expose:
+      - "3000"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/etc/timezone:/etc/timezone:ro"
+      - ".:/app"                    # bind mount do código do host
+      - "node_modules:/app/node_modules"  # protege node_modules do container
+      - "dist:/app/dist"            # idem para build output, se aplicável
+      - "public:/app/public"
+    networks:
+      aplicacao:
+        ipv4_address: 172.18.0.41
+networks:
+  aplicacao:
+    external: true
+volumes:
+  node_modules:
+  dist:
+  logs:
+  userDataDir:
+  public:
