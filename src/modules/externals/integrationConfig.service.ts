@@ -148,12 +148,24 @@ export class IntegracaoService {
   }
 
   async createTicketForIntegration(data: TicketCreateData) {
+    if (
+      typeof data.integrationSource !== "string" ||
+      data.integrationSource.trim().length === 0
+    ) {
+      throw new AppError(
+        "integrationSource é obrigatório para tickets de integração",
+        400,
+      );
+    }
+
+    const integrationSource = data.integrationSource.trim();
     const idExterno = this.toArray(data.metadata?.idExterno)
       .map(Number)
       .filter((n) => !isNaN(n));
 
     const findInput = {
       contato: data.contato as string,
+      integrationSource,
       metadata: {
         idexterno: idExterno.length ? idExterno : undefined,
         answered: false,
@@ -189,9 +201,17 @@ export class IntegracaoService {
     return await this.integrationConfigRepository.updateTicket(ticketId, data);
   }
 
-  async findTicketIntegrationn(contatoId: string) {
+  async findTicketIntegrationn(contatoId: string, integrationSource: string) {
+    if (!integrationSource.trim()) {
+      throw new AppError(
+        "integrationSource é obrigatório para localizar tickets de integração",
+        400,
+      );
+    }
+
     return await this.integrationConfigRepository.findTicketIntegration(
       contatoId,
+      integrationSource.trim(),
     );
   }
 

@@ -52,6 +52,77 @@ function useTickets({
     requestVersion === messageRequestVersion &&
     sameTicketId(currentTicket.value?.id, ticketId);
 
+  /** Normaliza tipos MIME e categorias de mídia usadas pelo painel. */
+  const mediaCategory = (mediaType) => {
+    const type = String(mediaType || "text").toLowerCase();
+    if (type.startsWith("image") || type.includes("image/")) return "image";
+    if (type.startsWith("video") || type.includes("video/")) return "video";
+    if (type.startsWith("audio") || type.includes("audio/")) return "audio";
+    if (type === "text") return "text";
+    return "document";
+  };
+
+  /**
+   * Verifica se uma mensagem persistida corresponde a um preview otimista.
+   * A comparação é feita uma mensagem por vez para não remover dois previews
+   * quando o operador envia textos iguais ou vários arquivos do mesmo tipo.
+   */
+  const matchesTemporaryMessage = (temporary, persisted) => {
+    if (!persisted?.fromMe) return false;
+
+    const temporaryType = mediaCategory(temporary.mediaType);
+    const persistedType = mediaCategory(persisted.mediaType);
+    if (temporaryType !== persistedType) return false;
+
+    const temporaryBody = String(temporary.body || "").trim();
+    const persistedBody = String(persisted.body || "").trim();
+
+    if (temporaryType === "text") {
+      if (!temporaryBody.length || temporaryBody !== persistedBody) {
+        return false;
+      }
+    } else {
+      // Para mídia sem legenda, o painel pode exibir o nome local do arquivo,
+      // enquanto o backend persiste corpo vazio. Só comparamos o texto quando o
+      // preview foi criado com uma legenda real.
+      if (temporary.hasCaption && temporaryBody !== persistedBody) {
+        return false;
+      }
+    }
+
+    // Evita associar o preview a uma mensagem antiga com o mesmo conteúdo,
+    // tolerando latência e uma pequena diferença entre os relógios.
+    const temporaryTime = Date.parse(temporary.createdAt || "");
+    const persistedTime = Date.parse(persisted.createdAt || "");
+    if (Number.isFinite(temporaryTime) && Number.isFinite(persistedTime)) {
+      const timeDifference = persistedTime - temporaryTime;
+      return timeDifference >= -300000 && timeDifference <= 300000;
+    }
+
+    return true;
+  };
+
+  /**
+   * Remove previews somente depois que o backend devolve suas mensagens
+   * persistidas, mantendo o DOM preenchido durante a espera da confirmação.
+   */
+  const reconcileTemporaryMessages = (persistedMessages) => {
+    if (!tempMessages.value.length || !persistedMessages.length) return;
+
+    const consumedIndexes = new Set();
+    tempMessages.value = tempMessages.value.filter((temporary) => {
+      const index = persistedMessages.findIndex(
+        (persisted, persistedIndex) =>
+          !consumedIndexes.has(persistedIndex) &&
+          matchesTemporaryMessage(temporary, persisted),
+      );
+
+      if (index === -1) return true;
+      consumedIndexes.add(index);
+      return false;
+    });
+  };
+
   /**
    * Tickets filtrados por busca, status e visibilidade do usuário logado.
    */
@@ -187,7 +258,8 @@ function useTickets({
       if (loadingMoreMessages.value || !hasMoreMessages.value) return;
       loadingMoreMessages.value = true;
     } else {
-      tempMessages.value = [];
+      // A mensagem temporária permanece visível enquanto o histórico
+      // persistido é buscado. Ela será removida por reconciliação abaixo.
       messageOffset.value = 0;
       hasMoreMessages.value = false;
     }
@@ -230,6 +302,7 @@ function useTickets({
         (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
       );
       currentMessages.value = orderedMessages;
+      reconcileTemporaryMessages(orderedMessages);
 
       // O cache fica em ordem decrescente, compatível com o listener
       // `new-message`; somente a renderização usa ordem crescente.
@@ -488,35 +561,48 @@ function useTickets({
   const sendFiles = async () => {
     if (!currentTicket.value || selectedFiles.value.length === 0) return;
 
+    const ticketId = currentTicket.value.id;
+
     // Copia a fila antes de qualquer atualização reativa. O código anterior
     // limpava selectedFiles dentro de um forEach assíncrono e perdia a
     // referência necessária para limpar previews e tratar a resposta.
     const filesToSend = [...selectedFiles.value];
     const formData = new FormData();
-    const temporaryMessages = filesToSend.map((item) => ({
-      id: "temp_" + Date.now() + "_" + Math.random(),
-      body: item.caption || item.name,
-      fromMe: true,
-      createdAt: new Date().toISOString(),
-      ack: 0,
-      mediaType: item.type.startsWith("image/")
-        ? "image"
-        : item.type.startsWith("video/")
-          ? "video"
-          : item.type.startsWith("audio/")
-            ? "audio"
-            : "document",
-      mediaUrl: item.preview,
-      isDeleted: false,
-    }));
+    const temporaryMessages = filesToSend.map((item) => {
+      const caption = item.caption?.trim() || "";
+      const body = caption
+        ? assinarMensagem.value
+          ? `*${currentUser.value.name}*:\n ${caption}`
+          : caption
+        : item.name;
+
+      return {
+        id: "temp_" + Date.now() + "_" + Math.random(),
+        body,
+        fromMe: true,
+        createdAt: new Date().toISOString(),
+        ack: 0,
+        mediaType: item.type.startsWith("image/")
+          ? "image"
+          : item.type.startsWith("video/")
+            ? "video"
+            : item.type.startsWith("audio/")
+              ? "audio"
+              : "document",
+        mediaUrl: item.preview,
+        hasCaption: Boolean(item.caption?.trim()),
+        isDeleted: false,
+      };
+    });
 
     filesToSend.forEach((item) => {
-      if (item.caption?.trim()) {
+      const caption = item.caption?.trim() || "";
+      if (caption) {
         formData.append(
           "body",
           assinarMensagem.value
-            ? `*${currentUser.value.name}*:\n ${item.caption.trim()}`
-            : item.caption.trim(),
+            ? `*${currentUser.value.name}*:\n ${caption}`
+            : caption,
         );
       }
       formData.append("files", item.file, item.name);
@@ -529,29 +615,27 @@ function useTickets({
     scrollToBottom();
 
     try {
-      const res = await fetch(
-        `${URL_BASE}/api/v1/messages/${currentTicket.value.id}`,
-        {
-          method: "POST",
-          body: formData,
-          headers: { Authorization: `Bearer ${token.value}` },
-        },
-      );
+      const res = await fetch(`${URL_BASE}/api/v1/messages/${ticketId}`, {
+        method: "POST",
+        body: formData,
+        headers: { Authorization: `Bearer ${token.value}` },
+      });
 
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}`);
       }
 
-      filesToSend.forEach(
-        (item) => item.preview && URL.revokeObjectURL(item.preview),
-      );
-      tempMessages.value = tempMessages.value.filter(
-        (message) => !temporaryMessages.includes(message),
-      );
+      // Reconsulta as mensagens persistidas. A reconciliação remove o
+      // temporário somente quando a mensagem real já estiver no histórico.
+      await loadMessages(ticketId);
 
-      // Reconsulta a mensagem persistida. Assim o painel troca o blob: local
-      // pela URL /public/<uuid> criada pelo backend.
-      await loadMessages(currentTicket.value.id);
+      const pendingTemporaryMessages = new Set(tempMessages.value);
+      temporaryMessages.forEach((message, index) => {
+        if (!pendingTemporaryMessages.has(message)) {
+          const preview = filesToSend[index]?.preview;
+          if (preview) URL.revokeObjectURL(preview);
+        }
+      });
     } catch (error) {
       console.error("Erro ao enviar arquivos:", error);
       // Restaura a fila para permitir nova tentativa sem perder os arquivos.

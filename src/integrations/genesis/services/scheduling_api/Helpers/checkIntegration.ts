@@ -97,8 +97,13 @@ export const checkIntegration = async (input: ICheckIntegration) => {
     throw new Error(`${error}`);
   }
 };
+const SCHEDULING_INTEGRATION_SOURCE = "scheduling_api";
+
 export const checkTicketIntegration = async (input: any) => {
-  const ticket = await integracaoService.findTicketIntegrationn(input.chatId);
+  const ticket = await integracaoService.findTicketIntegrationn(
+    input.chatId,
+    SCHEDULING_INTEGRATION_SOURCE,
+  );
 
   if (!ticket) return null;
 

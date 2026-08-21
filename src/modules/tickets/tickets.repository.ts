@@ -78,18 +78,26 @@ export class TicketsRepository {
       },
     });
   }
+  /**
+   * Persiste a mensagem e a atualização resumida do ticket no mesmo commit.
+   * Assim, uma falha em qualquer uma das operações não deixa mensagem órfã
+   * nem ticket atualizado sem a mensagem correspondente.
+   */
   async createcreateMessageAndUpdateTicket(
     ticketId: number,
     updateTicket: Prisma.TicketUpdateInput,
     messageData: Prisma.MessageCreateInput,
   ) {
-    const message = await prisma.message.create({ data: messageData });
-    const ticketUpdate = await prisma.ticket.update({
-      where: {
-        id: ticketId,
-      },
-      data: updateTicket,
+    return await prisma.$transaction(async (transaction) => {
+      const message = await transaction.message.create({ data: messageData });
+      const ticketUpdate = await transaction.ticket.update({
+        where: {
+          id: ticketId,
+        },
+        data: updateTicket,
+      });
+
+      return { ticketUpdate, message };
     });
-    return { ticketUpdate, message };
   }
 }

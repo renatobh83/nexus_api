@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { ChannelService } from "./channel.service.js";
 import { ChannelManager } from "./ChannelManager.js";
 import { handleSendMessage } from "../messages/handlers/handleSendMessage.js";
+import { readMultipartParts } from "../../utils/readMultipart.js";
 
 const service = new ChannelService();
 const channelManager = new ChannelManager();
@@ -63,24 +64,18 @@ export async function channelController(fastify: FastifyInstance) {
 
       const id = parseInt(channelId);
 
-      let filesArray: any[] = [];
+      let filesArray: Array<{
+        filename: string;
+        mimetype: string;
+        buffer: Buffer;
+      }> = [];
 
       let fields: Record<string, any> = {};
 
       if (request.isMultipart()) {
-        const parts = request.parts();
-        for await (const part of parts) {
-          if (part.type === "file") {
-            const buffer = await part.toBuffer();
-            filesArray.push({
-              filename: part.filename,
-              mimetype: part.mimetype,
-              buffer,
-            });
-          } else {
-            fields[part.fieldname] = part.value;
-          }
-        }
+        const parsedParts = await readMultipartParts(request.parts());
+        filesArray = parsedParts.files;
+        fields = parsedParts.fields;
       } else {
         fields = request.body as any;
       }
@@ -89,11 +84,9 @@ export async function channelController(fastify: FastifyInstance) {
       const enviarPara = to.includes("@") ? to : `+55${to}`;
 
       await Promise.all(
-        (filesArray && filesArray.length ? filesArray : [null]).map(
-          async (media: string) => {
-            await handleSendMessage(channel, enviarPara, body, media);
-          },
-        ),
+        (filesArray.length ? filesArray : [null]).map(async (media) => {
+          await handleSendMessage(channel, enviarPara, body, media);
+        }),
       );
       reply.status(200).send("ok");
     },

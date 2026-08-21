@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { MessageService } from "./messages.service.js";
 import { TicketService } from "../tickets/tickets.service.js";
+import { readMultipartParts } from "../../utils/readMultipart.js";
 const service = new MessageService();
 const ticketServices = new TicketService();
 const DEFAULT_MESSAGE_LIMIT = 40;
@@ -54,24 +55,17 @@ export async function messagesController(fastify: FastifyInstance) {
         throw new Error("TICKET_NO_FOUND");
       }
 
-      let filesArray: any[] = [];
+      let filesArray: Array<{
+        filename: string;
+        mimetype: string;
+        buffer: Buffer;
+      }> = [];
       let fields: Record<string, any> = {};
 
       if (request.isMultipart()) {
-        const parts = request.parts();
-
-        for await (const part of parts) {
-          if (part.type === "file") {
-            const buffer = await part.toBuffer();
-            filesArray.push({
-              filename: part.filename,
-              mimetype: part.mimetype,
-              buffer,
-            });
-          } else {
-            fields[part.fieldname] = part.value;
-          }
-        }
+        const parsedParts = await readMultipartParts(request.parts());
+        filesArray = parsedParts.files;
+        fields = parsedParts.fields;
       } else {
         fields = request.body as any;
       }

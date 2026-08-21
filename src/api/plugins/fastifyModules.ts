@@ -14,6 +14,10 @@ import {
   getAllowedCorsOrigins,
   isAllowedCorsOrigin,
 } from "../../config/cors.js";
+import {
+  MAX_MULTIPART_FILE_BYTES,
+  MAX_MULTIPART_FILES,
+} from "../../utils/readMultipart.js";
 
 const fastifyModule = fp(async (fastify: FastifyInstance) => {
   fastify.log.info(
@@ -104,7 +108,15 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
   });
 
   await fastify.register(formbody);
-  await fastify.register(multipart, { limits: { fileSize: 60 * 1024 * 1024 } });
+  await fastify.register(multipart, {
+    limits: {
+      fileSize: MAX_MULTIPART_FILE_BYTES,
+      files: MAX_MULTIPART_FILES,
+      fields: 20,
+      fieldSize: 1024 * 1024,
+      parts: 30,
+    },
+  });
 
   // --- 6. Proteção contra Poluição de Parâmetros HTTP (HPP) ---
 
