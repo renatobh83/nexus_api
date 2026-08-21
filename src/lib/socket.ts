@@ -11,6 +11,7 @@ import {
 import { canAccessTicket } from "../modules/auth/authorization.js";
 import { TicketsRepository } from "../modules/tickets/tickets.repository.js";
 import { getAllowedCorsOrigins } from "../config/cors.js";
+import { getSocketMaxHttpBufferSize } from "./socket.security.js";
 
 let io: SocketIOServer | null = null;
 let waitForInitPromise: Promise<SocketIOServer> | null = null;
@@ -75,6 +76,7 @@ export const initSocket = (server: Server): SocketIOServer => {
       origin: getAllowedCorsOrigins(),
       credentials: true,
     },
+    maxHttpBufferSize: getSocketMaxHttpBufferSize(),
   };
 
   io = new SocketIOServer(server, socketOptions);
