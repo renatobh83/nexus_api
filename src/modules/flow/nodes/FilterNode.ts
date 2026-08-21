@@ -13,7 +13,7 @@ export const FilterNode = {
     )?.v;
 
     const value = getNestedValue(context, field);
-    console.log(context)
+
     // Função que converte o valor esperado para o tipo do valor original
     const coerceExpectedToValueType = (value: any, expected: any) => {
       // Se o valor for null ou undefined, retorna o expected como está
@@ -123,6 +123,8 @@ export const FilterNode = {
         break;
     }
 
+    // O executor usa `route` para selecionar uma saída nomeada. Sem esse
+    // campo, o fluxo seguia todas as conexões e a condição era ignorada.
     return {
       ...context,
       route: passed ? "output_1" : "output_2",
@@ -130,6 +132,6 @@ export const FilterNode = {
   },
 };
 
-export function getNestedValue(obj: any, path: string) {
+function getNestedValue(obj: any, path: string) {
   return path.split(".").reduce((acc, key) => acc?.[key], obj);
 }

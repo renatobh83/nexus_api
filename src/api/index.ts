@@ -17,6 +17,7 @@ import routes from "./routes/index.js";
 import fastifyModule from "./plugins/fastifyModules.js";
 import { initSocket } from "../lib/socket.js";
 import { errorHandler } from "../utils/errorHandler.js";
+import { AppError } from "../utils/AppError.js";
 
 let io: SocketIOServer | null = null;
 
@@ -89,9 +90,7 @@ async function buildServer(): Promise<FastifyInstance> {
           !normalizedRole ||
           !normalizedAllowedRoles.includes(normalizedRole)
         ) {
-          return reply.code(403).send({
-            message: "Insufficient permissions",
-          });
+          throw new AppError("Insufficient permissions", 403);
         }
       },
   );
@@ -102,14 +101,14 @@ async function buildServer(): Promise<FastifyInstance> {
       const token = extractBearerToken(request.headers.authorization);
 
       if (!token) {
-        return reply.code(401).send({ message: "Not authenticated" });
+        throw new AppError("Not authenticated", 401);
       }
 
       try {
         request.chatUser = verifyChatToken(token);
       } catch (error) {
         request.log.warn({ error }, "Token de chat inválido");
-        return reply.code(401).send({ message: "Invalid token" });
+        throw new AppError("Invalid token", 401);
       }
     },
   );
@@ -120,7 +119,7 @@ async function buildServer(): Promise<FastifyInstance> {
       const token = extractBearerToken(request.headers.authorization);
 
       if (!token) {
-        return reply.code(401).send({ message: "Not authenticated" });
+        throw new AppError("Not authenticated", 401);
       }
 
       try {
@@ -133,7 +132,7 @@ async function buildServer(): Promise<FastifyInstance> {
         request.user = claims;
       } catch (error) {
         request.log.warn({ error }, "Token Bearer inválido");
-        return reply.code(401).send({ message: "Invalid token" });
+        throw new AppError("Invalid token", 401);
       }
     },
   );
@@ -141,8 +140,9 @@ async function buildServer(): Promise<FastifyInstance> {
 
   server.setNotFoundHandler((request, reply) => {
     reply.status(404).send({
-      error: "Not Found",
-      message: `A rota ${request.url} não existe`,
+      success: false,
+      error: `A rota ${request.url} não existe`,
+      statusCode: 404,
     });
   });
 

@@ -1,26 +1,54 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { AppError } from "./AppError.js";
 
+interface FastifyErrorLike extends Error {
+  statusCode?: number;
+  code?: string;
+  validation?: unknown;
+}
+
+/**
+ * Converte qualquer exceção lançada durante uma requisição em uma resposta
+ * JSON estável, mantendo mensagens operacionais e ocultando detalhes internos.
+ */
 export async function errorHandler(
-  error: Error,
+  error: FastifyErrorLike,
   request: FastifyRequest,
   reply: FastifyReply,
 ) {
-  console.error(error);
+  const statusCode = resolveStatusCode(error);
+  const isClientError = statusCode >= 400 && statusCode < 500;
+  const message = isClientError
+    ? error.message || "Requisição inválida"
+    : "Erro interno do servidor";
 
-  // Erro personalizado
-  if (error instanceof AppError) {
-    return reply.status(error.statusCode).send({
-      success: false,
-      error: error.message,
-      statusCode: error.statusCode,
-    });
-  }
+  request.log.error(
+    {
+      err: error,
+      statusCode,
+      requestId: request.id,
+      method: request.method,
+      url: request.url,
+    },
+    "Erro não tratado durante a requisição",
+  );
 
-  // Erro padrão
-  return reply.status(500).send({
+  return reply.status(statusCode).send({
     success: false,
-    error: "Erro interno do servidor",
-    statusCode: 500,
+    error: message,
+    statusCode,
   });
+}
+
+/**
+ * Prioriza o status explícito de `AppError` e dos erros do Fastify, mas impede
+ * que valores inválidos façam a API responder com um status fora do intervalo.
+ */
+function resolveStatusCode(error: FastifyErrorLike): number {
+  const statusCode =
+    error instanceof AppError ? error.statusCode : (error.statusCode ?? 500);
+
+  return Number.isInteger(statusCode) && statusCode >= 400 && statusCode <= 599
+    ? statusCode
+    : 500;
 }

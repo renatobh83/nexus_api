@@ -77,12 +77,12 @@ const fastifyModule = fp(async (fastify: FastifyInstance) => {
       // tanto pela aplicação interna quanto pelo widget hospedado em outra
       // origem. A política global do Helmet continua restrita para os demais
       // recursos da API.
-      response.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+      response.raw.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
       // O painel Vue usa outra origem e alguns elementos de mídia podem
       // solicitar leitura CORS. Como esses arquivos são públicos, não há
       // credencial de usuário envolvida nessa resposta.
-      response.setHeader("Access-Control-Allow-Origin", "*");
-      response.setHeader("Cache-Control", "public, max-age=3600");
+      response.raw.setHeader("Access-Control-Allow-Origin", "*");
+      response.raw.setHeader("Cache-Control", "public, max-age=3600");
     },
   });
 

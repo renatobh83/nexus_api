@@ -29,6 +29,7 @@ function useTickets({
   const hasMoreMessages = ref(false);
   const messageOffset = ref(0);
   const tempMessages = ref([]);
+  let messageRequestVersion = 0;
 
   const MESSAGE_PAGE_SIZE = 40;
   const assinarMensagem = ref(false);
@@ -37,6 +38,19 @@ function useTickets({
   const selectedFiles = ref([]);
 
   // --- Computed ---
+
+  /** Compara IDs vindos da API mesmo quando um lado é número e o outro string. */
+  const sameTicketId = (left, right) =>
+    left !== null &&
+    left !== undefined &&
+    right !== null &&
+    right !== undefined &&
+    String(left) === String(right);
+
+  /** Confirma que uma resposta ainda pertence ao ticket e à seleção atuais. */
+  const isActiveMessageRequest = (ticketId, requestVersion) =>
+    requestVersion === messageRequestVersion &&
+    sameTicketId(currentTicket.value?.id, ticketId);
 
   /**
    * Tickets filtrados por busca, status e visibilidade do usuário logado.
@@ -165,7 +179,10 @@ function useTickets({
    * Carrega as mensagens de um ticket específico.
    * @param {number|string} ticketId
    */
-  const loadMessages = async (ticketId, { append = false } = {}) => {
+  const loadMessages = async (
+    ticketId,
+    { append = false, requestVersion = ++messageRequestVersion } = {},
+  ) => {
     if (append) {
       if (loadingMoreMessages.value || !hasMoreMessages.value) return;
       loadingMoreMessages.value = true;
@@ -193,6 +210,8 @@ function useTickets({
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       const data = await response.json();
+      if (!isActiveMessageRequest(ticketId, requestVersion)) return;
+
       const messages = Array.isArray(data.messages)
         ? data.messages
         : Array.isArray(data)
@@ -230,6 +249,9 @@ function useTickets({
       messageOffset.value = requestedSkip + messages.length;
       hasMoreMessages.value = Boolean(data.hasMore);
     } catch (error) {
+      // Uma resposta antiga não pode restaurar mensagens depois da troca de ticket.
+      if (!isActiveMessageRequest(ticketId, requestVersion)) return;
+
       // Em caso de falha inicial, preserva o fallback já carregado no ticket.
       // Em uma página adicional, mantém as mensagens atuais sem descartá-las.
       console.error("Erro ao carregar mensagens do ticket:", error);
@@ -241,7 +263,9 @@ function useTickets({
           : [];
       }
     } finally {
-      if (append) loadingMoreMessages.value = false;
+      if (append && isActiveMessageRequest(ticketId, requestVersion)) {
+        loadingMoreMessages.value = false;
+      }
     }
 
     await nextTick();
@@ -252,11 +276,15 @@ function useTickets({
   const loadMoreMessages = async () => {
     if (!currentTicket.value) return;
 
+    const ticketId = currentTicket.value.id;
+    const requestVersion = messageRequestVersion;
     const area = document.querySelector(".messages-area");
     const previousHeight = area?.scrollHeight || 0;
     const previousTop = area?.scrollTop || 0;
 
-    await loadMessages(currentTicket.value.id, { append: true });
+    await loadMessages(ticketId, { append: true, requestVersion });
+    if (!isActiveMessageRequest(ticketId, requestVersion)) return;
+
     await nextTick();
 
     // Mantém a mesma mensagem visível depois de inserir itens acima.
@@ -277,15 +305,39 @@ function useTickets({
    */
   const selectTicket = async (ticketId) => {
     sidebarOpen.value = !sidebarOpen.value;
-    if (currentTicket.value?.id === ticketId) return;
-    currentTicket.value = allTickets.value.find((t) => t.id === ticketId);
-    if (!currentTicket.value) return;
+    if (sameTicketId(currentTicket.value?.id, ticketId)) return;
+
+    const requestVersion = ++messageRequestVersion;
+    const nextTicket = allTickets.value.find((t) =>
+      sameTicketId(t.id, ticketId),
+    );
+
+    // Limpa o histórico antes da requisição para nunca mostrar mensagens de outro ticket.
+    currentTicket.value = nextTicket || null;
+    currentMessages.value = [];
+    tempMessages.value = [];
+    messageOffset.value = 0;
+    hasMoreMessages.value = false;
+    loadingMoreMessages.value = false;
+
+    if (!nextTicket) {
+      loadingMessages.value = false;
+      return;
+    }
 
     loadingMessages.value = true;
-    await loadMessages(ticketId);
-    loadingMessages.value = false;
+    try {
+      await loadMessages(ticketId, { requestVersion });
+    } finally {
+      // Um carregamento anterior não pode desligar o loading do ticket atual.
+      if (requestVersion === messageRequestVersion) {
+        loadingMessages.value = false;
+      }
+    }
+
+    if (requestVersion !== messageRequestVersion) return;
     await nextTick();
-    scrollToBottom();
+    scrollToBottom(ticketId);
   };
 
   /**
