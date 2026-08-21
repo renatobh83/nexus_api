@@ -60,8 +60,8 @@ importers:
         specifier: ^7.9.1
         version: 7.9.1(prisma@7.9.1(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@6.0.3))(typescript@6.0.3)
       "@wppconnect-team/wppconnect":
-        specifier: ^2.2.7
-        version: 2.2.7(@types/node@25.9.1)(puppeteer-core@24.43.1)(typescript@6.0.3)
+        specifier: ^2.3.1
+        version: 2.3.1(@types/node@25.9.1)(puppeteer-core@24.43.1)(typescript@6.0.3)
       bcryptjs:
         specifier: ^3.0.3
         version: 3.0.3
@@ -1486,16 +1486,16 @@ packages:
         integrity: sha512-6I+MuqXBcv9jnlcVowHoHKSdk9gXTWkHLKyqBwRWg7LY6A3Ei8SHfubpqGV5rBUSppxMq2RszPJUS6w+H0YgmQ==,
       }
 
-  "@wppconnect-team/wppconnect@2.2.7":
+  "@wppconnect-team/wppconnect@2.3.1":
     resolution:
       {
-        integrity: sha512-aB+p5wG64DW319babvU9/+EDUyFAEpyHKLaspXG1j+FyzfjvmYrzCNd2SUs2PANNlTZLziEtAbEmIR5EVVKJzw==,
+        integrity: sha512-Wm83Yhti8JkLXq++WAiac14iepnQhl71iQXuswFM/1o2UE14lNZoDx9cP4WQNyc8zoqTRNxg82dre5Xl6lawJg==,
       }
 
-  "@wppconnect/wa-js@4.5.0":
+  "@wppconnect/wa-js@4.6.0":
     resolution:
       {
-        integrity: sha512-59eFzrFA/VtrHztHCXGDGvqNqBQYqcG/x0wxeB0IqnNqIBrKI3UmbqDwSrf8qw62CBRtcML37KPPmtYoWnvY7A==,
+        integrity: sha512-epf+ucZO9c25dCaGraslVNHB1mRjid7rfijZhKbalXed/gbDzi6u69wdHCgPbcZW9McVpKmVW+3AzffI39p2SQ==,
       }
     engines: { whatsapp-web: ">=2.3000.1038792969-alpha" }
 
@@ -1691,10 +1691,10 @@ packages:
       }
     engines: { node: ">= 6.0.0" }
 
-  axios@1.18.1:
+  axios@1.19.0:
     resolution:
       {
-        integrity: sha512-3nTvFlvpn9Zu/RkHUqtc7/+al4UpRW5az71ap5zccp6e8RAYEzhMTecX8Dz1wWDYrPpUoB1HAQEGEAEvUr7S9g==,
+        integrity: sha512-ht/iuYZXEjFxLH/Hkezgd7m6JKlHHXEUSneaDz8uZe1Gj5QZtCnpyDsckvAiEnT89OEbCLmnte4R4sn7P0EKFw==,
       }
 
   b4a@1.8.0:
@@ -6090,12 +6090,12 @@ snapshots:
       d3-time-format: 4.1.0
       internmap: 2.0.3
 
-  "@wppconnect-team/wppconnect@2.2.7(@types/node@25.9.1)(puppeteer-core@24.43.1)(typescript@6.0.3)":
+  "@wppconnect-team/wppconnect@2.3.1(@types/node@25.9.1)(puppeteer-core@24.43.1)(typescript@6.0.3)":
     dependencies:
-      "@wppconnect/wa-js": 4.5.0
+      "@wppconnect/wa-js": 4.6.0
       "@wppconnect/wa-version": 1.5.4485
       atob: 2.1.2
-      axios: 1.18.1
+      axios: 1.19.0
       boxen: 5.1.2
       catch-exit: 2.0.0
       chalk: 4.1.2
@@ -6138,7 +6138,7 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  "@wppconnect/wa-js@4.5.0": {}
+  "@wppconnect/wa-js@4.6.0": {}
 
   "@wppconnect/wa-version@1.5.4485":
     dependencies:
@@ -6240,7 +6240,7 @@ snapshots:
 
   aws-ssl-profiles@1.1.2: {}
 
-  axios@1.18.1:
+  axios@1.19.0:
     dependencies:
       follow-redirects: 1.16.0
       form-data: 4.0.6
