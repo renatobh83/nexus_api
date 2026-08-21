@@ -48,3 +48,32 @@ export function getChatTokenRateLimitConfig(
  * a resolução padrão do Fastify e sem confiar em `X-Forwarded-For` enquanto
  * `trustProxy` não estiver configurado explicitamente.
  */
+
+/**
+ * Retorna o identificador público do cliente somente quando ele contém um
+ * CNPJ com 14 dígitos, aceitando a formatação usual de pontos, barra e hífen.
+ * Letras e outros caracteres são rejeitados antes da normalização.
+ */
+export function normalizeChatIdentifier(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+
+  const trimmed = value.trim();
+  if (!trimmed || !/^[\d.\-/\s]+$/.test(trimmed)) return undefined;
+
+  const digits = trimmed.replace(/\D/g, "");
+  return digits.length === 14 ? digits : undefined;
+}
+
+/**
+ * A sessão do chat web é criada com `randomUUID()` e usada como prova de
+ * posse do token durante o rebind. Aceitar somente UUIDs evita transformar
+ * qualquer string assinada em um identificador de sessão válido.
+ */
+export function isChatSessionId(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      value,
+    )
+  );
+}

@@ -27,8 +27,9 @@ export const HandleMessageChatWeb = async (
     return;
   }
 
+  // O rebind usa somente a sessão aleatória presente no token verificado;
+  // email não é mais um fator de localização de tickets existentes.
   const ticket = await channelService.findTicketWebChat(
-    payload.email,
     socket.id,
     payload.sessionId,
   );

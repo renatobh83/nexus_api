@@ -4,7 +4,10 @@ import { saveFile } from "../../utils/saveFile.js";
 import { PUBLIC_DIR } from "../../config/env.js";
 import { buildPublicMediaUrl, getMediaBaseUrl } from "../../config/media.js";
 import { randomUUID } from "node:crypto";
-import { getChatTokenRateLimitConfig } from "./chatWeb.security.js";
+import {
+  getChatTokenRateLimitConfig,
+  normalizeChatIdentifier,
+} from "./chatWeb.security.js";
 
 export async function chatWebController(fastify: FastifyInstance) {
   fastify.get(
@@ -34,15 +37,18 @@ export async function chatWebController(fastify: FastifyInstance) {
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { email, name, identifier } = request.body as any;
 
+      const normalizedIdentifier = normalizeChatIdentifier(identifier);
+
       if (
         typeof email !== "string" ||
         !email.trim() ||
         typeof name !== "string" ||
-        !name.trim()
+        !name.trim() ||
+        !normalizedIdentifier
       ) {
         return reply.code(400).send({
           error: "Invalid chat identity",
-          message: "Nome e email são obrigatórios",
+          message: "Nome, email e CNPJ válido são obrigatórios",
         });
       }
 
@@ -52,10 +58,7 @@ export async function chatWebController(fastify: FastifyInstance) {
         sub: randomUUID(),
         name: name.trim(),
         email: email.trim().toLowerCase(),
-        identifier:
-          typeof identifier === "string"
-            ? identifier.replace(/\D/g, "")
-            : undefined,
+        identifier: normalizedIdentifier,
         role: "guest",
         type: "chat-client",
       });

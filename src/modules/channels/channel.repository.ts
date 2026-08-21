@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../lib/prisma.js";
+import { isChatSessionId } from "../chatWeb/chatWeb.security.js";
 
 export class ChannelsRepository {
   /**
@@ -72,48 +73,68 @@ export class ChannelsRepository {
     });
   }
 
-  async findTicketForChatWeb(
-    contato: string,
-    scoketId: string,
-    chatSessionId: string,
-  ) {
-    const ticket = await prisma.ticket.findFirst({
-      where: {
-        contato,
-        chatClient: true,
-        status: {
-          notIn: ["closed"],
-        },
-        metadata: {
-          path: ["chatSessionId"],
-          equals: chatSessionId,
-        },
-      },
-      orderBy: {
-        updatedAt: "desc",
-      },
-    });
-    if (!ticket) return null;
-    // Atualiza o ticket encontrado
-    const updatedTicket = await prisma.ticket.update({
-      where: {
-        id: ticket.id,
-      },
-      data: {
-        // Campos que você quer atualizar
-        updatedAt: new Date(),
-        socketId: scoketId,
-        // exemplo: lastInteraction: new Date(),
-      },
-      include: {
-        messages: {
-          orderBy: {
-            createdAt: "desc",
+  /**
+   * Reassocia uma conexão somente ao ticket que contém a sessão UUID emitida
+   * no token verificado. O filtro da atualização repete a prova de posse para
+   * evitar que um ticket alterado entre a leitura e a troca do socket seja
+   * reassumido por uma sessão diferente.
+   */
+  async findTicketForChatWeb(socketId: string, chatSessionId: string) {
+    if (!isChatSessionId(chatSessionId)) return null;
+
+    return prisma.$transaction(async (transaction) => {
+      const ticket = await transaction.ticket.findFirst({
+        where: {
+          chatClient: true,
+          status: {
+            notIn: ["closed"],
+          },
+          metadata: {
+            path: ["chatSessionId"],
+            equals: chatSessionId,
           },
         },
-      },
-    });
+        select: {
+          id: true,
+        },
+      });
 
-    return updatedTicket;
+      if (!ticket) return null;
+
+      const rebound = await transaction.ticket.updateMany({
+        where: {
+          id: ticket.id,
+          chatClient: true,
+          status: {
+            notIn: ["closed"],
+          },
+          metadata: {
+            path: ["chatSessionId"],
+            equals: chatSessionId,
+          },
+        },
+        data: {
+          updatedAt: new Date(),
+          socketId,
+        },
+      });
+
+      // Se a prova deixou de corresponder, não devolve mensagens de outro
+      // vínculo e deixa o callback transacional ser concluído sem alteração.
+      if (rebound.count !== 1) return null;
+
+      return transaction.ticket.findUnique({
+        where: {
+          id: ticket.id,
+        },
+        include: {
+          messages: {
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+        },
+      });
+    });
   }
 }

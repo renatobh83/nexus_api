@@ -1,6 +1,6 @@
 import { MessageInternal } from "../messages.types.js";
 
-import { Prisma } from "@prisma/client";
+import { Message, Prisma } from "@prisma/client";
 import { MessageService } from "../messages.service.js";
 import {
   ContactInternal,
@@ -9,12 +9,15 @@ import {
 
 const messageService = new MessageService();
 
-export const VerifyMessage = async (
+/**
+ * Constrói os campos da mensagem sem incluir a relação com o ticket.
+ * A relação é adicionada pelo chamador que conhece o contexto da transação.
+ */
+export const buildMessageData = async (
   message: MessageInternal,
   contato: ContactInternal,
-  ticketId: number,
   session: SessionInternal,
-) => {
+): Promise<Prisma.MessageCreateWithoutTicketInput> => {
   const body =
     message.type === "list"
       ? "message.list.description"
@@ -22,8 +25,8 @@ export const VerifyMessage = async (
 
   const media =
     message.type !== "chat" ? await session.downloadMedia(message) : "";
-    
-  const messageData: Prisma.MessageCreateInput = {
+
+  return {
     messageId: message.messageId,
     body: message.type === "chat" ? body : message.caption || media,
     ack: message.ack,
@@ -45,13 +48,34 @@ export const VerifyMessage = async (
       message.type === "chat" ? message.content : message.caption || media,
     mimetype: message.mimetype,
     quotedMsgId: message.quotedMsgId,
-    ticket: {
-      connect: undefined,
-    },
   };
-  messageData.ticket = {
-    connect: { id: ticketId },
-  };
+};
 
-  return await messageService.createMessage(messageData);
+/**
+ * Notifica uma mensagem após uma transação concluída, sem fazer nova escrita.
+ */
+export const notifyMessageCreated = async (
+  message: Message,
+  ticketId: number,
+): Promise<void> => {
+  await messageService.notifyMessageCreated(message, ticketId);
+};
+
+/**
+ * Persiste uma mensagem no caminho legado que não possui transação de ticket.
+ */
+export const VerifyMessage = async (
+  message: MessageInternal,
+  contato: ContactInternal,
+  ticketId: number,
+  session: SessionInternal,
+) => {
+  const messageData = await buildMessageData(message, contato, session);
+
+  return await messageService.createMessage({
+    ...messageData,
+    ticket: {
+      connect: { id: ticketId },
+    },
+  });
 };

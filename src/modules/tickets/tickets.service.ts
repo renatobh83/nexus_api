@@ -150,6 +150,49 @@ export class TicketService {
 
     return ticket;
   }
+  /**
+   * Cria o ticket e sua primeira mensagem no mesmo commit do banco.
+   */
+  async createTicketAndCreateMessage(
+    ticketData: Prisma.TicketCreateInput,
+    messageData: Prisma.MessageCreateWithoutTicketInput,
+  ) {
+    return await this.ticketRepository.createTicketAndCreateMessage(
+      ticketData,
+      messageData,
+    );
+  }
+
+  /**
+   * Grava a mensagem e atualiza o resumo do ticket no mesmo commit do banco.
+   * A emissão de eventos deve ocorrer depois que esta operação retornar.
+   */
+  async updateTicketAndCreateMessage(
+    ticketId: number,
+    updateTicket: Prisma.TicketUpdateInput,
+    messageData: Prisma.MessageCreateWithoutTicketInput,
+  ) {
+    const requestedStatus =
+      typeof updateTicket.status === "string" ? updateTicket.status : undefined;
+    const result = await this.ticketRepository.updateTicketAndCreateMessage(
+      ticketId,
+      updateTicket,
+      messageData,
+    );
+
+    void runPostCommitEffects(result.ticketUpdate, requestedStatus).catch(
+      (error) => {
+        logPostCommitFailure("efeitos de transição", ticketId, error);
+      },
+    );
+
+    return result;
+  }
+
+  /**
+   * Mantém o método histórico para consumidores que ainda fornecem a relação
+   * ticket dentro do payload da mensagem.
+   */
   async createMessageAndUpdateTicket(
     ticketId: number,
     updateTicket: Prisma.TicketUpdateInput,

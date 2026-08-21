@@ -1,8 +1,10 @@
 import { TicketService } from "../tickets.service.js";
-import { Prisma, Ticket } from "@prisma/client";
+import { Message, Prisma, Ticket } from "@prisma/client";
 import { ContactInternal } from "../../../providers/session.types.js";
-import { VerifyMessage } from "../../messages/handlers/verifyMessage.js";
-import { pendingMessagesQueue } from "../../../queues/pendingMessagesQueue.js";
+import {
+  buildMessageData,
+  notifyMessageCreated,
+} from "../../messages/handlers/verifyMessage.js";
 
 interface CreateTicketInput {
   contato: string;
@@ -75,6 +77,7 @@ export const createTicket = async (
   ticket: Ticket;
   isNew: boolean;
   isConcurrentMessage?: boolean;
+  createdMessage?: Message;
 }> => {
   const { session, contactOwner, contato, ticketGroup } = input;
 
@@ -95,6 +98,12 @@ export const createTicket = async (
   createPayload.queue = {
     connect: { id: process.env.BOT_QUEUE_ID },
   };
+  // A mensagem é montada antes da escrita para que ticket e mensagem possam
+  // participar do mesmo transaction callback.
+  const messageData = input.ObjMessage
+    ? await buildMessageData(input.ObjMessage, contactOwner, session)
+    : undefined;
+
   // 5. O chat web só pode reutilizar um ticket pertencente à mesma sessão.
   const ticketWhere: Prisma.TicketWhereInput = {
     contato,
@@ -114,6 +123,16 @@ export const createTicket = async (
   if (!existingTicket) {
     logger.info("Criando novo ticket");
     try {
+      if (messageData) {
+        const { ticket, message } =
+          await ticketService.createTicketAndCreateMessage(
+            createPayload,
+            messageData,
+          );
+        await notifyMessageCreated(message, ticket.id);
+        return { ticket, isNew: true, createdMessage: message };
+      }
+
       const ticket = await ticketService.createTicket(createPayload);
       return { ticket, isNew: true };
     } catch (error: any) {
@@ -128,7 +147,22 @@ export const createTicket = async (
           throw error;
         }
 
-        await VerifyMessage(input.ObjMessage, contactOwner, ticket.id, session);
+        if (messageData) {
+          const { ticketUpdate: updatedTicket, message } =
+            await ticketService.updateTicketAndCreateMessage(
+              ticket.id,
+              sharedFields,
+              messageData,
+            );
+          await notifyMessageCreated(message, updatedTicket.id);
+          return {
+            ticket: updatedTicket,
+            isNew: false,
+            isConcurrentMessage: true,
+            createdMessage: message,
+          };
+        }
+
         // await pendingMessagesQueue.add(
         //   "process-messages-queue",
         //   {
@@ -170,6 +204,17 @@ export const createTicket = async (
         }
       : {}),
   };
+  if (messageData) {
+    const { ticketUpdate: ticket, message } =
+      await ticketService.updateTicketAndCreateMessage(
+        existingTicket.id,
+        updateFields,
+        messageData,
+      );
+    await notifyMessageCreated(message, ticket.id);
+    return { ticket, isNew: false, createdMessage: message };
+  }
+
   const ticket = await ticketService.updateTicket(
     existingTicket.id,
     updateFields,

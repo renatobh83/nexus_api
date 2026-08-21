@@ -4,7 +4,6 @@ import {
   logger,
   updateTicket,
 } from "../../tickets/Helpers/CreateTicket.js";
-import { VerifyMessage } from "./verifyMessage.js";
 import { getClientIONamespace } from "../../../lib/socket.js";
 import {
   ContactInternal,
@@ -38,30 +37,28 @@ export const handleMessage = async (
   try {
     const serialized = contato.id._serialized;
     const lastMessage = formatLastMessage(message);
-    const { ticket, isNew, isConcurrentMessage } = await createTicket({
-      contato: serialized,
-      contactOwner: contato,
-      session: session,
-      ticketGroup: message.isGroupMsg,
-      msg: lastMessage,
-      unreadMessages: 0,
-      chatClient: message.socketId ? true : false,
-      socketId: message.socketId,
-      chatSessionId: message.chatSessionId,
-      ObjMessage: message,
-    });
+    const { ticket, isNew, isConcurrentMessage, createdMessage } =
+      await createTicket({
+        contato: serialized,
+        contactOwner: contato,
+        session: session,
+        ticketGroup: message.isGroupMsg,
+        msg: lastMessage,
+        unreadMessages: 0,
+        chatClient: message.socketId ? true : false,
+        socketId: message.socketId,
+        chatSessionId: message.chatSessionId,
+        ObjMessage: message,
+      });
 
     if (ticket.isInteraction) return;
     if (isConcurrentMessage) {
       logger.info("Mensagem concorrente ignorada durante criação do ticket");
       return;
     }
-    const createdMessage = await VerifyMessage(
-      message,
-      contato,
-      ticket.id,
-      session,
-    );
+    if (!createdMessage) {
+      throw new Error("A mensagem não foi persistida com o ticket");
+    }
 
     const result = { ...ticket, messages: [createdMessage] };
 

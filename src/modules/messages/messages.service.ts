@@ -1,4 +1,5 @@
-import { Prisma } from "@prisma/client";
+import { Message, Prisma } from "@prisma/client";
+import { AppError } from "../../utils/AppError.js";
 import { getClientIONamespace, waitForSocket } from "../../lib/socket.js";
 import { buildMessageBody } from "./message.utils.js";
 import { MessageRepository } from "./messages.repository.js";
@@ -14,22 +15,17 @@ export class MessageService {
     this.ticketsRepository = new TicketsRepository();
   }
 
-  async createMessage(dto: Prisma.MessageCreateInput) {
-    let bodyToDb = (dto.body ?? "").trim();
-    if (bodyToDb === "") {
-      bodyToDb = "Bot message - sem conteudo";
-    }
-    const { body, ...restDto } = dto;
-    const messageData: Prisma.MessageCreateInput = {
-      body: bodyToDb,
-      ...restDto,
-    };
-    const message = await this.messageRepository.create(messageData);
-
+  /**
+   * Emite a mensagem já persistida para o painel, consultando o ticket apenas
+   * depois do commit para evitar que clientes recebam dados de uma operação
+   * que ainda possa sofrer rollback.
+   */
+  async notifyMessageCreated(message: Message, ticketId: number) {
     const clientNamespace = getClientIONamespace();
     const ticket = await this.ticketsRepository.findTicket({
-      id: dto.ticket.connect!.id,
+      id: ticketId,
     });
+
     if (ticket && ticket.userId) {
       clientNamespace.to(`user-${ticket.userId}`).emit("new-message", {
         ...message,
@@ -42,6 +38,30 @@ export class MessageService {
         ack: 2,
       });
     }
+  }
+
+  /**
+   * Persiste uma mensagem fora de uma transação de ticket e conserva o
+   * comportamento legado dos workers e das integrações existentes.
+   */
+  async createMessage(dto: Prisma.MessageCreateInput) {
+    let bodyToDb = (dto.body ?? "").trim();
+    if (bodyToDb === "") {
+      bodyToDb = "Bot message - sem conteudo";
+    }
+    const { body, ...restDto } = dto;
+    const ticketId = dto.ticket.connect?.id;
+    if (typeof ticketId !== "number") {
+      throw new AppError("A mensagem precisa estar associada a um ticket", 400);
+    }
+
+    const messageData: Prisma.MessageCreateInput = {
+      body: bodyToDb,
+      ...restDto,
+    };
+    const message = await this.messageRepository.create(messageData);
+
+    await this.notifyMessageCreated(message, ticketId);
 
     return message;
   }

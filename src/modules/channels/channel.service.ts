@@ -62,14 +62,12 @@ export class ChannelService {
     }
   }
 
-  async findTicketWebChat(
-    contato: string,
-    socketid: string,
-    chatSessionId: string,
-  ) {
+  /**
+   * Reassocia o socket apenas ao ticket que prova a posse da sessão do token.
+   */
+  async findTicketWebChat(socketId: string, chatSessionId: string) {
     return await this.channelsRepository.findTicketForChatWeb(
-      contato,
-      socketid,
+      socketId,
       chatSessionId,
     );
   }
