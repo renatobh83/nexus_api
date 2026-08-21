@@ -1,5 +1,13 @@
 import { hi } from "date-fns/locale";
 import { FlowsService } from "../flow.service.js";
+import {
+  getAiRequestTimeoutMs,
+  getRequiredAiApiKey,
+  parseAiActiveConversationLimit,
+  parseAiHistoryLimit,
+  readResponseTextLimited,
+  trimAiHistory,
+} from "./processAi.security.js";
 
 const conversationHistories = new Map<
   string,
@@ -7,17 +15,16 @@ const conversationHistories = new Map<
 >();
 
 export function clearAiHistory(ticketId: string | number) {
-  
   conversationHistories.delete(String(ticketId));
-  
 }
 
 function formatarListaLaudos(laudos: any[]): string {
   return laudos
     .map((l) => {
-      const nome = l.procedimento.length > 40
-        ? l.procedimento.slice(0, 40) + "..."
-        : l.procedimento;
+      const nome =
+        l.procedimento.length > 40
+          ? l.procedimento.slice(0, 40) + "..."
+          : l.procedimento;
       return `${l.indice}. ${nome} — ${l.data}`;
     })
     .join("\n");
@@ -25,9 +32,10 @@ function formatarListaLaudos(laudos: any[]): string {
 function formatarListaAgendamento(agendamentos: any[]): string {
   return agendamentos
     .map((l) => {
-      const nome = l.modalidade.length > 40
-        ? l.modalidade.slice(0, 40) + "..."
-        : l.modalidade;
+      const nome =
+        l.modalidade.length > 40
+          ? l.modalidade.slice(0, 40) + "..."
+          : l.modalidade;
       return `${l.indice}. ${nome} — ${l.data} - ${l.hora}`;
     })
     .join("\n");
@@ -54,14 +62,27 @@ export const ProcessAiNode = {
     const prompt = context.mensagem;
     const promptAgent = await flowService.findAiPrompt(promptData);
 
-    const ticketId = String(context.ticket.id ?? context.ticket.id ?? "default");
+    const ticketId = String(
+      context.ticket.id ?? context.ticket.id ?? "default",
+    );
 
     if (!conversationHistories.has(ticketId)) {
+      const maxActiveConversations = parseAiActiveConversationLimit();
+      if (conversationHistories.size >= maxActiveConversations) {
+        const oldestTicketId = conversationHistories.keys().next().value;
+        if (typeof oldestTicketId === "string") {
+          conversationHistories.delete(oldestTicketId);
+        }
+      }
+
       conversationHistories.set(ticketId, []);
     }
     const history = conversationHistories.get(ticketId)!;
-  
+
+    const historyLimit = parseAiHistoryLimit(maxHistory);
+
     history.push({ role: "user", content: prompt });
+    trimAiHistory(history, historyLimit);
 
     const listaLaudosTexto = context.laudosDisponiveis
       ? formatarListaLaudos(context.laudosDisponiveis)
@@ -81,10 +102,10 @@ export const ProcessAiNode = {
 
     const messages = [
       systemMessage,
-      ...sanitizeHistory(history.slice(-maxHistory)),
+      ...sanitizeHistory(history.slice(-historyLimit)),
     ];
 
-    const response = await fetchWithRetry(
+    const responseText = await fetchWithRetry(
       ticketId,
       messages,
       history,
@@ -94,12 +115,29 @@ export const ProcessAiNode = {
       temperature,
       maxTokens,
     );
+    let data: {
+      choices?: Array<{
+        finish_reason?: string;
+        message?: { content?: unknown };
+      }>;
+    };
 
-    const data = await response.json();
-    const usage = data.usage;
-    const choice = data.choices[0];
+    try {
+      data = JSON.parse(responseText) as typeof data;
+    } catch {
+      throw new Error("Resposta inválida do provedor de IA.");
+    }
+
+    const choice = data.choices?.[0];
+    if (
+      !choice ||
+      !choice.message ||
+      typeof choice.message.content !== "string"
+    ) {
+      throw new Error("Resposta inválida do provedor de IA.");
+    }
+
     const finishReason = choice.finish_reason;
-    console.log(choice)
     if (finishReason === "length") {
       console.warn(
         `[AI][ticket=${ticketId}] Resposta truncada por limite de tokens.`,
@@ -113,7 +151,7 @@ export const ProcessAiNode = {
         },
       };
     }
-    const raw = choice.message.content as string;
+    const raw = choice.message.content;
 
     const semThought = stripThought(raw);
     const dadosExtraidos = extractDados(semThought); // só então procura ###DADOS###
@@ -125,13 +163,11 @@ export const ProcessAiNode = {
         : "Desculpe, pode repetir a última informação?"; // fallback nunca-vazio
 
     history.push({ role: "assistant", content: clean });
-
+    trimAiHistory(history, historyLimit);
 
     const escopo = promptData;
     const chaveDados = `dados_${escopo}`;
     const chaveEtapa = `etapaConcluida_${escopo}`;
-
-
 
     const dadosAcumulados = {
       ...(context[chaveDados] ?? {}),
@@ -142,7 +178,6 @@ export const ProcessAiNode = {
       ),
     };
     let etapaConcluidaFinal = dadosExtraidos?.concluido === true;
-
 
     if (escopo === "laudos") {
       const indiceEscolhido = dadosAcumulados?.indice_escolhido;
@@ -164,9 +199,11 @@ export const ProcessAiNode = {
         Number(indiceEscolhido) >= 1 &&
         Number(indiceEscolhido) <= (context.listaAgendamentos?.length ?? 0); // confirma o nome certo aqui também
 
-      const acaoValida = acao != null && ["confirmar", "cancelar", "preparo"].includes(acao);
+      const acaoValida =
+        acao != null && ["confirmar", "cancelar", "preparo"].includes(acao);
 
-      etapaConcluidaFinal = etapaConcluidaFinal && agendamentoValido && acaoValida;
+      etapaConcluidaFinal =
+        etapaConcluidaFinal && agendamentoValido && acaoValida;
     }
     return {
       ...context,
@@ -193,55 +230,71 @@ async function fetchWithRetry(
   model = "gemma-4-31b-it",
   temperature = 0.7,
   tokens = 500,
-): Promise<Response> {
-  const response = await fetch(
-    "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-    {
-      method: "POST",
-      headers: {
-         Authorization: `Bearer ${process.env.GEMINI_API_KEY}`,
-        "Content-Type": "application/json",
+): Promise<string> {
+  const controller = new AbortController();
+  const timeoutMs = getAiRequestTimeoutMs();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${getRequiredAiApiKey()}`,
+          "Content-Type": "application/json",
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          model: `models/${model}`,
+          messages,
+          temperature,
+          max_tokens: tokens,
+        }),
       },
-      body: JSON.stringify({
-        model: `models/${model}`,
-        messages,
-        temperature,
-        max_tokens: tokens,  
-      }),
-    },
-  );
+    );
 
-  if (!response.ok) {
-    const err = await response.text();
+    if (!response.ok) {
+      const retryable = response.status === 429 || response.status >= 500;
 
-    if (attempt === 1) {
-      console.warn(
-        `[AI][ticket=${ticketId}] Erro ${response.status} tentativa ${attempt}, retentando sem histórico...`,
-      );
+      if (attempt === 1 && retryable) {
+        await response.body?.cancel();
+        console.warn(
+          `[AI][ticket=${ticketId}] Erro ${response.status}; retentando sem histórico...`,
+        );
 
-      // Limpa histórico corrompido mantendo só a última mensagem do usuário
-      const lastUserMsg = history.filter((m) => m.role === "user").at(-1)!;
-      history.splice(0, history.length);
-      history.push(lastUserMsg);
+        // Limpa histórico corrompido mantendo só a última mensagem do usuário.
+        const lastUserMsg = history.filter((m) => m.role === "user").at(-1);
+        history.splice(0, history.length);
+        if (lastUserMsg) history.push(lastUserMsg);
 
-      // Reenvia só system + última mensagem
-      return fetchWithRetry(
-        ticketId,
-        [systemMessage, lastUserMsg],
-        history,
-        systemMessage,
-        2,
-        model,
-        temperature,
-        tokens,
-      );
+        // Reenvia só system + última mensagem, no máximo uma vez.
+        return fetchWithRetry(
+          ticketId,
+          lastUserMsg ? [systemMessage, lastUserMsg] : [systemMessage],
+          history,
+          systemMessage,
+          2,
+          model,
+          temperature,
+          tokens,
+        );
+      }
+
+      await readResponseTextLimited(response);
+      throw new Error(`LLM request failed with status ${response.status}.`);
     }
 
-    console.error(`[AI][ticket=${ticketId}] Erro ${response.status}:`, err);
-    throw new Error(`LLM error ${response.status}: ${err}`);
-  }
+    return readResponseTextLimited(response, 1_048_576);
+  } catch (error) {
+    if (controller.signal.aborted) {
+      throw new Error(`LLM request excedeu o timeout de ${timeoutMs} ms.`);
+    }
 
-  return response;
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function sanitizeHistory(
