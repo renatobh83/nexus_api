@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { getClientIONamespace, waitForSocket } from "../../lib/socket.js";
 import { buildMessageBody } from "./message.utils.js";
 import { MessageRepository } from "./messages.repository.js";
+import type { MessagePagination } from "./messages.repository.js";
 import { SendMessageSystemProxy } from "./handlers/handleSendMessageSystemProxy.js";
 import { TicketsRepository } from "../tickets/tickets.repository.js";
 
@@ -45,8 +46,11 @@ export class MessageService {
     return message;
   }
 
-  async findMessagesTicket(where: Prisma.MessageWhereInput) {
-    return await this.messageRepository.findAllMessageTicket(where);
+  async findMessagesTicket(
+    where: Prisma.MessageWhereInput,
+    pagination?: MessagePagination,
+  ) {
+    return await this.messageRepository.findAllMessageTicket(where, pagination);
   }
 
   async createMessageSystem(data: any) {

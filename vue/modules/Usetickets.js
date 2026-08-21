@@ -25,7 +25,12 @@ function useTickets({
   const currentMessages = ref([]);
   const newMessageText = ref("");
   const loadingMessages = ref(false);
+  const loadingMoreMessages = ref(false);
+  const hasMoreMessages = ref(false);
+  const messageOffset = ref(0);
   const tempMessages = ref([]);
+
+  const MESSAGE_PAGE_SIZE = 40;
   const assinarMensagem = ref(false);
 
   const fileInput = ref(null);
@@ -160,17 +165,30 @@ function useTickets({
    * Carrega as mensagens de um ticket específico.
    * @param {number|string} ticketId
    */
-  const loadMessages = async (ticketId) => {
-    tempMessages.value = [];
+  const loadMessages = async (ticketId, { append = false } = {}) => {
+    if (append) {
+      if (loadingMoreMessages.value || !hasMoreMessages.value) return;
+      loadingMoreMessages.value = true;
+    } else {
+      tempMessages.value = [];
+      messageOffset.value = 0;
+      hasMoreMessages.value = false;
+    }
+
     const ticket = allTickets.value.find((t) => t.id === ticketId);
+    const requestedSkip = append ? messageOffset.value : 0;
 
     try {
-      // O ticket pode ainda conter a lista antiga em memória quando o POST
-      // termina. Buscar o endpoint garante que mediaUrl e mediaType venham do
-      // registro persistido, e não do preview local (blob:).
-      const response = await fetch(`${URL_BASE}/api/v1/messages/${ticketId}`, {
-        headers: { Authorization: `Bearer ${token.value}` },
+      // O endpoint devolve somente uma página. A mensagem persistida contém
+      // mediaUrl e mediaType definitivos, nunca o preview local `blob:`.
+      const params = new URLSearchParams({
+        limit: String(MESSAGE_PAGE_SIZE),
+        skip: String(requestedSkip),
       });
+      const response = await fetch(
+        `${URL_BASE}/api/v1/messages/${ticketId}?${params.toString()}`,
+        { headers: { Authorization: `Bearer ${token.value}` } },
+      );
 
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
@@ -181,25 +199,76 @@ function useTickets({
           ? data
           : [];
 
-      // Mantém o cache na ordem original da API, usada pelo listener
-      // `new-message`; o computed `allMessages` ordena somente a renderização.
-      if (ticket) ticket.messages = [...messages];
-      currentMessages.value = [...messages].sort(
+      const merged = new Map();
+      for (const message of append
+        ? [...currentMessages.value, ...messages]
+        : messages) {
+        const key = message.id || message.messageId;
+        if (key) merged.set(String(key), message);
+      }
+
+      const orderedMessages = [...merged.values()].sort(
         (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
       );
+      currentMessages.value = orderedMessages;
+
+      // O cache fica em ordem decrescente, compatível com o listener
+      // `new-message`; somente a renderização usa ordem crescente.
+      if (ticket) {
+        const cached = new Map();
+        for (const message of append
+          ? [...(ticket.messages || []), ...messages]
+          : messages) {
+          const key = message.id || message.messageId;
+          if (key) cached.set(String(key), message);
+        }
+        ticket.messages = [...cached.values()].sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+        );
+      }
+
+      messageOffset.value = requestedSkip + messages.length;
+      hasMoreMessages.value = Boolean(data.hasMore);
     } catch (error) {
-      // Fallback para o cache existente se a consulta falhar; a tela continua
-      // utilizável e o próximo evento/atualização poderá sincronizar a lista.
+      // Em caso de falha inicial, preserva o fallback já carregado no ticket.
+      // Em uma página adicional, mantém as mensagens atuais sem descartá-las.
       console.error("Erro ao carregar mensagens do ticket:", error);
-      currentMessages.value = ticket?.messages
-        ? [...ticket.messages].sort(
-            (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
-          )
-        : [];
+      if (!append) {
+        currentMessages.value = ticket?.messages
+          ? [...ticket.messages].sort(
+              (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+            )
+          : [];
+      }
+    } finally {
+      if (append) loadingMoreMessages.value = false;
     }
 
     await nextTick();
-    scrollToBottom(ticketId);
+    if (!append) scrollToBottom(ticketId);
+  };
+
+  /** Carrega a página anterior quando o operador chega ao topo do histórico. */
+  const loadMoreMessages = async () => {
+    if (!currentTicket.value) return;
+
+    const area = document.querySelector(".messages-area");
+    const previousHeight = area?.scrollHeight || 0;
+    const previousTop = area?.scrollTop || 0;
+
+    await loadMessages(currentTicket.value.id, { append: true });
+    await nextTick();
+
+    // Mantém a mesma mensagem visível depois de inserir itens acima.
+    if (area && area.scrollHeight > previousHeight) {
+      area.scrollTop = area.scrollHeight - previousHeight + previousTop;
+    }
+  };
+
+  const handleMessagesScroll = (event) => {
+    if (event.currentTarget.scrollTop <= 80) {
+      void loadMoreMessages();
+    }
   };
 
   /**
@@ -489,6 +558,9 @@ function useTickets({
     currentMessages,
     newMessageText,
     loadingMessages,
+    loadingMoreMessages,
+    hasMoreMessages,
+    messageOffset,
     tempMessages,
     assinarMensagem,
     fileInput,
@@ -502,6 +574,8 @@ function useTickets({
     updateSingleTicket,
     loadTickets,
     loadMessages,
+    loadMoreMessages,
+    handleMessagesScroll,
     selectTicket,
     attendTicket,
     reopenTicket,

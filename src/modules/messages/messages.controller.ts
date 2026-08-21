@@ -3,17 +3,42 @@ import { MessageService } from "./messages.service.js";
 import { TicketService } from "../tickets/tickets.service.js";
 const service = new MessageService();
 const ticketServices = new TicketService();
+const DEFAULT_MESSAGE_LIMIT = 40;
+const MAX_MESSAGE_LIMIT = 100;
+
+function parsePaginationInteger(
+  value: unknown,
+  fallback: number,
+  minimum: number,
+  maximum?: number,
+): number {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < minimum) return fallback;
+  return maximum === undefined ? parsed : Math.min(parsed, maximum);
+}
 export async function messagesController(fastify: FastifyInstance) {
   fastify.get(
     "/:ticketId",
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { ticketId } = request.params as any;
       const numberTicket = parseInt(ticketId);
-      const { count, hasMore, messages } = await service.findMessagesTicket({
-        ticketid: numberTicket,
-      });
+      const query = request.query as {
+        limit?: string;
+        skip?: string;
+      };
+      const limit = parsePaginationInteger(
+        query?.limit,
+        DEFAULT_MESSAGE_LIMIT,
+        1,
+        MAX_MESSAGE_LIMIT,
+      );
+      const skip = parsePaginationInteger(query?.skip, 0, 0);
+      const { count, hasMore, messages } = await service.findMessagesTicket(
+        { ticketid: numberTicket },
+        { limit, skip },
+      );
 
-      reply.status(200).send({ count, hasMore, messages });
+      reply.status(200).send({ count, hasMore, limit, skip, messages });
     },
   );
   fastify.post(

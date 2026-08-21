@@ -123,8 +123,11 @@ export const WaitUntil = {
         break;
     }
 
+    // O executor usa `route` para selecionar uma saída nomeada. Sem esse
+    // campo, o fluxo seguia todas as conexões e a condição era ignorada.
     return {
       ...context,
+      route: passed ? "output_1" : "output_2",
     };
   },
 };

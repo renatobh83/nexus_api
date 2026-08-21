@@ -6,6 +6,15 @@ export interface ResponseMessages {
   count: number;
   hasMore: boolean;
 }
+
+export interface MessagePagination {
+  limit?: number;
+  skip?: number;
+}
+
+const DEFAULT_MESSAGE_LIMIT = 40;
+const MAX_MESSAGE_LIMIT = 100;
+
 const messageInclude = {
   ticket: {
     include: {
@@ -49,24 +58,33 @@ export class MessageRepository {
       data: data,
     });
   }
-  async findAllMessageTicket(where: Prisma.MessageWhereInput): Promise<any> {
-    const DEFAULT_LIMIT = 40;
-    const DEFAULT_SKIP = 0;
-    const messages = await prisma.message.findMany({
-      take: DEFAULT_LIMIT,
-      skip: DEFAULT_SKIP,
-      where,
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-    const count = messages.length;
-    const hasMore = count > DEFAULT_SKIP + messages.length;
+  async findAllMessageTicket(
+    where: Prisma.MessageWhereInput,
+    pagination: MessagePagination = {},
+  ): Promise<ResponseMessages> {
+    const requestedLimit = Number.isInteger(pagination.limit)
+      ? pagination.limit!
+      : DEFAULT_MESSAGE_LIMIT;
+    const requestedSkip = Number.isInteger(pagination.skip)
+      ? pagination.skip!
+      : 0;
+    const limit = Math.min(Math.max(requestedLimit, 1), MAX_MESSAGE_LIMIT);
+    const skip = Math.max(requestedSkip, 0);
+
+    const [messages, count] = await prisma.$transaction([
+      prisma.message.findMany({
+        take: limit,
+        skip,
+        where,
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      }),
+      prisma.message.count({ where }),
+    ]);
 
     return {
-      messages, //: JSON.parse(JSON.stringify(messages)),
-      hasMore,
+      messages,
       count,
+      hasMore: skip + messages.length < count,
     };
   }
 }
