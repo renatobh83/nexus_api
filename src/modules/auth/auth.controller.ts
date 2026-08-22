@@ -3,7 +3,13 @@ import { AuthService } from "./auth.service.js";
 import { signUserToken, verifyUserToken } from "./jwt.js";
 import { isTokenRevoked, revokeToken } from "./tokenRevocation.js";
 import { disconnectUserSockets } from "../../lib/socket.js";
+import { getAuthenticatedSubject } from "./authorization.js";
+import { parseUserId, parseSelfProfileUpdateData, toPublicUser } from "../users/users.security.js";
+import { UsersService } from "../users/users.service.js";
+import { AppError } from "../../utils/AppError.js";
+
 const authService = new AuthService();
+const usersService = new UsersService();
 export async function authController(fastify: FastifyInstance) {
   fastify.post(
     "/login",
@@ -33,6 +39,44 @@ export async function authController(fastify: FastifyInstance) {
       });
     },
   );
+  fastify.put(
+    "/me",
+    {
+      preHandler: [
+        fastify.authenticate,
+        fastify.authorizeRoles("administrador", "atendente"),
+      ],
+    },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      
+      const claims = request.user;
+      const userId = parseUserId(getAuthenticatedSubject(claims));
+      const profileData = parseSelfProfileUpdateData(request.body);
+      console.log(userId)
+      console.log(request.body)
+      if (!claims || !userId) {
+        throw new AppError("Usuário autenticado inválido", 401);
+      }
+
+      if (!profileData) {
+        throw new AppError("Dados de perfil inválidos", 400);
+      }
+
+      const user = await usersService.updateOwnProfile(userId, profileData);
+      const requiresReauthentication = profileData.newPassword !== undefined;
+
+      if (requiresReauthentication) {
+        await revokeToken(claims);
+        disconnectUserSockets(userId);
+      }
+
+      reply.status(200).send({
+        user: toPublicUser(user),
+        requiresReauthentication,
+      });
+    },
+  );
+
   fastify.post(
     "/logout",
     { preHandler: fastify.authenticate },

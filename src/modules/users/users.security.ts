@@ -4,6 +4,7 @@ const ALLOWED_ROLES = new Set(["administrador", "atendente"]);
 const MAX_NAME_LENGTH = 120;
 const MAX_EMAIL_LENGTH = 254;
 const MAX_PASSWORD_LENGTH = 128;
+const MIN_SELF_PASSWORD_LENGTH = 8;
 
 export interface UserCreateData {
   name: string;
@@ -21,6 +22,12 @@ export interface UserUpdateData {
   passwordHash?: string;
 }
 
+export interface SelfProfileUpdateData {
+  name?: string;
+  currentPassword?: string;
+  newPassword?: string;
+}
+
 export interface PublicUser {
   id: string;
   name: string;
@@ -32,6 +39,57 @@ export interface PublicUser {
 type UserWriteMode = "create" | "update";
 type UserWriteData = UserCreateData | UserUpdateData;
 type UnknownRecord = Record<string, unknown>;
+
+/**
+ * Aceita somente os campos destinados à edição do próprio perfil. A senha atual
+ * nunca é persistida: ela existe apenas para verificação no service.
+ */
+export function parseSelfProfileUpdateData(
+  value: unknown,
+): SelfProfileUpdateData | null {
+  if (!isRecord(value)) return null;
+
+  const allowedFields = new Set(["name", "currentPassword", "newPassword"]);
+  if (Object.keys(value).some((field) => !allowedFields.has(field))) {
+    return null;
+  }
+
+  const name = readOptionalText(value.name, MAX_NAME_LENGTH);
+  const currentPassword = readOptionalPassword(value.currentPassword);
+  const newPassword = readOptionalPassword(value.newPassword);
+
+  if (name === null) return null;
+  if (currentPassword === null) return null;
+  if (newPassword === null) return null;
+
+  if (newPassword !== undefined && newPassword.length < MIN_SELF_PASSWORD_LENGTH) {
+    return null;
+  }
+
+  if (newPassword !== undefined && currentPassword === undefined) {
+    return null;
+  }
+
+  if (newPassword === undefined && currentPassword !== undefined) {
+    return null;
+  }
+
+  const data: SelfProfileUpdateData = {};
+  if (name !== undefined) data.name = name;
+  if (currentPassword !== undefined) data.currentPassword = currentPassword;
+  if (newPassword !== undefined) data.newPassword = newPassword;
+
+  return Object.keys(data).length > 0 ? data : null;
+}
+
+/**
+ * Valida uma senha informada para uso temporário na operação de perfil.
+ */
+function readOptionalPassword(value: unknown): string | null | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== "string" || value.length === 0) return null;
+  return value.length <= MAX_PASSWORD_LENGTH ? value : null;
+}
 
 /**
  * Retorna o identificador do usuário somente quando ele possui o formato UUID

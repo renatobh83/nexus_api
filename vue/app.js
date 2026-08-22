@@ -43,6 +43,7 @@ async function initApp() {
   const [
     TabChats,
     ConfigUsers,
+    ConfigCompanies,
     ConfigChannels,
     TabGraficos,
     AppModals,
@@ -54,6 +55,7 @@ async function initApp() {
   ] = await Promise.all([
     loadComponent("./templates/tab-chats.html", autoInject),
     loadComponent("./templates/config-users.html", autoInject),
+    loadComponent("./templates/config-companies.html", autoInject),
     loadComponent("./templates/config-channels.html", autoInject),
     loadComponent("./templates/tab-graficos.html", autoInject),
     loadComponent("./templates/modals.html", autoInject),
@@ -91,6 +93,60 @@ async function initApp() {
       const isAuthenticated = ref(false);
       const currentUser = ref(null);
       const ticketNovo = ref("");
+
+      /**
+       * Normaliza o perfil recebido no JWT para que a navegação não dependa de
+       diferenças de capitalização ou espaços vindas do armazenamento local.
+       * A regra visual não substitui a autorização do backend; ela somente evita
+       * renderizar opções que resultarão em HTTP 403.
+       */
+      const currentRole = computed(() =>
+        String(currentUser.value?.role ?? currentUser.value?.profile ?? "")
+          .trim()
+          .toLowerCase(),
+      );
+      const isAdmin = computed(() => currentRole.value === "administrador");
+      const canAccessConfiguration = computed(() =>
+        ["administrador", "atendente"].includes(currentRole.value),
+      );
+
+      /**
+       * Troca a aba principal somente quando o perfil possui acesso funcional
+       * àquela área. O backend continua sendo a autoridade final da operação.
+       */
+      const setActiveTab = (tab) => {
+        if (tab === "flow" && !isAdmin.value) return;
+        if (tab === "configuracoes" && !canAccessConfiguration.value) return;
+        activeTab.value = tab;
+      };
+
+      /**
+       * Troca a subaba de configurações respeitando a matriz atual de acesso:
+       * atendentes podem consultar Canais; as demais configurações são admin.
+       */
+      const setConfigSubtab = (subtab) => {
+        const allowedSubtabs = isAdmin.value
+          ? ["users", "channels", "companies", "integracao", "settings"]
+          : ["channels"];
+        if (!allowedSubtabs.includes(subtab)) return;
+        configSubtab.value = subtab;
+      };
+
+      /**
+       * Corrige uma seleção antiga quando o usuário muda de perfil ou quando
+       * uma sessão administrativa é encerrada e outra sessão é aberta.
+       */
+      const normalizeNavigation = () => {
+        if (!isAdmin.value && activeTab.value === "flow") {
+          activeTab.value = "chats";
+        }
+        if (!canAccessConfiguration.value && activeTab.value === "configuracoes") {
+          activeTab.value = "chats";
+        }
+        if (!isAdmin.value && configSubtab.value !== "channels") {
+          configSubtab.value = "channels";
+        }
+      };
       // Socket exposto como ref para os módulos acessarem reativamente
       const socketRef = ref(null);
 
@@ -208,6 +264,7 @@ async function initApp() {
           const parsedUser = JSON.parse(userData);
           parsedUser.role = payload.profile;
           currentUser.value = parsedUser;
+          normalizeNavigation();
           isAuthenticated.value = true;
           return true;
         } catch {
@@ -257,13 +314,22 @@ async function initApp() {
       // =========================================================================
       // 6. COMPOSABLES (módulos)
       // =========================================================================
-      const shared = { URL_BASE, token, currentUser, sonnerAlert };
+      const shared = {
+        URL_BASE,
+        token,
+        currentUser,
+        currentRole,
+        isAdmin,
+        sonnerAlert,
+      };
 
       const qrCode = useQrCode({ STATUS, sonnerAlert });
 
       const channels = useChannels({ ...shared });
 
       const users = useUsers({ ...shared });
+
+      const companies = useCompanies({ ...shared });
 
       const integracoes = useIntegracao({ ...shared });
 
@@ -570,15 +636,25 @@ async function initApp() {
       onMounted(async () => {
         if (!checkAuthentication()) return;
         initSocket();
-        await Promise.all([
+        const initialLoads = [
           tickets.loadTickets(),
           channels.loadChannels(),
-          users.loadUsers(),
-          integracoes.loadIntegracao(),
-          settings.loadQueues(),
-          settings.loadHours(),
-          settings.loadHolidays(),
-        ]);
+        ];
+
+        // Usuários comuns não possuem acesso às rotas administrativas. Não
+        // iniciar esses fetches evita erros 403 no console e requisições inúteis.
+        if (isAdmin.value) {
+          initialLoads.push(
+            users.loadUsers(),
+            companies.loadCompanies(),
+            integracoes.loadIntegracao(),
+            settings.loadQueues(),
+            settings.loadHours(),
+            settings.loadHolidays(),
+          );
+        }
+
+        await Promise.all(initialLoads);
         // 4. 🔥 ÚNICA LINHA que você precisa para o SW agora:
         await notifications.requestPermission();
         getWebLLM();
@@ -611,6 +687,8 @@ async function initApp() {
         ...graficos,
         // Integracoes
         ...integracoes,
+        // Empresas
+        ...companies,
         // Flow
         ...flow,
         // Settings
@@ -619,12 +697,18 @@ async function initApp() {
         // Estado global
         ...shared,
         activeTab,
+        setActiveTab,
         sidebarOpen,
         configSubtab,
+        setConfigSubtab,
+        normalizeNavigation,
         userMenuOpen,
         socketConnected,
         isAuthenticated,
         currentUser,
+        currentRole,
+        isAdmin,
+        canAccessConfiguration,
         showAlerta,
         alertaMessage,
         isSuccess,
@@ -665,6 +749,7 @@ async function initApp() {
   app.component("tab-graficos", TabGraficos);
   app.component("app-modals", AppModals);
   app.component("config-users", ConfigUsers);
+  app.component("config-companies", ConfigCompanies);
   app.component("config-channels", ConfigChannels);
   app.component("config-integracao", ConfigIntegracao);
   app.component("tab-dashboard", TabDashboard);

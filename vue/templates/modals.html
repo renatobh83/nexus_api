@@ -163,43 +163,72 @@
   </div>
 </div>
 
-<!-- Modal Usuário -->
+<!-- Modal Usuário / Meu perfil -->
 <div id="userModal" class="modal" :class="{ active: userModalVisible }">
   <div class="modal-content">
     <div class="modal-header">
-      <h3>{{ editingUser.id ? 'Editar' : 'Adicionar' }} Usuário</h3>
-      <button class="modal-close" @click="userModalVisible = false">&times;</button>
+      <h3>{{ profileMode ? 'Meu perfil' : (editingUser.id ? 'Editar Usuário' : 'Adicionar Usuário') }}</h3>
+      <button class="modal-close" @click="closeUserModal">&times;</button>
     </div>
     <div class="modal-body">
       <div class="form-group">
         <span>Nome</span>
-        <input v-model="editingUser.name" placeholder="Nome" />
+        <input v-model="editingUser.name" placeholder="Nome" autocomplete="name" />
       </div>
-      <div class="form-group">
-        <span>Email</span>
-        <input v-model="editingUser.email" type="email">
-      </div>
-      <div class="form-group">
-        <span>Senha</span>
-        <input v-model="editingUser.passwordHash" type="password">
-      </div>
-      <div class="form-group" v-if="isAdmin">
-        <span>Perfil</span>
-        <select v-model="editingUser.role">
-          <option value="atendente">Atendente</option>
-          <option value="administrador">Admin</option>
-        </select>
-      </div>
-      <div class="form-group" v-if="isAdmin">
-        <span>Status</span>
-        <select v-model="editingUser.isActive">
-          <option :value="true">Ativo</option>
-          <option :value="false">Inativo</option>
-        </select>
-      </div>
+
+      <template v-if="profileMode">
+        <div class="form-group">
+          <span>Email</span>
+          <input v-model="editingUser.email" type="email" disabled autocomplete="username">
+        </div>
+        <div class="form-group">
+          <span>Senha atual</span>
+          <input v-model="editingUser.currentPassword" type="password"
+            placeholder="Obrigatória para trocar a senha" autocomplete="current-password">
+        </div>
+        <div class="form-group">
+          <span>Nova senha</span>
+          <input v-model="editingUser.newPassword" type="password"
+            placeholder="Deixe vazio para não alterar" autocomplete="new-password">
+        </div>
+        <div class="form-group">
+          <span>Confirmar nova senha</span>
+          <input v-model="editingUser.confirmPassword" type="password"
+            placeholder="Repita a nova senha" autocomplete="new-password">
+        </div>
+      </template>
+
+      <template v-else>
+        <div class="form-group">
+          <span>Email</span>
+          <input v-model="editingUser.email" type="email" autocomplete="username">
+        </div>
+        <div class="form-group">
+          <span>Senha</span>
+          <input v-model="editingUser.passwordHash" type="password"
+            placeholder="Deixe vazio para manter a senha" autocomplete="new-password">
+        </div>
+        <div class="form-group" v-if="isAdmin">
+          <span>Perfil</span>
+          <select v-model="editingUser.role">
+            <option value="atendente">Atendente</option>
+            <option value="administrador">Administrador</option>
+          </select>
+        </div>
+        <div class="form-group" v-if="isAdmin">
+          <span>Status</span>
+          <select v-model="editingUser.isActive">
+            <option :value="true">Ativo</option>
+            <option :value="false">Inativo</option>
+          </select>
+        </div>
+      </template>
+
       <div class="modal-buttons">
-        <button class="btn-secondary" @click="userModalVisible = false">Cancelar</button>
-        <button class="btn-primary" @click="saveUser">Salvar</button>
+        <button class="btn-secondary" @click="closeUserModal">Cancelar</button>
+        <button class="btn-primary" @click="saveUser" :disabled="savingUser">
+          {{ savingUser ? 'Salvando...' : 'Salvar' }}
+        </button>
       </div>
     </div>
   </div>
@@ -244,6 +273,112 @@
       <div class="modal-buttons">
         <button class="btn-secondary" @click="integracaoModalVisible = false">Cancelar</button>
         <button class="btn-primary" @click="saveIntegracao" :disabled="loading">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal Empresa -->
+<div id="companyModal" class="modal" :class="{ active: companyModalVisible }">
+  <div class="modal-content company-modal-content">
+    <div class="modal-header">
+      <h3>{{ editingCompany.id ? 'Editar' : 'Adicionar' }} Empresa</h3>
+      <button class="modal-close" @click="closeCompanyModal" :disabled="savingCompany">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group" style="display: grid; grid-template-columns: 1fr 2fr; gap: 1rem;">
+        <div>
+          <span>CNPJ *</span>
+          <input v-model="editingCompany.cnpj"
+            placeholder="00.000.000/0000-00 ou 12.ABC.345/01DE-35" maxlength="18"
+            @input="editingCompany.cnpj = formatCnpj(editingCompany.cnpj)">
+        </div>
+        <div>
+          <span>Razão social *</span>
+          <input v-model="editingCompany.legalName" placeholder="Razão social da empresa" maxlength="160">
+        </div>
+      </div>
+
+      <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div>
+          <span>Nome fantasia</span>
+          <input v-model="editingCompany.tradeName" placeholder="Nome fantasia" maxlength="160">
+        </div>
+        <div>
+          <span>Email</span>
+          <input v-model="editingCompany.email" type="email" placeholder="contato@empresa.com.br" maxlength="254">
+        </div>
+      </div>
+
+      <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div>
+          <span>Telefone</span>
+          <input v-model="editingCompany.phone" placeholder="(00) 00000-0000" maxlength="15">
+        </div>
+        <div v-if="editingCompany.id">
+          <span>Status</span>
+          <select v-model="editingCompany.isActive">
+            <option :value="true">Ativa</option>
+            <option :value="false">Inativa</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <span>Descrição</span>
+        <textarea v-model="editingCompany.description" rows="2" maxlength="500"
+          placeholder="Descrição ou observações da empresa"></textarea>
+      </div>
+
+      <div class="form-group" style="display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 1rem;">
+        <div>
+          <span>CEP</span>
+          <input v-model="editingCompany.postalCode" placeholder="00000-000" maxlength="9"
+            @input="editingCompany.postalCode = editingCompany.postalCode.replace(/\D/g, '').slice(0, 8)">
+        </div>
+        <div>
+          <span>Rua</span>
+          <input v-model="editingCompany.street" placeholder="Logradouro" maxlength="160">
+        </div>
+        <div>
+          <span>Número</span>
+          <input v-model="editingCompany.number" placeholder="Nº" maxlength="160">
+        </div>
+      </div>
+
+      <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div>
+          <span>Complemento</span>
+          <input v-model="editingCompany.complement" placeholder="Sala, andar, bloco..." maxlength="160">
+        </div>
+        <div>
+          <span>Bairro</span>
+          <input v-model="editingCompany.neighborhood" placeholder="Bairro" maxlength="160">
+        </div>
+      </div>
+
+      <div class="form-group" style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1rem;">
+        <div>
+          <span>Cidade</span>
+          <input v-model="editingCompany.city" placeholder="Cidade" maxlength="160">
+        </div>
+        <div>
+          <span>UF</span>
+          <input v-model="editingCompany.state" placeholder="UF" maxlength="2"
+            @input="editingCompany.state = editingCompany.state.toUpperCase().slice(0, 2)">
+        </div>
+        <div>
+          <span>País</span>
+          <input v-model="editingCompany.country" placeholder="Brasil" maxlength="80">
+        </div>
+      </div>
+
+      <div class="modal-buttons">
+        <button class="btn-secondary" @click="closeCompanyModal" :disabled="savingCompany">Cancelar</button>
+        <button class="btn-primary" @click="saveCompany" :disabled="savingCompany">
+          {{ savingCompany ? 'Salvando...' : 'Salvar' }}
+        </button>
       </div>
     </div>
   </div>

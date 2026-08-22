@@ -46,6 +46,7 @@ export async function companiesController(fastify: FastifyInstance) {
   fastify.post(
     "/",
     async (request: FastifyRequest, reply: FastifyReply) => {
+      
       const companyData = parseCompanyWriteData(request.body, "create");
 
       if (!companyData) {

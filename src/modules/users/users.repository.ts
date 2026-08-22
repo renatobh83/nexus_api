@@ -31,6 +31,15 @@ export class UsersRepository {
     });
   }
 
+  findByIdForAuthentication(
+    id: string,
+  ): Promise<AuthenticationUserRecord | null> {
+    return prisma.user.findUnique({
+      where: { id },
+      select: AUTHENTICATION_USER_SELECT,
+    });
+  }
+
   updateUser(id: string, data: Prisma.UserUpdateInput): Promise<PublicUserRecord> {
     return prisma.user.update({
       where: { id },

@@ -99,36 +99,67 @@ const normalizeOptionalText = (
   return normalizeText(value, maxLength);
 };
 
+/**
+ * Normaliza um CNPJ numérico ou alfanumérico para 14 caracteres maiúsculos.
+ * A máscara visual é removida; as 12 primeiras posições aceitam letras e
+ * números, enquanto os dois dígitos verificadores finais devem ser numéricos.
+ */
 export const normalizeCnpj = (value: unknown): string | undefined => {
   if (typeof value !== "string") return undefined;
-  const digits = value.replace(/\D/g, "");
-  return digits.length === CNPJ_LENGTH ? digits : undefined;
+
+  const normalized = value
+    .trim()
+    .toUpperCase()
+    .replace(/[.\/\-\s]/g, "");
+
+  return /^[A-Z0-9]{12}[0-9]{2}$/.test(normalized)
+    ? normalized
+    : undefined;
 };
 
-const hasRepeatedDigits = (value: string): boolean =>
-  /^([0-9])\1+$/.test(value);
+/**
+ * Rejeita a sequência artificial composta pelo mesmo caractere nas 12 posições
+ * de base. A regra preserva a proteção anterior contra CNPJs numéricos como
+ * 11.111.111/1111-11 e também evita aceitar uma base alfanumérica obviamente
+ * inválida, sem restringir combinações legítimas de letras e números.
+ */
+const hasRepeatedBaseCharacters = (value: string): boolean =>
+  /^([A-Z0-9])\1{11}$/.test(value.slice(0, 12));
 
+/**
+ * Calcula um dígito verificador pelo módulo 11 oficial do CNPJ.
+ * Cada caractere da base é convertido pelo código ASCII menos 48: dígitos
+ * permanecem com seus valores e A-Z passam a representar 17-42.
+ */
+const calculateCnpjDigit = (base: string): number => {
+  const initialFactor = base.length === 12 ? 5 : 6;
+  let factor = initialFactor;
+  let total = 0;
+
+  for (const character of base) {
+    total += (character.charCodeAt(0) - 48) * factor;
+    factor -= 1;
+    if (factor === 1) factor = 9;
+  }
+
+  const remainder = total % 11;
+  return remainder < 2 ? 0 : 11 - remainder;
+};
+
+/**
+ * Valida CNPJs numéricos legados e CNPJs alfanuméricos novos, aceitando tanto
+ * a forma compacta quanto a forma com máscara, como 12.ABC.345/01DE-35.
+ */
 export const isValidCnpj = (value: unknown): value is string => {
-  const digits = normalizeCnpj(value);
-  if (!digits || hasRepeatedDigits(digits)) return false;
+  const normalized = normalizeCnpj(value);
+  if (!normalized || hasRepeatedBaseCharacters(normalized)) return false;
 
-  const calculateDigit = (base: string): number => {
-    let factor = base.length - 5;
-    let total = 0;
+  const base = normalized.slice(0, 12);
+  const firstDigit = calculateCnpjDigit(base);
+  const secondDigit = calculateCnpjDigit(base + firstDigit);
+  const checkDigits = `${firstDigit}${secondDigit}`;
 
-    for (const digit of base) {
-      total += Number(digit) * factor;
-      factor -= 1;
-      if (factor === 1) factor = 9;
-    }
-
-    const remainder = total % 11;
-    return remainder < 2 ? 0 : 11 - remainder;
-  };
-
-  const firstDigit = calculateDigit(digits.slice(0, 12));
-  const secondDigit = calculateDigit(digits.slice(0, 12) + firstDigit);
-  return digits === digits.slice(0, 12) + firstDigit + secondDigit;
+  return normalized.slice(12) === checkDigits;
 };
 
 const normalizeEmail = (value: unknown): string | undefined => {

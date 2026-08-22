@@ -213,7 +213,12 @@ export async function start() {
 
     setImmediate(async () => {
       const channelManager = new ChannelManager();
-      channelManager.startAllReadySessions().catch(app.log.error);
+      channelManager.startAllReadySessions().catch((error) => {
+        app.log.error(
+          { err: error },
+          "❌ Falha ao carregar as sessões prontas dos canais.",
+        );
+      });
     });
   } catch (err: any) {
     if (app) {

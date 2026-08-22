@@ -187,17 +187,30 @@ function useCompanies({ URL_BASE, token, sonnerAlert }) {
   };
 
   /**
-   * Formata CNPJ apenas para exibição no painel.
+   * Formata CNPJ numérico ou alfanumérico para exibição no painel.
+   * A base possui 12 posições e os dois últimos caracteres são os dígitos
+   * verificadores. A máscara visual continua compatível com o padrão brasileiro.
    * @param {string} value
    * @returns {string}
    */
   const formatCnpj = (value) => {
-    const digits = String(value || "").replace(/\D/g, "").slice(0, 14);
-    return digits
-      .replace(/^(\d{2})(\d)/, "$1.$2")
-      .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
-      .replace(/^(\d{2})\.(\d{3})\.(\d{3})(\d)/, "$1.$2.$3/$4")
-      .replace(/^(\d{2})\.(\d{3})\.(\d{3})\/(\d{4})(\d)/, "$1.$2.$3/$4-$5");
+    const normalized = String(value || "")
+      .toUpperCase()
+      .replace(/[.\/\-\s]/g, "")
+      .replace(/[^A-Z0-9]/g, "")
+      .slice(0, 14);
+
+    return normalized
+      .replace(/^([A-Z0-9]{2})([A-Z0-9])/, "$1.$2")
+      .replace(/^([A-Z0-9]{2})\.([A-Z0-9]{3})([A-Z0-9])/, "$1.$2.$3")
+      .replace(
+        /^([A-Z0-9]{2})\.([A-Z0-9]{3})\.([A-Z0-9]{3})([A-Z0-9])/, 
+        "$1.$2.$3/$4",
+      )
+      .replace(
+        /^([A-Z0-9]{2})\.([A-Z0-9]{3})\.([A-Z0-9]{3})\/([A-Z0-9]{4})([0-9]{2})/,
+        "$1.$2.$3/$4-$5",
+      );
   };
 
   /**

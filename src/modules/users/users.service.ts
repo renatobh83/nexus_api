@@ -1,7 +1,12 @@
 import { Prisma } from "@prisma/client";
-import { hash } from "bcryptjs";
+import { compare, hash } from "bcryptjs";
+import { AppError } from "../../utils/AppError.js";
 import { UsersRepository } from "./users.repository.js";
-import { UserCreateData, UserUpdateData } from "./users.security.js";
+import {
+  SelfProfileUpdateData,
+  UserCreateData,
+  UserUpdateData,
+} from "./users.security.js";
 
 export class UsersService {
   private usersRepository: UsersRepository;
@@ -33,6 +38,39 @@ export class UsersService {
       ...(data.passwordHash === undefined
         ? {}
         : { passwordHash: await hash(data.passwordHash, 8) }),
+    };
+
+    return await this.usersRepository.updateUser(userId, userData);
+  };
+
+  updateOwnProfile = async (
+    userId: string,
+    data: SelfProfileUpdateData,
+  ) => {
+    const currentUser =
+      await this.usersRepository.findByIdForAuthentication(userId);
+
+    if (!currentUser) {
+      throw new AppError("Usuário não encontrado", 404);
+    }
+
+    if (data.newPassword !== undefined) {
+      const passwordMatches = Boolean(
+        currentUser.passwordHash &&
+          data.currentPassword &&
+          (await compare(data.currentPassword, currentUser.passwordHash)),
+      );
+
+      if (!passwordMatches) {
+        throw new AppError("Senha atual inválida", 403);
+      }
+    }
+
+    const userData: Prisma.UserUpdateInput = {
+      ...(data.name === undefined ? {} : { name: data.name }),
+      ...(data.newPassword === undefined
+        ? {}
+        : { passwordHash: await hash(data.newPassword, 8) }),
     };
 
     return await this.usersRepository.updateUser(userId, userData);
