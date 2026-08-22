@@ -17,7 +17,8 @@ export async function consultarAgendamentos(context: any) {
     cd_paciente: sessao.cd_paciente,
     token: sessao.ds_token
   })
-  console.log(data)
+  // Não registrar o payload: a resposta pode conter dados pessoais e clínicos.
+  console.log("Agendamentos consultados", { count: data.length });
   if (!data.length) {
      return {
       ...context,

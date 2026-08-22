@@ -87,7 +87,11 @@ export const wbotWebListener = async (wbot: Session): Promise<void> => {
     await handleMessage(messageInternal, session, contato);
   });
   wbot.onBackendEvent((eventName, ...args) => {
-    console.log("Backend event:", eventName, args);
+    // Registra apenas metadados; os argumentos podem conter mensagens, contatos ou tokens.
+    console.log("Backend event recebido", {
+      eventName,
+      argumentCount: args.length,
+    });
   });
   wbot.onReactionMessage(async (msg: any) => {
     await HandleMsgReaction(msg);
