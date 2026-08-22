@@ -11,6 +11,10 @@ import {
   parseTicketStatus,
   parseTicketUpdateBody,
 } from "./ticket.security.js";
+import {
+  FLOW_PERMISSIONS,
+  canUseFlowRoute,
+} from "../auth/flowAuthorization.js";
 
 const service = new TicketService();
 
@@ -69,6 +73,11 @@ export async function ticketController(fastify: FastifyInstance) {
 
   fastify.put(
     "/:ticketid/flow",
+    {
+      config: {
+        flowPermission: FLOW_PERMISSIONS.UPDATE_TICKET,
+      },
+    },
     async (
       request: FastifyRequest<{
         Params: LegacyTicketParams;
@@ -90,7 +99,13 @@ export async function ticketController(fastify: FastifyInstance) {
         return reply.status(404).send({ message: "Ticket not found" });
       }
 
-      if (!canAccessTicket(request.user, currentTicket)) {
+      const flowAuthorized = canUseFlowRoute(
+        request.user,
+        request.isInternalFlow,
+        request.routeOptions?.config,
+      );
+
+      if (!flowAuthorized && !canAccessTicket(request.user, currentTicket)) {
         return reply.status(403).send({ message: "Insufficient permissions" });
       }
 

@@ -39,12 +39,20 @@ export class IntegrationConfigRepository {
       },
     };
   }
-  async listaAll() {
-    return prisma.integrationConfig.findMany();
+  async listaAll(clientId?: string) {
+    return prisma.integrationConfig.findMany({
+      ...(clientId ? { where: { clientId } } : {}),
+      orderBy: [{ integrationName: "asc" }, { clientId: "asc" }],
+    });
   }
   async createOrUpdate(dto: Prisma.IntegrationConfigCreateInput) {
     return prisma.integrationConfig.upsert({
-      where: { integrationName: dto.integrationName },
+      where: {
+        integrationName_clientId: {
+          integrationName: dto.integrationName,
+          clientId: dto.clientId,
+        },
+      },
       update: dto,
       create: dto,
     });
@@ -54,7 +62,10 @@ export class IntegrationConfigRepository {
     return prisma.integrationConfig.findFirst({ where });
   }
 
-  async updateById(id: string, data: Prisma.IntegrationConfigUpdateInput) {
+  async updateById(
+    id: string,
+    data: Prisma.IntegrationConfigUpdateInput,
+  ) {
     return prisma.integrationConfig.update({
       where: { id },
       data,

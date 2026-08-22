@@ -9,13 +9,17 @@ export class AuthService {
   }
 
   async login(email: string, password: string) {
-    const user = await this.usersRepository.findByEmail(email);
+    const user = await this.usersRepository.findByEmailForAuthentication(email);
 
     if (!user) {
       throw new AppError("ERR_USER_NOT_FOUND");
     }
 
-    const isPasswordValid = await compare(password, user.passwordHash!);
+    if (!user.passwordHash) {
+      throw new AppError("ERR_INVALID_CREDENTIALS", 403);
+    }
+
+    const isPasswordValid = await compare(password, user.passwordHash);
 
     if (!isPasswordValid) {
       throw new AppError("ERR_INVALID_CREDENTIALS", 403);
@@ -36,10 +40,11 @@ export class AuthService {
       throw new Error("ERR_USER_NOT_FOUND");
     }
 
-    const updateLogin = await this.usersRepository.updateUser(user.id, {
+    const lastLogout = new Date();
+    await this.usersRepository.updateUser(user.id, {
       isOnline: false,
-      lastLogout: new Date(),
+      lastLogout,
     });
-    return updateLogin;
+    return { ...user, lastLogout };
   }
 }

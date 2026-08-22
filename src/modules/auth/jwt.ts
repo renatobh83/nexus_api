@@ -13,6 +13,7 @@ export interface AuthClaims extends JwtPayload {
   role?: string;
   type?: AuthTokenType | string;
   service?: string;
+  permissions?: string[];
 }
 
 const JWT_ALGORITHMS: VerifyOptions["algorithms"] = ["HS256"];

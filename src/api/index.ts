@@ -20,6 +20,7 @@ import { errorHandler } from "../utils/errorHandler.js";
 import { AppError } from "../utils/AppError.js";
 import { loadAppConfig } from "../config/appConfig.js";
 import { isTokenRevoked } from "../modules/auth/tokenRevocation.js";
+import { canUseFlowRoute } from "../modules/auth/flowAuthorization.js";
 
 let io: SocketIOServer | null = null;
 
@@ -35,6 +36,10 @@ declare module "fastify" {
   }
   interface FastifyInstance {
     authenticateChat: (
+      request: FastifyRequest,
+      reply: FastifyReply,
+    ) => Promise<void>;
+    authenticate: (
       request: FastifyRequest,
       reply: FastifyReply,
     ) => Promise<void>;
@@ -87,9 +92,21 @@ async function buildServer(): Promise<FastifyInstance> {
           item.toLowerCase(),
         );
 
-        if (!normalizedRole || !normalizedAllowedRoles.includes(normalizedRole)) {
-          throw new AppError("Insufficient permissions", 403);
+        if (normalizedRole && normalizedAllowedRoles.includes(normalizedRole)) {
+          return;
         }
+
+        if (
+          canUseFlowRoute(
+            request.user,
+            request.isInternalFlow,
+            request.routeOptions?.config,
+          )
+        ) {
+          return;
+        }
+
+        throw new AppError("Insufficient permissions", 403);
       },
   );
 

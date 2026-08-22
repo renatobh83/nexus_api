@@ -1,16 +1,44 @@
-import { Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "../../lib/prisma.js";
+import {
+  AUTHENTICATION_USER_SELECT,
+  PUBLIC_USER_SELECT,
+  type AuthenticationUserRecord,
+  type PublicUserRecord,
+} from "./userSelections.js";
 
 export class UsersRepository {
-  create(data: Prisma.UserCreateInput) {
-    return prisma.user.create({ data: data });
+  create(data: Prisma.UserCreateInput): Promise<PublicUserRecord> {
+    return prisma.user.create({
+      data,
+      select: PUBLIC_USER_SELECT,
+    });
   }
-  findByEmail(email: string) {
-    return prisma.user.findUnique({ where: { email: email } });
+
+  findByEmail(email: string): Promise<PublicUserRecord | null> {
+    return prisma.user.findUnique({
+      where: { email },
+      select: PUBLIC_USER_SELECT,
+    });
   }
-  updateUser(id: string, data: Prisma.UserUpdateInput) {
-    return prisma.user.update({ where: { id: id }, data });
+
+  findByEmailForAuthentication(
+    email: string,
+  ): Promise<AuthenticationUserRecord | null> {
+    return prisma.user.findUnique({
+      where: { email },
+      select: AUTHENTICATION_USER_SELECT,
+    });
   }
+
+  updateUser(id: string, data: Prisma.UserUpdateInput): Promise<PublicUserRecord> {
+    return prisma.user.update({
+      where: { id },
+      data,
+      select: PUBLIC_USER_SELECT,
+    });
+  }
+
   deactivateUser(id: string) {
     return prisma.user.updateMany({
       where: { id },
@@ -21,15 +49,10 @@ export class UsersRepository {
       },
     });
   }
-  listaAll() {
+
+  listaAll(): Promise<PublicUserRecord[]> {
     return prisma.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        isActive: true,
-        role: true,
-        email: true,
-      },
+      select: PUBLIC_USER_SELECT,
     });
   }
 }

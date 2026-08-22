@@ -38,13 +38,14 @@ model Channel {
 
 model IntegrationConfig {
   id              String   @id @default(uuid())
-  integrationName String   @unique
-  clientId        String?
+  integrationName String
+  clientId        String
   isActive        Boolean  @default(true)
   settings        Json
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  @@unique([integrationName, clientId])
   @@map("integration_configs")
 }
 

@@ -56,7 +56,7 @@ const SENSITIVE_SETTINGS_FIELDS = ["apiKey", "webhookSecret"] as const;
 
 interface CreateOrUpdateConfigData {
   integrationName: string;
-  clientId: string | null;
+  clientId: string;
   settings: PrismaJsonField;
   isActive: boolean;
 }
@@ -89,11 +89,15 @@ export class IntegracaoService {
     clientId: string | null = null,
     isActive = true,
   ) {
-    this.validateRequiredField("integrationName", integrationName);
+    const normalizedIntegrationName = this.normalizeRequiredField(
+      "integrationName",
+      integrationName,
+    );
+    const normalizedClientId = this.normalizeRequiredField("clientId", clientId);
 
     logger.info("Criando/atualizando configuração de integração", {
-      integrationName,
-      clientId,
+      integrationName: normalizedIntegrationName,
+      clientId: normalizedClientId,
     });
     if (typeof settings === "string") {
       settings = JSON.parse(settings);
@@ -103,7 +107,8 @@ export class IntegracaoService {
     }
     const existingConfig =
       await this.integrationConfigRepository.findIntegracaoConfig({
-        integrationName,
+        integrationName: normalizedIntegrationName,
+        clientId: normalizedClientId,
       });
     const encryptedSettings = this.encryptSensitiveFields(
       settings,
@@ -111,8 +116,8 @@ export class IntegracaoService {
     );
 
     const data: CreateOrUpdateConfigData = {
-      integrationName,
-      clientId,
+      integrationName: normalizedIntegrationName,
+      clientId: normalizedClientId,
       settings: encryptedSettings as unknown as PrismaJsonField,
       isActive,
     };
@@ -120,8 +125,8 @@ export class IntegracaoService {
     const config = await this.integrationConfigRepository.createOrUpdate(data);
 
     logger.info("Configuração salva com sucesso", {
-      integrationName,
-      clientId,
+      integrationName: normalizedIntegrationName,
+      clientId: normalizedClientId,
     });
 
     return this.sanitizeIntegrationConfig(config);
@@ -134,8 +139,12 @@ export class IntegracaoService {
     clientId: string | null = null,
     isActive = true,
   ) {
-    this.validateRequiredField("integracaoId", id);
-    this.validateRequiredField("integrationName", integrationName);
+    this.normalizeRequiredField("integracaoId", id);
+    const normalizedIntegrationName = this.normalizeRequiredField(
+      "integrationName",
+      integrationName,
+    );
+    const normalizedClientId = this.normalizeRequiredField("clientId", clientId);
 
     if (typeof settings === "string") {
       settings = JSON.parse(settings);
@@ -155,8 +164,8 @@ export class IntegracaoService {
       existingConfig.settings,
     );
     const config = await this.integrationConfigRepository.updateById(id, {
-      integrationName,
-      clientId,
+      integrationName: normalizedIntegrationName,
+      clientId: normalizedClientId,
       settings: encryptedSettings as unknown as Prisma.InputJsonValue,
       isActive,
     });
@@ -171,22 +180,28 @@ export class IntegracaoService {
   }
 
   async getIntegrationConfig(integrationName: string, clientId: string) {
-    this.validateRequiredField("integrationName", integrationName);
-    this.validateRequiredField("clientId", clientId);
+    const normalizedIntegrationName = this.normalizeRequiredField(
+      "integrationName",
+      integrationName,
+    );
+    const normalizedClientId = this.normalizeRequiredField("clientId", clientId);
 
     logger.info("Buscando configuração de integração", {
-      integrationName,
-      clientId,
+      integrationName: normalizedIntegrationName,
+      clientId: normalizedClientId,
     });
 
     const config = await this.integrationConfigRepository.findIntegracaoConfig({
-      integrationName,
-      clientId,
+      integrationName: normalizedIntegrationName,
+      clientId: normalizedClientId,
       isActive: true,
     });
 
     if (!config) {
-      logger.warn("Configuração não encontrada", { integrationName, clientId });
+      logger.warn("Configuração não encontrada", {
+        integrationName: normalizedIntegrationName,
+        clientId: normalizedClientId,
+      });
       return null;
     }
 
@@ -240,18 +255,27 @@ export class IntegracaoService {
       data,
     );
   }
-  async loadIntegracoes() {
-    const configs = await this.integrationConfigRepository.listaAll();
+  async loadIntegracoes(clientId?: string) {
+    const normalizedClientId =
+      clientId === undefined
+        ? undefined
+        : this.normalizeRequiredField("clientId", clientId);
+    const configs = await this.integrationConfigRepository.listaAll(
+      normalizedClientId,
+    );
     return configs.map((config) => this.sanitizeIntegrationConfig(config));
   }
   async updateTicketIntegration(ticketId: number, data: TicketUpdateData) {
-    this.validateRequiredField("ticketId", String(ticketId));
+    this.normalizeRequiredField("ticketId", String(ticketId));
 
     logger.info("Atualizando ticket", { ticketId });
     return await this.integrationConfigRepository.updateTicket(ticketId, data);
   }
 
-  async findTicketIntegrationn(contatoId: string, integrationSource: string) {
+  async findTicketIntegrationn(
+    contatoId: string,
+    integrationSource: string,
+  ) {
     if (!integrationSource.trim()) {
       throw new AppError(
         "integrationSource é obrigatório para localizar tickets de integração",
@@ -380,7 +404,11 @@ export class IntegracaoService {
   private asIntegrationSettings(
     settings: Prisma.JsonValue | undefined,
   ): IntegrationSettings {
-    if (settings && typeof settings === "object" && !Array.isArray(settings)) {
+    if (
+      settings &&
+      typeof settings === "object" &&
+      !Array.isArray(settings)
+    ) {
       return settings as IntegrationSettings;
     }
 
@@ -428,9 +456,14 @@ export class IntegracaoService {
     return Array.isArray(value) ? value : [value];
   }
 
-  private validateRequiredField(fieldName: string, value: string): void {
-    if (!value || value.trim() === "") {
-      throw new Error(`O campo "${fieldName}" é obrigatório`);
+  private normalizeRequiredField(
+    fieldName: string,
+    value: string | null | undefined,
+  ): string {
+    if (typeof value !== "string" || value.trim() === "") {
+      throw new AppError(`O campo "${fieldName}" é obrigatório`, 400);
     }
+
+    return value.trim();
   }
 }

@@ -20,7 +20,12 @@ export async function integrationController(fastify: FastifyInstance) {
     },
   );
   fastify.get("/", async (request: FastifyRequest, reply: FastifyReply) => {
-    const integracoes = await integracaoService.loadIntegracoes();
+    const { clientId } = request.query as { clientId?: unknown };
+    if (clientId !== undefined && typeof clientId !== "string") {
+      throw new AppError("clientId inválido", 400);
+    }
+
+    const integracoes = await integracaoService.loadIntegracoes(clientId);
     reply.status(200).send(integracoes);
   });
   fastify.put(
