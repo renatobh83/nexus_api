@@ -110,6 +110,7 @@ export function buildWppBrowserArgs(
   config: WppWebRuntimeConfig,
 ): string[] {
   const args = [
+     "--no-sandbox",
     "--disable-gpu",
     "--disable-accelerated-2d-canvas",
     "--disable-accelerated-video-decode",
