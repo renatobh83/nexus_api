@@ -96,7 +96,7 @@ Obrigado pela compreensão!",
         }
         // fora do horário — avisa o contato e não atribui agente
       }
-      const flow = await flowService.findFirst();
+      const flow = await flowService.findMainActive();
 
       if (!flow || !flow.flow_json) {
         console.warn("Nenhum flow encontrado para ticket novo.");
@@ -160,7 +160,7 @@ Obrigado pela compreensão!",
           pendingExecution.moduleName,
         );
       } else {
-        const flow = await flowService.findFirst();
+        const flow = await flowService.findMainActive();
         if (!flow || !flow.flow_json) {
           console.warn("Nenhum flow encontrado para ticket existente.");
           return { isNew, ticketId: ticket.id };

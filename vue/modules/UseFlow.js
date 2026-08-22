@@ -230,6 +230,7 @@ function useFlow({
   const showModalCarregar = ref(false);
   const flowsDisponiveis = ref([]);
   const carregandoFlows = ref(false);
+  const ativandoFlowId = ref(null);
 
   const showVars = ref(false);
   const currentPropIndex = ref(null);
@@ -762,6 +763,35 @@ function useFlow({
       console.error("Erro ao deletar flow:", e);
     }
   }
+
+  async function ativarFlow(id) {
+    if (ativandoFlowId.value) return;
+    ativandoFlowId.value = id;
+
+    try {
+      const resp = await fetch(`${URL_BASE}/api/v1/flows/${id}/activate`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token.value}`,
+        },
+      });
+
+      const body = await resp.json().catch(() => null);
+      if (!resp.ok) {
+        throw new Error(body?.error || body?.message || "Falha ao ativar Flow");
+      }
+
+      flowsDisponiveis.value = flowsDisponiveis.value.map((flow) => ({
+        ...flow,
+        ativo: flow.id === id,
+      }));
+    } catch (e) {
+      console.error("Erro ao ativar flow:", e);
+    } finally {
+      ativandoFlowId.value = null;
+    }
+  }
+
   async function listarFlows() {
     const resp = await fetch(`${URL_BASE}/api/v1/flows`);
     return await resp.json();
@@ -801,9 +831,11 @@ function useFlow({
     showModalCarregar,
     flowsDisponiveis,
     carregandoFlows,
+    ativandoFlowId,
     abrirModalCarregar,
     carregarFlow,
     deletarFlow,
+    ativarFlow,
     showVars,
     variables,
     showVariables,

@@ -8,20 +8,37 @@ export class FlowsRepository {
    * @param data - Os dados já formatados no tipo Prisma.flowsCreateInput.
    */
   async createOrUpdate(data: Prisma.flowsCreateInput) {
-    const saved = await prisma.flows.upsert({
-      where: { nome: data.nome },
-      update: {
-        flow_json: data.flow_json,
-        descricao: data.descricao,
-        updatedAt: new Date(),
-      },
-      create: {
-        nome: data.nome,
-        descricao: data.descricao,
-        flow_json: data.flow_json,
-      },
+    return prisma.$transaction(async (tx) => {
+      const existing = await tx.flows.findUnique({
+        where: { nome: data.nome },
+        select: { id: true },
+      });
+
+      if (existing) {
+        return tx.flows.update({
+          where: { id: existing.id },
+          data: {
+            flow_json: data.flow_json,
+            descricao: data.descricao,
+            updatedAt: new Date(),
+          },
+        });
+      }
+
+      const activeFlow = await tx.flows.findFirst({
+        where: { ativo: true },
+        select: { id: true },
+      });
+
+      return tx.flows.create({
+        data: {
+          nome: data.nome,
+          descricao: data.descricao,
+          flow_json: data.flow_json,
+          ativo: !activeFlow,
+        },
+      });
     });
-    return saved;
   }
   /**
    * buscar um flow pelo id
@@ -32,9 +49,14 @@ export class FlowsRepository {
       where: { id },
     });
   }
-  async findFirst() {
+  async findMainActive() {
     return await prisma.flows.findFirst({
       where: { ativo: true },
+      orderBy: [
+        { updatedAt: "desc" },
+        { createdAt: "desc" },
+        { id: "asc" },
+      ],
     });
   }
   /**
@@ -43,8 +65,43 @@ export class FlowsRepository {
    */
   async listAll() {
     return await prisma.flows.findMany({
-      where: { ativo: true },
-      select: { id: true, nome: true, descricao: true, updatedAt: true },
+      orderBy: [{ ativo: "desc" }, { updatedAt: "desc" }],
+      select: {
+        id: true,
+        nome: true,
+        descricao: true,
+        ativo: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  async activate(id: string) {
+    return prisma.$transaction(async (tx) => {
+      const flow = await tx.flows.findUnique({
+        where: { id },
+        select: { id: true },
+      });
+
+      if (!flow) return null;
+
+      await tx.flows.updateMany({
+        where: {
+          ativo: true,
+          id: { not: id },
+        },
+        data: {
+          ativo: false,
+        },
+      });
+
+      return tx.flows.update({
+        where: { id },
+        data: {
+          ativo: true,
+          updatedAt: new Date(),
+        },
+      });
     });
   }
   /**

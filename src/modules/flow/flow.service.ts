@@ -17,8 +17,8 @@ export class FlowsService {
   async findById(id: string) {
     return await this.flowsRepository.find(id);
   }
-  async findFirst() {
-    return await this.flowsRepository.findFirst();
+  async findMainActive() {
+    return await this.flowsRepository.findMainActive();
   }
   async createOrUpdate(data: FlowWriteData) {
     return await this.flowsRepository.createOrUpdate(data);
@@ -26,6 +26,10 @@ export class FlowsService {
 
   async deleteFlows(id: string) {
     return await this.flowsRepository.delete(id);
+  }
+
+  async activate(id: string) {
+    return await this.flowsRepository.activate(id);
   }
   async flowExecutionFindFirst(where: Prisma.FlowExecutionWhereInput) {
     return await this.flowsRepository.flowExecutionFindFirst(where);

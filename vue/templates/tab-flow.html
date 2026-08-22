@@ -168,6 +168,15 @@
           <div style="font-size:10px;color:#55557a;white-space:nowrap;margin-left:12px;">
             {{ new Date(flow.updatedAt).toLocaleDateString('pt-BR') }}
           </div>
+          <span v-if="flow.ativo" title="Flow principal ativo"
+            style="font-size:10px;color:#34d399;white-space:nowrap;margin-left:8px;">
+            Principal
+          </span>
+          <button v-else @click.stop="ativarFlow(flow.id)" :disabled="ativandoFlowId === flow.id"
+            title="Tornar este o Flow principal" style="font-size:10px;color:#a5b4fc;background:#292942;border:1px solid #3b3b5a;
+            border-radius:4px;padding:4px 6px;cursor:pointer;margin-left:8px;">
+            {{ ativandoFlowId === flow.id ? 'Ativando...' : 'Ativar' }}
+          </button>
           <span @click.stop="deletarFlow(flow.id)" title="Excluir flow" style="font-size:15px;color:#66668a;cursor:pointer;padding:2px 6px;
            border-radius:4px;transition:color .15s;" onmouseover="this.style.color='#ff453a'"
             onmouseout="this.style.color='#66668a'">🗑</span>
@@ -272,11 +281,12 @@
         <!-- ações do form -->
         <div style="display:flex;gap:8px;justify-content:flex-end;">
           <button class="btn btn-ghost" @click="promptEditando = null">Cancelar</button>
-          <button class="btn btn-run" @click="salvarPrompt"
-            :disabled="!promptEditando.name.trim() || !promptEditando.content.trim()"
-            style="opacity: (!promptEditando.name.trim() || !promptEditando.content.trim()) ? 0.5 : 1">
+          <button class="btn btn-run" :class="{
+    'btn-disabled': !promptEditando.name.trim() || !promptEditando.content.trim()
+  }" @click="salvarPrompt" :disabled="!promptEditando.name.trim() || !promptEditando.content.trim()">
             {{ salvandoPrompt ? 'Salvando...' : 'Salvar' }}
           </button>
+
         </div>
 
       </div>
