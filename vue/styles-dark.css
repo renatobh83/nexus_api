@@ -173,6 +173,22 @@ body::before {
   background: #2a2a2a;
 }
 
+.profile-dropdown-btn {
+  width: 100%;
+  padding: 12px 15px;
+  background: #1e1e1e;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  color: #e0e0e0;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.profile-dropdown-btn:hover {
+  background: #2a2a2a;
+}
+
 .logout-dropdown-btn {
   width: 100%;
   padding: 12px 15px;

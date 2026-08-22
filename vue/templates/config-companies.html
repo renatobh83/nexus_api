@@ -1,0 +1,38 @@
+<div v-if="configSubtab === 'companies'">
+  <div class="users-header">
+    <h2>🏢 Gerenciar Empresas</h2>
+    <button class="btn-primary" @click="openCompanyModal">➕ Nova Empresa</button>
+  </div>
+
+  <div v-if="loadingCompanies" class="loading-state">
+    <div class="spinner"></div>
+  </div>
+  <div v-else-if="companies.length === 0" class="empty-state">📭 Nenhuma empresa cadastrada</div>
+  <table v-else class="users-table companies-table">
+    <thead>
+      <tr>
+        <th>CNPJ</th>
+        <th>Razão social</th>
+        <th>Nome fantasia</th>
+        <th>Email</th>
+        <th>Cidade/UF</th>
+        <th>Status</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr v-for="company in companies" :key="company.id">
+        <td>{{ formatCnpj(company.cnpj) }}</td>
+        <td>{{ company.legalName }}</td>
+        <td>{{ company.tradeName || '—' }}</td>
+        <td>{{ company.email || '—' }}</td>
+        <td>{{ company.city || '—' }}<span v-if="company.state">/{{ company.state }}</span></td>
+        <td>{{ company.isActive === true ? '🟢 Ativa' : '🔴 Inativa' }}</td>
+        <td class="action-icons">
+          <button @click="editCompany(company)" title="Editar empresa">✏️</button>
+          <button v-if="company.isActive" @click="deleteCompany(company.id)" title="Desativar empresa">🗑️</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

@@ -49,6 +49,32 @@ model IntegrationConfig {
   @@map("integration_configs")
 }
 
+model Company {
+  id           String   @id @default(uuid()) @db.Uuid
+  cnpj         String   @unique
+  legalName    String
+  tradeName    String?
+  description  String?
+  email        String?
+  phone        String?
+  postalCode   String?
+  street       String?
+  number       String?
+  complement   String?
+  neighborhood String?
+  city         String?
+  state        String?
+  country      String   @default("Brasil")
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([legalName])
+  @@map("companies")
+}
+
+
 model flows {
   id           String          @id @default(uuid())
   nome         String          @unique

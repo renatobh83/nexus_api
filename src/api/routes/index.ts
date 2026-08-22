@@ -4,6 +4,7 @@ import { messagesController } from "../../modules/messages/messages.controller.j
 import { ticketController } from "../../modules/tickets/tickets.controller.js";
 import { integrationController } from "../../modules/externals/integrationConfig.controller.js";
 import { usersController } from "../../modules/users/users.controller.js";
+import { companiesController } from "../../modules/companies/companies.controller.js";
 import { authController } from "../../modules/auth/auth.controller.js";
 import { chatWebController } from "../../modules/chatWeb/chatWeb.controller.js";
 import { flowController } from "../../modules/flow/flow.controller.js";
@@ -41,6 +42,7 @@ async function apiV1Routes(fastify: FastifyInstance) {
       );
       adminScope.register(integrationController, { prefix: "/external" });
       adminScope.register(usersController, { prefix: "/users" });
+      adminScope.register(companiesController, { prefix: "/companies" });
       adminScope.register(flowController, { prefix: "/flows" });
       adminScope.register(serviceHoursRoutes, { prefix: "/service-hours" });
       adminScope.register(wppSessionRoutes);
