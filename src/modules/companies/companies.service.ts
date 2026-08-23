@@ -11,7 +11,12 @@ export class CompaniesService {
   ) {}
 
   async listCompanies() {
-    return this.companiesRepository.listAll();
+    try {
+      
+      return this.companiesRepository.listAll();
+    } catch (error) {
+      console.log(error)
+    }
   }
 
   async findCompanyById(id: string) {
