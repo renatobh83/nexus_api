@@ -93,6 +93,7 @@ async function initApp() {
       const isAuthenticated = ref(false);
       const currentUser = ref(null);
       const ticketNovo = ref("");
+     
 
       /**
        * Normaliza o perfil recebido no JWT para que a navegação não dependa de
@@ -556,11 +557,15 @@ async function initApp() {
         });
 
         socket.on("channel-update", (data) => {
+          
           const isCurrentChannel =
             channels.currentChannelId.value &&
             channels.currentChannelId.value === (data.channelId || data.id);
           if (!isCurrentChannel) return;
-
+          
+            if (data.status === "OPENING") {
+              channels.OPENING.value = true
+            }
           if (data.status === "qrcode" && data.qrcode) {
             qrCode.qrCodeModalVisible.value = true;
             qrCode.generateQRCode(data.qrcode);

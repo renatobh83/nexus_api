@@ -261,6 +261,7 @@
     // === MENSAGEM AVULSA (BROADCAST) ===
     let broadcastSelectedFile = null;
     function ensureSocketConnection() {
+      console.log("ensureSocketConnection")
       return new Promise((resolve) => {
         if (socket && socket.connected) {
           resolve(true);
@@ -878,6 +879,7 @@
     }
     // === SOCKET.IO ===
     function initSocket() {
+      console.log("init")
       if (socket && socket.connected) {
         console.log('Socket já conectado');
         return;
@@ -953,6 +955,7 @@
         await loadTickets();
       });
       socket.on('channel-update', (data) => {
+        console.log(data)
         if (currentChannelId && currentChannelId === (data.channelId || data.id)) {
           if (data.status === 'qrcode' && data.qrcode) showQRCode(data.qrcode);
           if (data.pairingCode) showPairingCode(data.pairingCode);
@@ -1064,6 +1067,7 @@
 
     // Função para solicitar permissão de notificação
     async function requestNotificationPermission() {
+      console.log("N")
       if (!("Notification" in window)) {
         console.log("Este navegador não suporta notificações");
         return false;
@@ -1521,6 +1525,7 @@
     }
 
     // Inicialização
+    console.log("LOAD")
     initSocket();
     loadTickets();
     requestNotificationPermission();

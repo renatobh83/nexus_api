@@ -19,7 +19,7 @@
       </div>
 
       <div class="channel-name">
-        {{ ch.name }} {{ ch.status}}
+        {{ ch.name }}
         <button @click="editChannel(ch)" v-if="isAdmin">✏️</button>
       </div>
       <div class="channel-actions" v-if="isAdmin" v-show="ch.type !== 'web'">
@@ -27,7 +27,11 @@
           @click="disconnectChannel(ch.id)">Desconectar</button>
         <button v-if="ch.status === 'CONNECTED' || ch.status === 'qrcode'" class="channel-btn refresh"
           @click="refreshChannel(ch.id)">Reconectar</button>
-        <button v-else class="channel-btn connect" @click="connectChannel(ch.id)">Conectar</button>
+        <button v-else class="channel-btn connect"
+             @click="connectChannel(ch.id)" 
+            :disabled="currentChannelId === ch.id"  
+            :class="{ 'opacity-50 cursor-not-allowed': currentChannelId === ch.id }"
+        >   {{ currentChannelId === ch.id ? 'Conectando...' : 'Conectar' }}</button>
       </div>
     </div>
   </div>

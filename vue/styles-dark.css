@@ -1512,6 +1512,11 @@ input:checked + .slider-footer:before {
 .channel-btn.connect:hover {
   background: #0a7566;
 }
+.channel-btn.opacity-50.cursor-not-allowed{
+  opacity: 50;
+  cursor: not-allowed;
+  background: #6f7372;
+}
 
 .channel-btn.disconnect {
   background: #7a2020;

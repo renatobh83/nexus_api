@@ -3,7 +3,7 @@
  * @description Composable para gerenciamento de canais (WhatsApp, Telegram, etc.).
  */
 function useChannels({ URL_BASE, token, sonnerAlert }) {
-  const { ref } = Vue;
+  const { ref, computed } = Vue;
 
   // --- Estado ---
   const channels = ref([]);
@@ -18,6 +18,7 @@ function useChannels({ URL_BASE, token, sonnerAlert }) {
   const accessToken = ref("");
   const phoneNumberId = ref("");
   const editingChannel = ref({ selectedChannelType: "" });
+  const OPENING = ref(false)
 
   // --- Funções ---
 
@@ -33,6 +34,7 @@ function useChannels({ URL_BASE, token, sonnerAlert }) {
       channels.value.unshift(updatedChannel);
     }
   }
+   const isOpengin = computed(()=> OPENING.value)
 
   /**
    * Carrega a lista de canais disponíveis.
@@ -229,6 +231,7 @@ function useChannels({ URL_BASE, token, sonnerAlert }) {
     setTimeout(() => connectChannel(channelId), 1000);
   };
 
+
   return {
     channels,
     loadingChannels,
@@ -242,6 +245,8 @@ function useChannels({ URL_BASE, token, sonnerAlert }) {
     accessToken,
     phoneNumberId,
     editingChannel,
+    isOpengin,
+    OPENING,
     updateSingleChannel,
     loadChannels,
     openAddChannelModal,
