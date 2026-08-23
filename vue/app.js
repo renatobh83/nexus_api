@@ -562,6 +562,7 @@ async function initApp() {
           if (!isCurrentChannel) return;
 
           if (data.status === "qrcode" && data.qrcode) {
+            qrCode.qrCodeModalVisible.value = true;
             qrCode.generateQRCode(data.qrcode);
           }
           if (data.pairingCode) {

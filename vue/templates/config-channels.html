@@ -19,7 +19,7 @@
       </div>
 
       <div class="channel-name">
-        {{ ch.name }}
+        {{ ch.name }} {{ ch.status}}
         <button @click="editChannel(ch)" v-if="isAdmin">✏️</button>
       </div>
       <div class="channel-actions" v-if="isAdmin" v-show="ch.type !== 'web'">
