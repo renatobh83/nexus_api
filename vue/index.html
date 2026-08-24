@@ -50,12 +50,16 @@
       <div style="position: relative;">
         <button class="menu-hamburger" :class="{ activeHam: activeTab === 'chats' }" @click="toggleSidebar">☰</button>
         <div class="top-menu">
-          <div class="menu-item" :class="{ active: activeTab === 'chats' }" @click="setActiveTab('chats')">💬 Chats</div>
-          <div class="menu-item" :class="{ active: activeTab === 'dashboard' }" @click="setActiveTab('dashboard')">📈
+          <div class="menu-item" :class="{ active: activeTab === 'chats' }" @click="setActiveTab('chats')">💬 Chats
+          </div>
+          <div v-if="isAdmin" class="menu-item" :class="{ active: activeTab === 'dashboard' }"
+            @click="setActiveTab('dashboard')">📈
             Dashboard</div>
-          <div class="menu-item" :class="{ active: activeTab === 'graficos' }" @click="setActiveTab('graficos')">📈
+          <div v-if="isAdmin" class="menu-item" :class="{ active: activeTab === 'graficos' }"
+            @click="setActiveTab('graficos')">📈
             Gráficos</div>
-          <div v-if="isAdmin" class="menu-item" :class="{ active: activeTab === 'flow' }" @click="setActiveTab('flow')">📈
+          <div v-if="isAdmin" class="menu-item" :class="{ active: activeTab === 'flow' }" @click="setActiveTab('flow')">
+            📈
             Flow</div>
           <div v-if="canAccessConfiguration" class="menu-item" :class="{ active: activeTab === 'configuracoes' }"
             @click="setActiveTab('configuracoes')">⚙️ Configurações</div>
@@ -67,13 +71,13 @@
       <div class="main-content">
 
         <tab-chats></tab-chats>
-        <tab-dashboard></tab-dashboard>
+        <tab-dashboard v-if="isAdmin"></tab-dashboard>
         <tab-flow v-if="isAdmin"></tab-flow>
         <!-- ABA CONFIGURAÇÕES -->
         <div class="tab-configuracoes" :class="{ hidden: activeTab !== 'configuracoes' }">
           <div class="config-container">
             <div class="config-sidebar">
-                              <div v-if="isAdmin" class="config-sidebar-item" :class="{ active: configSubtab === 'users' }"
+              <div v-if="isAdmin" class="config-sidebar-item" :class="{ active: configSubtab === 'users' }"
                 @click="setConfigSubtab('users')">👥 Usuários</div>
               <div class="config-sidebar-item" :class="{ active: configSubtab === 'channels' }"
                 @click="setConfigSubtab('channels')">🔌 Canais</div>
@@ -81,7 +85,7 @@
                 @click="setConfigSubtab('companies')">🏢 Empresas</div>
               <div v-if="isAdmin" class="config-sidebar-item" :class="{ active: configSubtab === 'integracao' }"
                 @click="setConfigSubtab('integracao')">⛓️ Integrações</div>
-                 <div v-if="isAdmin" class="config-sidebar-item" :class="{ active: configSubtab === 'settings' }"
+              <div v-if="isAdmin" class="config-sidebar-item" :class="{ active: configSubtab === 'settings' }"
                 @click="setConfigSubtab('settings')">🕢 H. Atend.</div>
 
             </div>
@@ -96,7 +100,7 @@
           </div>
         </div>
 
-        <tab-graficos></tab-graficos>
+        <tab-graficos v-if="isAdmin"></tab-graficos>
 
       </div>
 

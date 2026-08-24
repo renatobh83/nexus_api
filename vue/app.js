@@ -93,7 +93,6 @@ async function initApp() {
       const isAuthenticated = ref(false);
       const currentUser = ref(null);
       const ticketNovo = ref("");
-     
 
       /**
        * Normaliza o perfil recebido no JWT para que a navegação não dependa de
@@ -141,7 +140,10 @@ async function initApp() {
         if (!isAdmin.value && activeTab.value === "flow") {
           activeTab.value = "chats";
         }
-        if (!canAccessConfiguration.value && activeTab.value === "configuracoes") {
+        if (
+          !canAccessConfiguration.value &&
+          activeTab.value === "configuracoes"
+        ) {
           activeTab.value = "chats";
         }
         if (!isAdmin.value && configSubtab.value !== "channels") {
@@ -557,17 +559,15 @@ async function initApp() {
         });
 
         socket.on("channel-update", (data) => {
-          
           const isCurrentChannel =
             channels.currentChannelId.value &&
             channels.currentChannelId.value === (data.channelId || data.id);
           if (!isCurrentChannel) return;
-          
-            if (data.status === "OPENING") {
-              channels.OPENING.value = true
-            }
+
+          if (data.status === "OPENING") {
+            channels.OPENING.value = true;
+          }
           if (data.status === "qrcode" && data.qrcode) {
-            qrCode.qrCodeModalVisible.value = true;
             qrCode.generateQRCode(data.qrcode);
           }
           if (data.pairingCode) {
@@ -642,10 +642,7 @@ async function initApp() {
       onMounted(async () => {
         if (!checkAuthentication()) return;
         initSocket();
-        const initialLoads = [
-          tickets.loadTickets(),
-          channels.loadChannels(),
-        ];
+        const initialLoads = [tickets.loadTickets(), channels.loadChannels()];
 
         // Usuários comuns não possuem acesso às rotas administrativas. Não
         // iniciar esses fetches evita erros 403 no console e requisições inúteis.
