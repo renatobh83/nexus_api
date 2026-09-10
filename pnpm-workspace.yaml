@@ -1,6 +1,9 @@
 onlyBuiltDependencies:
   - esbuild
   - puppeteer
+  - prisma
+  - "@prisma/client"
+  - "@prisma/engines"
 
 overrides:
   basic-ftp: 5.3.1
