@@ -4,6 +4,7 @@ onlyBuiltDependencies:
   - prisma
   - "@prisma/client"
   - "@prisma/engines"
+  - dotenv
 
 overrides:
   basic-ftp: 5.3.1
