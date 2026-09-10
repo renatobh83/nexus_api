@@ -45,7 +45,8 @@
     "socket.io": "^4.8.3",
     "teleproto": "1.225.3",
     "uuid": "^14.0.0",
-    "xss": "^1.0.15"
+    "xss": "^1.0.15",
+    "dotenv": "^17.4.2"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.10",
@@ -54,7 +55,6 @@
     "@types/node": "^25.9.0",
     "@types/pg": "^8.20.0",
     "@typescript-eslint/parser": "^8.67.0",
-    "dotenv": "^17.4.2",
     "eslint": "^10.9.0",
     "prisma": "^7.9.1",
     "tsx": "^4.22.3",
