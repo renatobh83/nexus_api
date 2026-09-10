@@ -106,33 +106,41 @@ export function readWppWebRuntimeConfig(
  * opt-in explícito, para que um ambiente de desenvolvimento que realmente
  * precise delas possa configurá-las sem tornar a produção insegura por padrão.
  */
-export function buildWppBrowserArgs(
-  config: WppWebRuntimeConfig,
-): string[] {
+export function buildWppBrowserArgs(config: WppWebRuntimeConfig): string[] {
   const args = [
-     "--no-sandbox",
+    // Sandbox / Docker (obrigatório)
+    "--no-sandbox",
+    "--disable-setuid-sandbox",
+    "--disable-dev-shm-usage",
+    // GPU / headless
     "--disable-gpu",
     "--disable-accelerated-2d-canvas",
-    "--disable-accelerated-video-decode",
-    "--disable-software-rasterizer",
-    "--disable-accelerated-d-canvas",
-    "--disable-dev-shm-usage",
+    // Memória / estabilidade
     "--js-flags=--max-old-space-size=256",
+    "--disable-ipc-flooding-protection",
+
+    // Background / throttling (CRÍTICO para WhatsApp Web)
     "--disable-background-timer-throttling",
     "--disable-backgrounding-occluded-windows",
     "--disable-renderer-backgrounding",
+
+    // Limpeza de features
     "--disable-extensions",
-    "--disable-background-networking",
     "--disable-default-apps",
     "--disable-sync",
     "--disable-notifications",
-    "--disable-remote-fonts",
     "--disable-breakpad",
     "--disable-component-update",
-    "--disable-hang-monitor",
     "--disable-features=TranslateUI",
+
+    // Inicialização
     "--no-first-run",
     "--metrics-recording-only",
+
+    // Anti-detecção (opcional, ajuda com WhatsApp Web)
+    "--disable-blink-features=AutomationControlled",
+
+    // Janela
     "--window-size=760,468",
   ];
 
@@ -193,10 +201,7 @@ export function getWppWebLockFileNames(): readonly string[] {
 
 export async function waitForWppProfile(
   client: WppProfileClient,
-  {
-    timeoutMs,
-    intervalMs,
-  }: { timeoutMs?: number; intervalMs?: number } = {},
+  { timeoutMs, intervalMs }: { timeoutMs?: number; intervalMs?: number } = {},
 ): Promise<WppProfile> {
   const runtimeConfig = readWppWebRuntimeConfig();
   const effectiveTimeoutMs = timeoutMs ?? runtimeConfig.profileTimeoutMs;
@@ -247,7 +252,10 @@ export async function waitForWppProfile(
       if (operationTimeout) clearTimeout(operationTimeout);
     }
 
-    const waitMs = Math.min(effectiveIntervalMs, Math.max(1, deadline - Date.now()));
+    const waitMs = Math.min(
+      effectiveIntervalMs,
+      Math.max(1, deadline - Date.now()),
+    );
     await new Promise<void>((resolve) => setTimeout(resolve, waitMs));
   }
 
