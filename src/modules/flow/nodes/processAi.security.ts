@@ -1,5 +1,5 @@
 export const AI_REQUEST_TIMEOUT_LIMITS = {
-  defaultMs: 30_000,
+  defaultMs: 60_000,
   maxMs: 120_000,
   minMs: 1_000,
 } as const;
