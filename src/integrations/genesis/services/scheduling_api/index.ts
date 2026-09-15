@@ -18,7 +18,7 @@ enum STATUS_CONFIRMACAO {
 }
 
 // 1. Resolver contato
-const resolveContato = async (
+export const resolveContato = async (
   wbot: Session,
   contato: string,
 ): Promise<string> => {

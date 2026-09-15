@@ -78,4 +78,28 @@ export async function integrationController(fastify: FastifyInstance) {
       reply.status(200).send({ success: true });
     },
   );
+  fastify.post(
+    "/:channelId/notifications/whatsapp",
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { channelId } = request.params as any;
+      const input = request.body as {
+        event: string;
+        occurredAt: string;
+        recipient: string;
+        alert: {
+          ticker: string;
+          title: string;
+          body: string;
+          movementPercent: number;
+        };
+      };
+
+      const sended = await integracaoService.notificationsApiExternal(
+        input,
+        channelId,
+      );
+
+      reply.status(200).send(sended);
+    },
+  );
 }

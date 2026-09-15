@@ -2,6 +2,9 @@ import { Prisma } from "@prisma/client";
 import { IntegrationConfigRepository } from "./integrationConfig.repository.js";
 import { decrypt, encrypt } from "../../utils/encryption.js";
 import { AppError } from "../../utils/AppError.js";
+import { buildAlertMessage } from "../../utils/marketAlertMessage.js";
+import { getWbot } from "../../providers/whatsapp-web/wpp-web/Wpp-web.js";
+import { resolveContato } from "../../integrations/genesis/services/scheduling_api/index.js";
 
 // ─── Tipos base do Prisma ─────────────────────────────────────────────────────
 
@@ -93,7 +96,10 @@ export class IntegracaoService {
       "integrationName",
       integrationName,
     );
-    const normalizedClientId = this.normalizeRequiredField("clientId", clientId);
+    const normalizedClientId = this.normalizeRequiredField(
+      "clientId",
+      clientId,
+    );
 
     logger.info("Criando/atualizando configuração de integração", {
       integrationName: normalizedIntegrationName,
@@ -144,7 +150,10 @@ export class IntegracaoService {
       "integrationName",
       integrationName,
     );
-    const normalizedClientId = this.normalizeRequiredField("clientId", clientId);
+    const normalizedClientId = this.normalizeRequiredField(
+      "clientId",
+      clientId,
+    );
 
     if (typeof settings === "string") {
       settings = JSON.parse(settings);
@@ -184,7 +193,10 @@ export class IntegracaoService {
       "integrationName",
       integrationName,
     );
-    const normalizedClientId = this.normalizeRequiredField("clientId", clientId);
+    const normalizedClientId = this.normalizeRequiredField(
+      "clientId",
+      clientId,
+    );
 
     logger.info("Buscando configuração de integração", {
       integrationName: normalizedIntegrationName,
@@ -260,9 +272,8 @@ export class IntegracaoService {
       clientId === undefined
         ? undefined
         : this.normalizeRequiredField("clientId", clientId);
-    const configs = await this.integrationConfigRepository.listaAll(
-      normalizedClientId,
-    );
+    const configs =
+      await this.integrationConfigRepository.listaAll(normalizedClientId);
     return configs.map((config) => this.sanitizeIntegrationConfig(config));
   }
   async updateTicketIntegration(ticketId: number, data: TicketUpdateData) {
@@ -272,10 +283,7 @@ export class IntegracaoService {
     return await this.integrationConfigRepository.updateTicket(ticketId, data);
   }
 
-  async findTicketIntegrationn(
-    contatoId: string,
-    integrationSource: string,
-  ) {
+  async findTicketIntegrationn(contatoId: string, integrationSource: string) {
     if (!integrationSource.trim()) {
       throw new AppError(
         "integrationSource é obrigatório para localizar tickets de integração",
@@ -288,7 +296,24 @@ export class IntegracaoService {
       integrationSource.trim(),
     );
   }
-
+  async notificationsApiExternal(
+    input: {
+      event: string;
+      occurredAt: string;
+      recipient: string;
+      alert: {
+        ticker: string;
+        title: string;
+        body: string;
+        movementPercent: number;
+      };
+    },
+    channelId: string,
+  ) {
+    if (input.event === "market.alert.created") {
+      return this._marketEvent(input, channelId);
+    }
+  }
   // ── Métodos Privados ────────────────────────────────────────────────────────
 
   /**
@@ -404,11 +429,7 @@ export class IntegracaoService {
   private asIntegrationSettings(
     settings: Prisma.JsonValue | undefined,
   ): IntegrationSettings {
-    if (
-      settings &&
-      typeof settings === "object" &&
-      !Array.isArray(settings)
-    ) {
+    if (settings && typeof settings === "object" && !Array.isArray(settings)) {
       return settings as IntegrationSettings;
     }
 
@@ -465,5 +486,38 @@ export class IntegracaoService {
     }
 
     return value.trim();
+  }
+
+  private async _marketEvent(
+    input: {
+      event: string;
+      occurredAt: string;
+      recipient: string;
+      alert: {
+        ticker: string;
+        title: string;
+        body: string;
+        movementPercent: number;
+      };
+    },
+    channelId: string,
+  ): Promise<{ success: boolean }> {
+    try {
+      const msg = buildAlertMessage(input);
+      const wbot = getWbot(+channelId);
+      if (wbot) {
+        const contato = await resolveContato(wbot, input.recipient);
+        const sentMessage = await wbot.sendText(contato, msg);
+
+        if (sentMessage.id) {
+          return { success: true };
+        }
+        return { success: false };
+      }
+      return { success: false };
+    } catch (error) {
+      console.log(error);
+      return { success: false };
+    }
   }
 }

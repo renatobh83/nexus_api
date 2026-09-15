@@ -17,7 +17,7 @@ import wppSessionRoutes from "./Wppsession.routes.js";
  */
 async function apiV1Routes(fastify: FastifyInstance) {
   fastify.register(chatWebController, { prefix: "/" });
-  // fastify.register(integrationController, { prefix: "/apiext" });
+  fastify.register(integrationController, { prefix: "/apiext" });
 
   fastify.register(authController, { prefix: "/auth" });
   fastify.register(apiExternalRoutes);
@@ -36,10 +36,7 @@ async function apiV1Routes(fastify: FastifyInstance) {
     });
 
     privateScope.register(async (adminScope) => {
-      adminScope.addHook(
-        "preHandler",
-        fastify.authorizeRoles("administrador"),
-      );
+      adminScope.addHook("preHandler", fastify.authorizeRoles("administrador"));
       adminScope.register(integrationController, { prefix: "/external" });
       adminScope.register(usersController, { prefix: "/users" });
       adminScope.register(companiesController, { prefix: "/companies" });
