@@ -27,5 +27,8 @@ export type MarketAlertNotification = ExternalNotificationBody & {
 
 export type MercadoLivreNotification = ExternalNotificationBody & {
   event: "ofertas.mercado.livre";
-  mensagem: string;
+  mensagem: {
+    body: string;
+    imagem: string;
+  };
 };

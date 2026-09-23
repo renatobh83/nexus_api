@@ -64,11 +64,10 @@ export const wbotWebListener = async (wbot: Session): Promise<void> => {
     });
     if (isBlocked) return;
     if (!message.id) {
-      const chat = await wbot.getChatById(message.chatId)
+      const chat = await wbot.getChatById(message.chatId);
       message.id = message.fromMe
         ? `true_${message.author}_${chat.lastReceivedKey.id}`
-        : `false_${resolveId(message.chatId)}_${chat.lastReceivedKey.id}`
-      
+        : `false_${resolveId(message.chatId)}_${chat.lastReceivedKey.id}`;
     }
     const messageInternal = toInternalMessage(message);
 

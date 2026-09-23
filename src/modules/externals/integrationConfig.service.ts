@@ -427,9 +427,25 @@ export class IntegracaoService {
     if (input.event !== "ofertas.mercado.livre") {
       return false;
     }
-    if (!input.mensagem) {
+
+    if (!input.mensagem || typeof input.mensagem !== "object") {
       return false;
     }
+
+    const { body, imagem } = input.mensagem as {
+      body?: unknown;
+      imagem?: unknown;
+    };
+
+    if (typeof body !== "string" || body.length === 0) {
+      return false;
+    }
+
+    // imagem é opcional? se for obrigatória, mantém o check
+    if (imagem !== undefined && typeof imagem !== "string") {
+      return false;
+    }
+
     return true;
   }
   private isMarketAlertNotification(
@@ -665,7 +681,18 @@ export class IntegracaoService {
           error: "Contato não encontrado",
         };
       }
-      const sentMessage = await wbot.sendText(contato, input.mensagem);
+      const res = await fetch(input.mensagem.imagem);
+      if (!res.ok)
+        throw new Error(`Falha ao baixar imagem (HTTP ${res.status})`);
+      const buffer = Buffer.from(await res.arrayBuffer());
+      const mime = res.headers.get("content-type") ?? "image/jpeg";
+
+      const sentMessage = await wbot.sendImageFromBase64(
+        contato,
+        `data:${mime};base64,${buffer.toString("base64")}`,
+        "oferta.jpg",
+        input.mensagem.body,
+      );
       return {
         success: Boolean(sentMessage?.id),
         ...(sentMessage?.id
