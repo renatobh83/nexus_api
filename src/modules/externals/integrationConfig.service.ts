@@ -674,7 +674,11 @@ export class IntegracaoService {
           error: "Canal do WhatsApp não encontrado",
         };
       }
-      const contato = await resolveContato(wbot, input.recipient.trim());
+
+      const contato = input.recipient.includes("@g.us")
+        ? input.recipient.trim()
+        : await resolveContato(wbot, input.recipient.trim());
+
       if (!contato) {
         return {
           success: false,
