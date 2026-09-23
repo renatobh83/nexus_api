@@ -52,7 +52,7 @@ async function main() {
 
   console.log("🔑 Sessão:");
   const sessionString = client.session.save();
-
+  console.log(sessionString);
   await client.sendMessage("me", {
     message: "🚀 Funcionando!",
   });
