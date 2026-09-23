@@ -3,6 +3,10 @@ import { IntegracaoService } from "./integrationConfig.service.js";
 import { checkIntegration } from "../../integrations/genesis/services/scheduling_api/Helpers/checkIntegration.js";
 import { AppError } from "../../utils/AppError.js";
 import { parseIntegrationConfigId } from "./integrationConfig.security.js";
+import {
+  ChannelParams,
+  ExternalNotificationBody,
+} from "./integrationConfig.types.js";
 
 const integracaoService = new IntegracaoService();
 export async function integrationController(fastify: FastifyInstance) {
@@ -78,28 +82,56 @@ export async function integrationController(fastify: FastifyInstance) {
       reply.status(200).send({ success: true });
     },
   );
-  fastify.post(
+  fastify.post<{
+    Params: ChannelParams;
+    Body: ExternalNotificationBody;
+  }>(
     "/:channelId/notifications/whatsapp",
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const { channelId } = request.params as any;
-      const input = request.body as {
-        event: string;
-        occurredAt: string;
-        recipient: string;
-        alert: {
-          ticker: string;
-          title: string;
-          body: string;
-          movementPercent: number;
-        };
-      };
+    {
+      schema: {
+        params: {
+          type: "object",
+          required: ["channelId"],
+          additionalProperties: false,
+          properties: {
+            channelId: {
+              type: "string",
+              pattern: "^[1-9][0-9]*$",
+            },
+          },
+        },
+        body: {
+          type: "object",
+          required: ["event", "occurredAt", "recipient"],
+          additionalProperties: true,
+          properties: {
+            event: {
+              type: "string",
+              minLength: 1,
+              maxLength: 100,
+            },
+            occurredAt: {
+              type: "string",
+              format: "date-time",
+            },
+            recipient: {
+              type: "string",
+              minLength: 1,
+              maxLength: 100,
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const channelId = Number(request.params.channelId);
 
-      const sended = await integracaoService.notificationsApiExternal(
-        input,
+      const result = await integracaoService.notificationsApiExternal(
+        request.body,
         channelId,
       );
-
-      reply.status(200).send(sended);
+      const statusCode = result.success ? 200 : 422;
+      return reply.status(statusCode).send(result);
     },
   );
 }

@@ -5,6 +5,12 @@ import { AppError } from "../../utils/AppError.js";
 import { buildAlertMessage } from "../../utils/marketAlertMessage.js";
 import { getWbot } from "../../providers/whatsapp-web/wpp-web/Wpp-web.js";
 import { resolveContato } from "../../integrations/genesis/services/scheduling_api/index.js";
+import {
+  ExternalNotificationBody,
+  MarketAlertNotification,
+  MercadoLivreNotification,
+  NotificationResult,
+} from "./integrationConfig.types.js";
 
 // ─── Tipos base do Prisma ─────────────────────────────────────────────────────
 
@@ -297,21 +303,45 @@ export class IntegracaoService {
     );
   }
   async notificationsApiExternal(
-    input: {
-      event: string;
-      occurredAt: string;
-      recipient: string;
-      alert: {
-        ticker: string;
-        title: string;
-        body: string;
-        movementPercent: number;
+    input: unknown,
+    channelId: number,
+  ): Promise<NotificationResult> {
+    if (!Number.isInteger(channelId) || channelId <= 0) {
+      return {
+        success: false,
+        error: "channelId inválido",
       };
-    },
-    channelId: string,
-  ) {
-    if (input.event === "market.alert.created") {
-      return this._marketEvent(input, channelId);
+    }
+    if (!this.isExternalNotificationInput(input)) {
+      return {
+        success: false,
+        error: "Payload da notificação inválido",
+      };
+    }
+    switch (input.event) {
+      case "market.alert.created":
+        if (!this.isMarketAlertNotification(input)) {
+          return {
+            success: false,
+            error: "Payload inválido para market.alert.created",
+          };
+        }
+
+        return this._marketEvent(input, channelId);
+      case "ofertas.mercado.livre":
+        if (!this.isOfertaMercadoLivre(input)) {
+          return {
+            success: false,
+            error: "Payload inválido para ofertas.mercado.livre",
+          };
+        }
+        return this._mercadoLivre(input, channelId);
+
+      default:
+        return {
+          success: false,
+          error: `Evento não suportado: ${input.event}`,
+        };
     }
   }
   // ── Métodos Privados ────────────────────────────────────────────────────────
@@ -390,6 +420,81 @@ export class IntegracaoService {
     }
 
     return encrypted;
+  }
+  private isOfertaMercadoLivre(
+    input: ExternalNotificationBody,
+  ): input is MercadoLivreNotification {
+    if (input.event !== "ofertas.mercado.livre") {
+      return false;
+    }
+    if (!input.mensagem) {
+      return false;
+    }
+    return true;
+  }
+  private isMarketAlertNotification(
+    input: ExternalNotificationBody,
+  ): input is MarketAlertNotification {
+    if (input.event !== "market.alert.created") {
+      return false;
+    }
+    input.al;
+    if (!input.alert || typeof input.alert !== "object") {
+      return false;
+    }
+
+    const alert = input.alert as Record<string, unknown>;
+
+    if (typeof alert.ticker !== "string" || alert.ticker.trim().length === 0) {
+      return false;
+    }
+
+    if (typeof alert.title !== "string" || alert.title.trim().length === 0) {
+      return false;
+    }
+
+    if (typeof alert.body !== "string" || alert.body.trim().length === 0) {
+      return false;
+    }
+
+    if (
+      typeof alert.movementPercent !== "number" ||
+      !Number.isFinite(alert.movementPercent)
+    ) {
+      return false;
+    }
+
+    return true;
+  }
+
+  private isExternalNotificationInput(
+    input: unknown,
+  ): input is ExternalNotificationBody {
+    if (!input || typeof input !== "object") {
+      return false;
+    }
+
+    const data = input as Record<string, unknown>;
+
+    if (typeof data.event !== "string" || data.event.trim().length === 0) {
+      return false;
+    }
+
+    if (
+      typeof data.occurredAt !== "string" ||
+      Number.isNaN(Date.parse(data.occurredAt))
+    ) {
+      return false;
+    }
+
+    if (
+      typeof data.recipient !== "string" ||
+      data.recipient.trim().length === 0
+    ) {
+      return false;
+    }
+
+    return true;
   }
 
   /**
@@ -487,37 +592,94 @@ export class IntegracaoService {
 
     return value.trim();
   }
-
+  /**
+   * Evento api mercado financeiro
+   */
   private async _marketEvent(
-    input: {
-      event: string;
-      occurredAt: string;
-      recipient: string;
-      alert: {
-        ticker: string;
-        title: string;
-        body: string;
-        movementPercent: number;
-      };
-    },
-    channelId: string,
-  ): Promise<{ success: boolean }> {
+    input: MarketAlertNotification,
+    channelId: number,
+  ): Promise<NotificationResult> {
     try {
-      const msg = buildAlertMessage(input);
-      const wbot = getWbot(+channelId);
-      if (wbot) {
-        const contato = await resolveContato(wbot, input.recipient);
-        const sentMessage = await wbot.sendText(contato, msg);
+      const wbot = getWbot(channelId);
 
-        if (sentMessage.id) {
-          return { success: true };
-        }
-        return { success: false };
+      if (!wbot) {
+        return {
+          success: false,
+          error: "Canal do WhatsApp não encontrado",
+        };
       }
-      return { success: false };
+
+      const message = buildAlertMessage(input);
+      if (!message || message.trim().length === 0) {
+        return {
+          success: false,
+          error: "Mensagem não pode ser vazia",
+        };
+      }
+      const contato = await resolveContato(wbot, input.recipient.trim());
+
+      if (!contato) {
+        return {
+          success: false,
+          error: "Contato não encontrado",
+        };
+      }
+      const sentMessage = await wbot.sendText(contato, message);
+
+      return {
+        success: Boolean(sentMessage?.id),
+        ...(sentMessage?.id
+          ? {}
+          : {
+              error: "Mensagem não foi enviada",
+            }),
+      };
     } catch (error) {
-      console.log(error);
-      return { success: false };
+      console.error("Erro ao enviar notificação:", error);
+      return {
+        success: false,
+        error: "Erro interno ao enviar a notificação",
+      };
+    }
+  }
+  /**
+   *  Evento api mercado livre
+   */
+  private async _mercadoLivre(
+    input: MercadoLivreNotification,
+    channelId: number,
+  ) {
+    try {
+      const wbot = getWbot(channelId);
+
+      if (!wbot) {
+        return {
+          success: false,
+          error: "Canal do WhatsApp não encontrado",
+        };
+      }
+      const contato = await resolveContato(wbot, input.recipient.trim());
+      if (!contato) {
+        return {
+          success: false,
+          error: "Contato não encontrado",
+        };
+      }
+      const sentMessage = await wbot.sendText(contato, input.mensagem);
+      return {
+        success: Boolean(sentMessage?.id),
+        ...(sentMessage?.id
+          ? {}
+          : {
+              error: "Mensagem não foi enviada",
+            }),
+      };
+    } catch (error) {
+      console.error("Erro ao enviar notificação:", error);
+      return {
+        success: false,
+        error: "Erro interno ao enviar a notificação",
+      };
     }
   }
 }
