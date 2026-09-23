@@ -100,6 +100,17 @@ export async function integrationController(fastify: FastifyInstance) {
             },
           },
         },
+        headers: {
+          type: "object",
+          required: ["x-api-key"],
+          properties: {
+            "x-api-key": {
+              type: "string",
+              minLength: 16,
+              maxLength: 200,
+            },
+          },
+        },
         body: {
           type: "object",
           required: ["event", "occurredAt", "recipient"],
@@ -125,7 +136,13 @@ export async function integrationController(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       const channelId = Number(request.params.channelId);
-
+      const apiKey = request.headers["x-api-key"];
+      const expected = process.env.WHATSAPP_API_KEY;
+      if (apiKey !== expected) {
+        return reply
+          .status(401)
+          .send({ success: false, error: "unauthorized" });
+      }
       const result = await integracaoService.notificationsApiExternal(
         request.body,
         channelId,
