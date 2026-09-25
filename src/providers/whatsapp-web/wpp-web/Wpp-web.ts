@@ -13,7 +13,7 @@ import {
   resolveWppWebSessionDir,
   waitForWppProfile,
   WppSessionOperationGate,
-} from "./wppWeb.security.js"
+} from "./wppWeb.security.js";
 
 function extractQrCode(url: string): string | null {
   if (!url) return null;
@@ -43,7 +43,6 @@ async function limparLockChromium(userDataDir: string): Promise<void> {
   }
 }
 
-
 /**
  * Inicializa sessão
  */
@@ -64,7 +63,7 @@ export const initWppWeb = async (
       headless: true,
       poweredBy: "RenatoDEV",
       disableWelcome: true,
-
+      protocolTimeout: 180000, // 3 min
       browserArgs: buildWppBrowserArgs(runtimeConfig),
 
       puppeteerOptions: {
@@ -96,7 +95,7 @@ export const initWppWeb = async (
       },
 
       statusFind: async (statusSession: any) => {
-        console.log(statusSession)
+        console.log(statusSession);
         switch (statusSession) {
           case "autocloseCalled":
           case "desconnectedMobile":
@@ -240,9 +239,12 @@ export const restartWppWeb = async (
         );
         await current.close();
       } catch (error) {
-        logger.warn(`Erro ao fechar sessão ${channel.name}; seguindo mesmo assim`, {
-          error: error instanceof Error ? error.message : String(error),
-        });
+        logger.warn(
+          `Erro ao fechar sessão ${channel.name}; seguindo mesmo assim`,
+          {
+            error: error instanceof Error ? error.message : String(error),
+          },
+        );
       }
       // Remove o cliente morto antes de iniciar o novo para que getWbot não
       // devolva uma instância fechada durante a janela de reinicialização.
@@ -259,7 +261,7 @@ export const restartWppWeb = async (
  * Lê o consumo de memória (RSS, em MB) do processo do Chrome
  * atrelado a uma sessão, direto do /proc (Linux).
  */
- async function getChromeMemoryMB(client: Session): Promise<number | null> {
+async function getChromeMemoryMB(client: Session): Promise<number | null> {
   try {
     const browser = (client as any)?.page?.browser?.();
     const pid = browser?.process?.()?.pid;
@@ -291,7 +293,9 @@ export const monitorSessionMemory = (
     const memMB = await getChromeMemoryMB(session);
     if (memMB === null) return;
 
-    logger.info(`[memória] Sessão ${channel.name}: ${memMB}MB (limite ${limitMB}MB)`);
+    logger.info(
+      `[memória] Sessão ${channel.name}: ${memMB}MB (limite ${limitMB}MB)`,
+    );
 
     if (memMB > limitMB) {
       await restartWppWeb(channel, channelService);

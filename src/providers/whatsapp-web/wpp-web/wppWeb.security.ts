@@ -116,7 +116,7 @@ export function buildWppBrowserArgs(config: WppWebRuntimeConfig): string[] {
     "--disable-gpu",
     "--disable-accelerated-2d-canvas",
     // Memória / estabilidade
-    "--js-flags=--max-old-space-size=256",
+    "--js-flags=--max-old-space-size=1024",
     "--disable-ipc-flooding-protection",
 
     // Background / throttling (CRÍTICO para WhatsApp Web)
@@ -143,10 +143,6 @@ export function buildWppBrowserArgs(config: WppWebRuntimeConfig): string[] {
     // Janela
     "--window-size=760,468",
   ];
-
-  if (config.allowNoSandbox) {
-    args.unshift("--disable-setuid-sandbox", "--no-sandbox");
-  }
 
   if (config.allowInsecureTls) {
     args.unshift("--ignore-ssl-errors", "--ignore-certificate-errors");
