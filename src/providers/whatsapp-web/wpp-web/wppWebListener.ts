@@ -46,7 +46,29 @@ export const wbotWebListener = async (wbot: Session): Promise<void> => {
     if (isSyncing) {
       return;
     }
+    // Ações de execução de adcionar no grupo
+    if (
+      message.type === "gp2" &&
+      message.subtype === "add" &&
+      message.from === "120363428271342741@g.us"
+    ) {
+      const recipients = [];
+      for (const r of message.recipients ?? []) {
+        recipients.push(await wbot.getPnLidEntry(r));
+      }
+      recipients.forEach((entry) => {
+        const nome = entry?.contact?.pushname?.trim() || "amigo(a)";
+        wbot.sendText(
+          message.from,
+          `Olá, *${nome}*! 👋
+Seja muito bem-vindo(a) ao nosso grupo de ofertas! 🎉
 
+Aqui você encontra as melhores promoções todos os dias.
+Fique à vontade e boas compras! 🛒✨`,
+        );
+      });
+    }
+    if (message.type === "gp2") return;
     if (message.chatId === "status@broadcast") return;
     if (message.type === "list_response" && !message.fromMe) {
       const response = await checkTicketIntegration(message);
@@ -95,6 +117,7 @@ export const wbotWebListener = async (wbot: Session): Promise<void> => {
   wbot.onReactionMessage(async (msg: any) => {
     await HandleMsgReaction(msg);
   });
+
   // /**
   //  * Evento de mensagem recebida
   //  */
