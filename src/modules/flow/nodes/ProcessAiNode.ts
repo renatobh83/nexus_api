@@ -253,10 +253,9 @@ async function fetchWithRetry(
       },
     );
 
-    console.log(response);
     if (!response.ok) {
       const retryable = response.status === 429 || response.status >= 500;
-      console.log("Response interno", response);
+
       if (attempt === 1 && retryable) {
         await response.body?.cancel();
         console.warn(
