@@ -289,10 +289,11 @@ async function fetchWithRetry(
         await readResponseTextLimited(retorno);
         throw new Error(`LLM request failed with status ${response.status}.`);
       }
+      console.log(response);
       await readResponseTextLimited(response);
       throw new Error(`LLM request failed with status ${response.status}.`);
     }
-
+    console.log(response);
     return readResponseTextLimited(response, 1_048_576);
   } catch (error) {
     if (controller.signal.aborted) {
