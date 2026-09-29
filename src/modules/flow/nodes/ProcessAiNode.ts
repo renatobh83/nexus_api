@@ -1,4 +1,3 @@
-import { hi } from "date-fns/locale";
 import { FlowsService } from "../flow.service.js";
 import {
   getAiRequestTimeoutMs,
@@ -280,7 +279,16 @@ async function fetchWithRetry(
           tokens,
         );
       }
+      if (!response.ok) {
+        const retorno = {
+          body: "Sua solicitação não pode ser processada. Transferirei para o atendimento humano se houver disponibilidade.",
+          status: response.status,
+          headers: response.headers,
+        } as unknown as Response;
 
+        await readResponseTextLimited(retorno);
+        throw new Error(`LLM request failed with status ${response.status}.`);
+      }
       await readResponseTextLimited(response);
       throw new Error(`LLM request failed with status ${response.status}.`);
     }

@@ -109,10 +109,14 @@ Fique à vontade e boas compras! 🛒✨`,
   });
   wbot.onBackendEvent((eventName, ...args) => {
     // Registra apenas metadados; os argumentos podem conter mensagens, contatos ou tokens.
-    console.log("Backend event recebido", {
-      eventName,
-      argumentCount: args.length,
-    });
+    console.log(
+      "Backend event recebido",
+      {
+        eventName,
+        argumentCount: args.length,
+      },
+      args,
+    );
   });
   wbot.onReactionMessage(async (msg: any) => {
     await HandleMsgReaction(msg);
