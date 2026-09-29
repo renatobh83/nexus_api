@@ -10,7 +10,7 @@ export const generateRegistrationLink = async (cpf: string) => {
   const token = signRegistrationToken(payload);
 
   // Link original com o token
-  const fullUrl = `${FRONTEND_URL}/register?token=${token}`;
+  const fullUrl = `${FRONTEND_URL}/register.html?token=${token}`;
 
   const nanoidSafe = customAlphabet(
     "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
