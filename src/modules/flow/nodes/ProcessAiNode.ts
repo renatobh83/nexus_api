@@ -253,9 +253,10 @@ async function fetchWithRetry(
       },
     );
 
+    console.log(response);
     if (!response.ok) {
       const retryable = response.status === 429 || response.status >= 500;
-
+      console.log("Response interno", response);
       if (attempt === 1 && retryable) {
         await response.body?.cancel();
         console.warn(
@@ -285,11 +286,10 @@ async function fetchWithRetry(
           status: response.status,
           headers: response.headers,
         } as unknown as Response;
-
-        await readResponseTextLimited(retorno);
+        console.log(retorno);
+        // await readResponseTextLimited(retorno);
         throw new Error(`LLM request failed with status ${response.status}.`);
       }
-      console.log(response);
       await readResponseTextLimited(response);
       throw new Error(`LLM request failed with status ${response.status}.`);
     }
