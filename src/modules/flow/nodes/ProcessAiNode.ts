@@ -8,6 +8,47 @@ import {
   trimAiHistory,
 } from "./processAi.security.js";
 
+type AiRequestErrorCode = "HTTP_ERROR" | "TIMEOUT" | "NETWORK_ERROR";
+
+class AiRequestError extends Error {
+  constructor(
+    message: string,
+    public readonly options: {
+      status?: number;
+      code: AiRequestErrorCode;
+    },
+  ) {
+    super(message);
+    this.name = "AiRequestError";
+  }
+
+  get status(): number | undefined {
+    return this.options.status;
+  }
+
+  get code(): AiRequestErrorCode {
+    return this.options.code;
+  }
+}
+
+function obterMensagemErroAi(error: unknown): string {
+  if (error instanceof AiRequestError) {
+    if (error.status === 429) {
+      return "🤖 Estou recebendo muitas solicitações no momento. Tente novamente em alguns instantes.";
+    }
+
+    if (error.status !== undefined && error.status >= 500) {
+      return "🤖 O serviço de IA está temporariamente indisponível. Tente novamente em alguns instantes.";
+    }
+
+    if (error.message.includes("timeout")) {
+      return "🤖 A resposta demorou mais que o esperado. Tente enviar sua mensagem novamente.";
+    }
+  }
+
+  return "🤖 Não consegui processar sua solicitação agora. Tente novamente em alguns instantes.";
+}
+
 const conversationHistories = new Map<
   string,
   { role: string; content: string }[]
@@ -103,17 +144,33 @@ export const ProcessAiNode = {
       systemMessage,
       ...sanitizeHistory(history.slice(-historyLimit)),
     ];
+    let responseText: string;
+    try {
+      responseText = await fetchWithRetry(
+        ticketId,
+        messages,
+        history,
+        systemMessage,
+        1,
+        model,
+        temperature,
+        maxTokens,
+      );
+    } catch (error) {
+      console.error(
+        `[AI][ticket=${ticketId}] Falha ao consultar o provedor de IA:`,
+        error,
+      );
 
-    const responseText = await fetchWithRetry(
-      ticketId,
-      messages,
-      history,
-      systemMessage,
-      1,
-      model,
-      temperature,
-      maxTokens,
-    );
+      return {
+        ...context,
+        output: {
+          type: "mensagem",
+          data: obterMensagemErroAi(error),
+        },
+      };
+    }
+
     let data: {
       choices?: Array<{
         finish_reason?: string;
@@ -146,6 +203,7 @@ export const ProcessAiNode = {
         ...context,
         output: {
           type: "mensagem",
+
           data: "🤖 Só um momento, deixa eu confirmar isso de novo...",
         },
       };
@@ -226,10 +284,11 @@ async function fetchWithRetry(
   history: { role: string; content: string }[],
   systemMessage: { role: string; content: string },
   attempt = 1,
-  model = "gemma-4-31b-it",
+  model = "gemma-4-26b-a4b-it",
   temperature = 0.7,
   tokens = 500,
 ): Promise<string> {
+  console.log(model);
   const controller = new AbortController();
   const timeoutMs = getAiRequestTimeoutMs();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -252,17 +311,26 @@ async function fetchWithRetry(
         }),
       },
     );
-
+    console.log(`[AI][ticket=${ticketId}] Modelo utilizado:`, model);
     if (!response.ok) {
       const retryable = response.status === 429 || response.status >= 500;
-
+      // Faz apenas uma nova tentativa sem histórico
+      const errorBody = await readResponseTextLimited(response);
+      console.error(`[AI][ticket=${ticketId}] Falha HTTP:`, {
+        status: response.status,
+        attempt,
+        model,
+        errorBody,
+        messagesCount: messages.length,
+        systemMessageLength: systemMessage.content.length,
+      });
       if (attempt === 1 && retryable) {
         await response.body?.cancel();
         console.warn(
           `[AI][ticket=${ticketId}] Erro ${response.status}; retentando sem histórico...`,
         );
 
-        // Limpa histórico corrompido mantendo só a última mensagem do usuário.
+        // Mantém somente a última mensagem do usuário
         const lastUserMsg = history.filter((m) => m.role === "user").at(-1);
         history.splice(0, history.length);
         if (lastUserMsg) history.push(lastUserMsg);
@@ -279,27 +347,32 @@ async function fetchWithRetry(
           tokens,
         );
       }
-      if (!response.ok) {
-        const retorno = {
-          body: "Sua solicitação não pode ser processada. Transferirei para o atendimento humano se houver disponibilidade.",
+      throw new AiRequestError(
+        `LLM request failed with status ${response.status}.`,
+        {
           status: response.status,
-          headers: response.headers,
-        } as unknown as Response;
-
-        // await readResponseTextLimited(retorno);
-        throw new Error(`LLM request failed with status ${response.status}.`);
-      }
-      await readResponseTextLimited(response);
-      throw new Error(`LLM request failed with status ${response.status}.`);
+          code: "HTTP_ERROR",
+        },
+      );
     }
 
     return readResponseTextLimited(response, 1_048_576);
   } catch (error) {
     if (controller.signal.aborted) {
-      throw new Error(`LLM request excedeu o timeout de ${timeoutMs} ms.`);
+      throw new AiRequestError(
+        `LLM request excedeu o timeout de ${timeoutMs} ms.`,
+        {
+          code: "TIMEOUT",
+        },
+      );
+    }
+    if (error instanceof AiRequestError) {
+      throw error;
     }
 
-    throw error;
+    throw new AiRequestError("Erro de rede ao consultar o provedor de IA.", {
+      code: "NETWORK_ERROR",
+    });
   } finally {
     clearTimeout(timeout);
   }
