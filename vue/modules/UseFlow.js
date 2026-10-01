@@ -60,7 +60,6 @@ function useFlow({
       props: [
         { k: "Tipo", v: "text" },
         { k: "Número", v: "" },
-        { k: "Mensagem", v: "" },
       ],
       inputs: 1,
       outputs: 1,

@@ -84,19 +84,19 @@ const flowService = new FlowsService();
 export const ProcessAiNode = {
   async execute(node: any, context: any) {
     const model = node.data.props.find(
-      (p: { k: string }) => p.k === "model",
+      (p: { k: string }) => p.k === "Modelo",
     )?.v;
     const promptData = node.data.props.find(
       (p: { k: string }) => p.k === "Prompt",
     )?.v;
     const maxHistory = node.data.props.find(
-      (p: { k: string }) => p.k === "maxHistory",
+      (p: { k: string }) => p.k === "Histórico Máx.",
     )?.v;
     const temperature = node.data.props.find(
-      (p: { k: string }) => p.k === "temperature",
+      (p: { k: string }) => p.k === "Temperatura",
     )?.v;
     const maxTokens = node.data.props.find(
-      (p: { k: string }) => p.k === "maxTokens",
+      (p: { k: string }) => p.k === "Tokens Máx.",
     )?.v;
 
     const prompt = context.mensagem;
@@ -288,7 +288,6 @@ async function fetchWithRetry(
   temperature = 0.7,
   tokens = 500,
 ): Promise<string> {
-  console.log(model);
   const controller = new AbortController();
   const timeoutMs = getAiRequestTimeoutMs();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -311,7 +310,7 @@ async function fetchWithRetry(
         }),
       },
     );
-    console.log(`[AI][ticket=${ticketId}] Modelo utilizado:`, model);
+    // console.log(`[AI][ticket=${ticketId}] Modelo utilizado:`, model);
     if (!response.ok) {
       const retryable = response.status === 429 || response.status >= 500;
       // Faz apenas uma nova tentativa sem histórico
