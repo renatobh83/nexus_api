@@ -32,3 +32,18 @@ export type MercadoLivreNotification = ExternalNotificationBody & {
     imagem: string;
   };
 };
+
+export type BoletimNoticiasNotification = ExternalNotificationBody & {
+  event: "boletim.noticiasEventos";
+  mensagem: {
+    weather: any;
+    alerts: { alerts: any[] };
+    brasil: any[];
+    mundo: any[];
+    tecnologia: any[];
+    city: any;
+    date: any;
+    timezone: any;
+    generated_at: string | number | Date;
+  };
+};

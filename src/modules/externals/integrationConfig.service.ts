@@ -6,11 +6,13 @@ import { buildAlertMessage } from "../../utils/marketAlertMessage.js";
 import { getWbot } from "../../providers/whatsapp-web/wpp-web/Wpp-web.js";
 import { resolveContato } from "../../integrations/genesis/services/scheduling_api/index.js";
 import {
+  BoletimNoticiasNotification,
   ExternalNotificationBody,
   MarketAlertNotification,
   MercadoLivreNotification,
   NotificationResult,
 } from "./integrationConfig.types.js";
+import { formatarMensagemBoletim } from "../../utils/formatarMessagemBoletim.js";
 
 // ─── Tipos base do Prisma ─────────────────────────────────────────────────────
 
@@ -336,7 +338,14 @@ export class IntegracaoService {
           };
         }
         return this._mercadoLivre(input, channelId);
-
+      case "boletim.noticiasEventos":
+        if (!this.isBoletimNoticias(input)) {
+          return {
+            success: false,
+            error: "Payload inválido para ofertas.mercado.livre",
+          };
+        }
+        return this._boletimEvent(input, channelId);
       default:
         return {
           success: false,
@@ -446,6 +455,18 @@ export class IntegracaoService {
       return false;
     }
 
+    return true;
+  }
+  private isBoletimNoticias(
+    input: ExternalNotificationBody,
+  ): input is BoletimNoticiasNotification {
+    if (input.event !== "boletim.noticiasEventos") {
+      return false;
+    }
+
+    if (!input.mensagem || typeof input.mensagem !== "string") {
+      return false;
+    }
     return true;
   }
   private isMarketAlertNotification(
@@ -626,6 +647,57 @@ export class IntegracaoService {
       }
 
       const message = buildAlertMessage(input);
+      if (!message || message.trim().length === 0) {
+        return {
+          success: false,
+          error: "Mensagem não pode ser vazia",
+        };
+      }
+      const contato = await resolveContato(wbot, input.recipient.trim());
+
+      if (!contato) {
+        return {
+          success: false,
+          error: "Contato não encontrado",
+        };
+      }
+      const sentMessage = await wbot.sendText(contato, message);
+
+      return {
+        success: Boolean(sentMessage?.id),
+        ...(sentMessage?.id
+          ? {}
+          : {
+              error: "Mensagem não foi enviada",
+            }),
+      };
+    } catch (error) {
+      console.error("Erro ao enviar notificação:", error);
+      return {
+        success: false,
+        error: "Erro interno ao enviar a notificação",
+      };
+    }
+  }
+
+  /**
+   * Evento boletim de noticias
+   */
+  private async _boletimEvent(
+    input: BoletimNoticiasNotification,
+    channelId: number,
+  ): Promise<NotificationResult> {
+    try {
+      const wbot = getWbot(channelId);
+
+      if (!wbot) {
+        return {
+          success: false,
+          error: "Canal do WhatsApp não encontrado",
+        };
+      }
+
+      const message = formatarMensagemBoletim(input.mensagem);
       if (!message || message.trim().length === 0) {
         return {
           success: false,
