@@ -135,6 +135,7 @@ export async function integrationController(fastify: FastifyInstance) {
       },
     },
     async (request, reply) => {
+      console.log(request);
       const channelId = Number(request.params.channelId);
       const apiKey = request.headers["x-api-key"];
       const expected = process.env.WHATSAPP_API_KEY;
