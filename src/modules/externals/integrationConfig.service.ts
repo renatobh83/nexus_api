@@ -464,7 +464,7 @@ export class IntegracaoService {
       return false;
     }
 
-    if (!input.mensagem || typeof input.mensagem !== "string") {
+    if (!input.mensagem || typeof input.mensagem !== "object") {
       return false;
     }
     return true;
