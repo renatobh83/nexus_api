@@ -59,7 +59,8 @@ export const FilterNode = {
     // Para operadores de comparação numérica, força conversão para número
     let finalValue = value;
     let finalExpected = convertedExpected;
-
+    console.log(finalValue);
+    console.log(finalExpected);
     // Para operadores > e <, converte ambos para número
     if (operator === ">" || operator === "<") {
       finalValue = Number(value);
