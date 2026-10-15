@@ -151,4 +151,25 @@ export async function integrationController(fastify: FastifyInstance) {
       return reply.status(statusCode).send(result);
     },
   );
+  fastify.get("/boletim", async (request, reply) => {
+    const API_KEY = process.env.API_KEY_BOLETIM || "";
+    const BOLETIM_URL = process.env.BOLETIM_URL || "";
+    if (!API_KEY) {
+      return reply.status(401).send({ success: false, error: "unauthorized" });
+    }
+    if (!BOLETIM_URL) {
+      return reply
+        .status(404)
+        .send({ success: false, error: "URL BOLETIM NÃO CADSTRADA" });
+    }
+    const res = await fetch(`${BOLETIM_URL}/run-now`, {
+      method: "POST",
+      headers: {
+        "X-API-Key": API_KEY,
+      },
+    });
+    const result = await res.json();
+    const statusCode = result.success ? 200 : 422;
+    return reply.status(statusCode).send(result);
+  });
 }
