@@ -61,6 +61,10 @@ export const FilterNode = {
     let finalExpected = convertedExpected;
     console.log(finalValue);
     console.log(finalExpected);
+    console.log(operator);
+    console.log(
+      String(finalValue).toLowerCase() === String(finalExpected).toLowerCase(),
+    );
     // Para operadores > e <, converte ambos para número
     if (operator === ">" || operator === "<") {
       finalValue = Number(value);
