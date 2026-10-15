@@ -475,7 +475,7 @@ export class IntegracaoService {
     if (input.event !== "market.alert.created") {
       return false;
     }
-    input.al;
+
     if (!input.alert || typeof input.alert !== "object") {
       return false;
     }
