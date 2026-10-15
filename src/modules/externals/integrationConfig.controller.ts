@@ -171,8 +171,8 @@ export async function integrationController(fastify: FastifyInstance) {
       signal: AbortSignal.timeout(60000), // 60 segundos
     });
     const result = await res.json();
-console.log(result)
-    const statusCode = result.published ? 200 : 422;
+
+    const statusCode = result.publication.published ? 200 : 422;
     return reply.status(statusCode).send(result);
   });
 }
