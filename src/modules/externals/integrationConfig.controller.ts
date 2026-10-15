@@ -152,8 +152,10 @@ export async function integrationController(fastify: FastifyInstance) {
     },
   );
   fastify.get("/boletim", async (request, reply) => {
+    console.log("DEBUG BOLETIM");
     const API_KEY = process.env.API_KEY_BOLETIM || "";
     const BOLETIM_URL = process.env.BOLETIM_URL || "";
+    console.log(BOLETIM_URL);
     if (!API_KEY) {
       return reply.status(401).send({ success: false, error: "unauthorized" });
     }
