@@ -59,12 +59,7 @@ export const FilterNode = {
     // Para operadores de comparação numérica, força conversão para número
     let finalValue = value;
     let finalExpected = convertedExpected;
-    console.log(finalValue);
-    console.log(finalExpected);
-    console.log(operator);
-    console.log(
-      String(finalValue).toLowerCase() === String(finalExpected).toLowerCase(),
-    );
+
     // Para operadores > e <, converte ambos para número
     if (operator === ">" || operator === "<") {
       finalValue = Number(value);
@@ -127,7 +122,12 @@ export const FilterNode = {
           .includes(String(finalExpected).toLowerCase());
         break;
     }
-
+    console.log(finalValue);
+    console.log(finalExpected);
+    console.log(operator);
+    console.log(
+      String(finalValue).toLowerCase() === String(finalExpected).toLowerCase(),
+    );
     // O executor usa `route` para selecionar uma saída nomeada. Sem esse
     // campo, o fluxo seguia todas as conexões e a condição era ignorada.
     return {
