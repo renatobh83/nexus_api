@@ -172,7 +172,7 @@ export async function integrationController(fastify: FastifyInstance) {
     });
     const result = await res.json();
 
-    const statusCode = result.published ? 200 : 422;
+    const statusCode = result.publication.published ? 200 : 422;
     return reply.status(statusCode).send(result);
   });
 }
