@@ -5,7 +5,6 @@ type Noticia = {
   status?: string;
   source: string;
   published: string;
-  url: string;
 };
 
 type Boletim = {
@@ -49,7 +48,7 @@ export function formatarMensagemBoletim(d: Boletim) {
 
     const meta = [n.source, n.published].filter(Boolean).join(" — ");
     if (meta) linhas.push(`  ${meta}`);
-    if (n.url) linhas.push(`  🔗 ${n.url}`);
+    // if (n.url) linhas.push(`  🔗 ${n.url}`);
 
     return linhas.join("\n");
   };
