@@ -95,7 +95,6 @@ export const initWppWeb = async (
       },
 
       statusFind: async (statusSession: any) => {
-        console.log(statusSession);
         switch (statusSession) {
           case "autocloseCalled":
           case "desconnectedMobile":

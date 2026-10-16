@@ -10,7 +10,6 @@ export interface TicketIntegrationJobData {
   rawResponse: string | number;
 }
 
-export const ticketIntegrationQueue = new Queue<TicketIntegrationJobData>(
-  "ticket-integration",
-  { connection: redisConnection },
-);
+export const ticketIntegrationQueue = new Queue("ticket-integration", {
+  connection: redisConnection,
+});

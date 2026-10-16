@@ -24,7 +24,7 @@ export const initTeleproto = async (
 
   const client = new TelegramClient(stringSession, apiId, apiHash, {
     connectionRetries: 5,
-  }) as SessionTbot;
+  }) as unknown as SessionTbot;
 
   await client.connect();
   // Verifica se a sessão é válida
