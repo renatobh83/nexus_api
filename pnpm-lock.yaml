@@ -61,8 +61,8 @@ importers:
         specifier: ^7.9.1
         version: 7.9.1(prisma@7.9.1(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@7.0.2))(typescript@7.0.2)
       '@wppconnect-team/wppconnect':
-        specifier: ^2.3.5
-        version: 2.3.5(@types/node@26.6.5)(puppeteer-core@24.43.1)(typescript@7.0.2)
+        specifier: ^2.3.6
+        version: 2.3.6(@types/node@26.6.5)(puppeteer-core@24.43.1)(typescript@7.0.2)
       bcryptjs:
         specifier: ^3.0.3
         version: 3.0.3
@@ -1121,11 +1121,11 @@ packages:
   '@visx/vendor@4.0.0-alpha.0':
     resolution: {integrity: sha512-6I+MuqXBcv9jnlcVowHoHKSdk9gXTWkHLKyqBwRWg7LY6A3Ei8SHfubpqGV5rBUSppxMq2RszPJUS6w+H0YgmQ==}
 
-  '@wppconnect-team/wppconnect@2.3.5':
-    resolution: {integrity: sha512-pKBcrL6oIqy4GcEksxGVYmJJ25RIaWLd08e77Tx1ZkmpdUXmRrqrknE8oVhQasr29iuvotQYt0SAQlXJEGljGw==}
+  '@wppconnect-team/wppconnect@2.3.6':
+    resolution: {integrity: sha512-IsCT5nPdddJexVBY5NdmYmAS6XJxPw4CZwZa3+6TiXp1DlFQHNSf3VDi13/woZfHrvfvlA5lgMHXFL1eG7Koaw==}
 
-  '@wppconnect/wa-js@4.7.1':
-    resolution: {integrity: sha512-vcA9q0adL6O9ixRM33wa3geKmYEz+CYP0k1t0rwCAxkp5rjl1YLO3hQOwPRfbTwdgMXC1RtaEl0g625v4In/tw==}
+  '@wppconnect/wa-js@4.7.2':
+    resolution: {integrity: sha512-9CGQcqd4TacoPq4uTDsqBtKWwUHdMeucG8C2wlSE6x786HCbc5f1tE7vHUTmPsXlXEITpmVZhtur5R+ua7tI9Q==}
     engines: {whatsapp-web: '>=2.3000.1038792969-alpha'}
 
   '@wppconnect/wa-version@1.5.5049':
@@ -4062,9 +4062,9 @@ snapshots:
       d3-time-format: 4.1.0
       internmap: 2.0.3
 
-  '@wppconnect-team/wppconnect@2.3.5(@types/node@26.6.5)(puppeteer-core@24.43.1)(typescript@7.0.2)':
+  '@wppconnect-team/wppconnect@2.3.6(@types/node@26.6.5)(puppeteer-core@24.43.1)(typescript@7.0.2)':
     dependencies:
-      '@wppconnect/wa-js': 4.7.1
+      '@wppconnect/wa-js': 4.7.2
       '@wppconnect/wa-version': 1.5.5049
       atob: 2.1.2
       axios: 1.20.0
@@ -4109,7 +4109,7 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@wppconnect/wa-js@4.7.1': {}
+  '@wppconnect/wa-js@4.7.2': {}
 
   '@wppconnect/wa-version@1.5.5049':
     dependencies:
