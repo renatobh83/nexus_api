@@ -8,6 +8,7 @@ import { MessageInternal } from "../../../../modules/messages/messages.types.js"
 import { Api } from "teleproto";
 import path from "path";
 import fs from "fs";
+import { optimizeKeepingFormat } from "../../../../utils/saveFile.js";
 
 function getPeerId(msg: any): string {
   if (msg.isChannel || msg.isGroup) {
@@ -79,12 +80,13 @@ export const toInternalSession = (session: SessionTbot): SessionInternal => ({
     const filePath = path.join(process.cwd(), "public", message.mediaUrl);
 
     // Cria o diretório 'downloads' se não existir
-    if (!fs.existsSync(path.join(process.cwd(), "public"))) {
-      fs.mkdirSync(path.join(process.cwd(), "public"));
-    }
-    // Salva o buffer no arquivo
-    fs.writeFileSync(filePath, media!);
-    console.log(`Mídia salva em: ${filePath}`);
+    await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
+    const finalBuffer = await optimizeKeepingFormat(
+      media as Buffer,
+      message.mediaUrl,
+    );
+    await fs.promises.writeFile(filePath, finalBuffer);
+
     return message.mediaUrl;
   },
 });

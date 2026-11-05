@@ -16,6 +16,7 @@ import {
 } from "../../../../utils/messsageMedia.js";
 import { PUBLIC_DIR } from "../../../../config/env.js";
 import { Message, Wid } from "@wppconnect-team/wppconnect";
+import { optimizeKeepingFormat } from "../../../../utils/saveFile.js";
 
 // Função auxiliar para normalizar o Wid para string
 export const resolveId = (id: string | Wid): string => {
@@ -23,11 +24,9 @@ export const resolveId = (id: string | Wid): string => {
   return id._serialized;
 };
 
-
-
 export const toInternalMessage = (msg: Message): MessageInternal => ({
   body: msg.body || msg.caption || "",
-  messageId: msg.id ,
+  messageId: msg.id,
   fromMe: msg.fromMe,
   isGroupMsg: msg.isGroupMsg,
   type: msg.type,
@@ -75,20 +74,20 @@ export const toInternalSession = (session: Session): SessionInternal => ({
   },
 
   downloadMedia: async (message: any): Promise<string> => {
-    
     const media = await session.downloadMedia(message.messageId);
-    
+    if (!media) {
+      throw new Error(`Falha ao baixar mídia da mensagem ${message.messageId}`);
+    }
     const matches = media.match(/^data:(.+);base64,(.+)$/);
     const base64Data = matches ? matches[2] : media;
-
     const fileData = Buffer.from(base64Data, "base64");
 
-    let ext = getSafeExtension(message.caption!, message.mimetype);
-    
+    const ext = getSafeExtension(message.caption!, message.mimetype);
     const filename = buildFilename(message, ext);
-    if (media) {
-      await writeFileAsync(join(PUBLIC_DIR, filename), fileData);
-    }
+
+    const finalBuffer = await optimizeKeepingFormat(fileData, filename);
+    await writeFileAsync(join(PUBLIC_DIR, filename), finalBuffer);
+
     return filename;
   },
 });
