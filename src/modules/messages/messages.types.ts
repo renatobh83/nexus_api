@@ -30,7 +30,8 @@ export type MessageType =
   | "list_response"
   | "buttons_response"
   | "poll_creation"
-  | "unknown";
+  | "unknown"
+  | "interactive";
 
 export interface MessageInternal {
   messageId: string;
