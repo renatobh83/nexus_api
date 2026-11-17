@@ -366,7 +366,13 @@ async function initApp() {
         users: users.users,
         channels: channels.channels,
       });
+      //     async function promptSalvar() {
+      //   const nome = window.prompt("Nome do flow:", "Meu Flow");
+      //   if (!nome) return;
+      //   const gatilho = window.prompt("gatilho:", "");
 
+      //   await flow.salvarFlow(nome, gatilho);
+      // }
       // =========================================================================
       // 7. COMPUTED que dependem de múltiplos módulos
       // =========================================================================
@@ -668,13 +674,7 @@ async function initApp() {
         socketRef.value?.disconnect();
         graficos.limparRecursosGraficos();
       });
-      async function promptSalvar() {
-        const nome = window.prompt("Nome do flow:", "Meu Flow");
-        if (!nome) return;
-        const gatilho = window.prompt("gatilho:", "");
 
-        await flow.salvarFlow(nome, gatilho);
-      }
       const allData = {
         // Tickets
         ...tickets,
@@ -696,7 +696,7 @@ async function initApp() {
         ...flow,
         // Settings
         ...settings,
-        promptSalvar,
+        promptSalvar: flow.promptSalvar,
         // Estado global
         ...shared,
         activeTab,

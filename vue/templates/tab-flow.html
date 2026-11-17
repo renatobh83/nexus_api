@@ -6,10 +6,13 @@
     <button class="btn btn-ghost" style="margin-left:8px;font-size:11px;padding:4px 10px;" @click="abrirModalPrompts"
       title="Gerenciar Prompts">🧠 Prompts</button>
     <div class="spacer"></div>
-
+    <span v-if="flowAtual?.id" style="font-size:11px;color:#66668a;margin-right:8px;max-width:160px;
+         overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" :title="flowAtual.nome">
+      {{ flowAtual.nome }}
+    </span>
     <!-- abas de módulos -->
     <div style="display:flex;align-items:center;gap:4px;margin-right:12px;">
-      <div v-for="mod in modulos" :key="mod" @click="trocarModulo(mod)" :style="{
+      <!-- <div v-for="mod in modulos" :key="mod" @click="trocarModulo(mod)" :style="{
           display:'flex', alignItems:'center', gap:'6px',
           padding:'4px 12px', borderRadius:'6px', cursor:'pointer',
           fontSize:'12px', fontWeight:'600', userSelect:'none',
@@ -20,11 +23,25 @@
         {{ mod }}
         <span v-if="mod !== 'Home'" @click.stop="removerModulo(mod)"
           style="font-size:14px;color:#66668a;line-height:1;">×</span>
+      </div> -->
+      <div v-for="mod in modulos" :key="mod.nome" @click="trocarModulo(mod.nome)"
+        @dblclick.stop="mod.nome !== 'Home' && abrirModalModulo(mod.nome)" :style="{
+          display:'flex', alignItems:'center', gap:'6px',
+          padding:'4px 12px', borderRadius:'6px', cursor:'pointer',
+          fontSize:'12px', fontWeight:'600', userSelect:'none',
+           background: moduloAtivo === mod.nome ? '#2e2e3e' : 'transparent',
+          color:       moduloAtivo === mod.nome ? '#e1e1e6' : '#66668a',
+          border:      moduloAtivo === mod.nome ? '1px solid #3a3a4d' : '1px solid transparent',
+        }">
+        {{ mod.nome }}
+        <span v-if="mod.protegido" title="Módulo protegido" style="font-size:11px;line-height:1;">🔒</span>
+        <span v-if="mod.nome !== 'Home' && !mod.protegido" @click.stop=" removerModulo(mod.nome)"
+          style="font-size:14px;color:#66668a;line-height:1;">×</span>
       </div>
 
       <!-- novo módulo -->
-      <button class="btn btn-ghost" style="padding:4px 10px;font-size:12px;"
-        @click="criarModulo('Módulo ' + modulos.length)">+ Módulo</button>
+      <button class="btn btn-ghost" style="padding:4px 10px;font-size:12px;" @click="abrirModalModulo()">+
+        Módulo</button>
     </div>
 
     <button class="btn btn-ghost" @click="clearFlow">Limpar</button>
@@ -34,7 +51,10 @@
       title="Carregar do navegador">📂</button> -->
     <button class="btn btn-ghost" style="margin-left:4px" @click="abrirModalCarregar"
       title="Carregar do banco">📂</button>
-    <button class="btn btn-ghost" style="margin-left:4px" @click="promptSalvar" title="Salvar no banco">💾</button>
+    <button class="btn btn-ghost" style="margin-left:4px" @click="promptSalvar" :disabled="salvandoFlow"
+      :title="flowAtual?.id ? 'Salvar alterações' : 'Salvar novo flow'">
+      💾
+    </button>
     <!-- <button class="btn btn-run" style="margin-left:8px" @click="runFlow">▶ Executar</button> -->
   </div>
 
@@ -289,6 +309,40 @@
 
         </div>
 
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal Módulo ── -->
+  <div v-if="showModalModulo" style="position:fixed;inset:0;background:rgba(0,0,0,.6);
+     display:flex;align-items:center;justify-content:center;z-index:999;" @click.self="fecharModalModulo">
+    <div style="background:#1e1e28;border:1px solid #2e2e3e;border-radius:12px;
+              padding:24px;width:340px;display:flex;flex-direction:column;gap:14px;">
+
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:14px;font-weight:600;color:#e1e1e6;">
+          {{ moduloEditando.original ? 'Renomear Módulo' : 'Novo Módulo' }}
+        </span>
+        <span @click="fecharModalModulo" style="font-size:18px;color:#66668a;cursor:pointer;line-height:1;">×</span>
+      </div>
+
+      <div>
+        <label style="font-size:11px;color:#66668a;display:block;margin-bottom:4px;">Nome do módulo</label>
+        <input v-model="moduloEditando.nome" @keyup.enter="salvarModulo" placeholder="ex: Atendimento, Vendas..." style="width:100%;background:#101014;border:1px solid #2e2e3e;border-radius:6px;
+               padding:7px 10px;color:#e1e1e6;font-size:13px;outline:none;box-sizing:border-box;" />
+        <label
+          style="display:flex;align-items:center;gap:8px;font-size:12px;color:#a0a0b8;cursor:pointer;user-select:none;">
+          <input type="checkbox" v-model="moduloEditando.protegido" :disabled="moduloEditando.original === 'Home'" />
+          🔒 Proteger módulo (impede exclusão acidental)
+        </label>
+        <div v-if="moduloErro" style="font-size:11px;color:#ff453a;margin-top:4px;">{{ moduloErro }}</div>
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn btn-ghost" @click="fecharModalModulo">Cancelar</button>
+        <button class="btn btn-run" :disabled="!moduloEditando.nome.trim()" @click="salvarModulo">
+          Salvar
+        </button>
       </div>
     </div>
   </div>

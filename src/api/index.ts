@@ -43,10 +43,9 @@ declare module "fastify" {
       request: FastifyRequest,
       reply: FastifyReply,
     ) => Promise<void>;
-    authorizeRoles: (...roles: string[]) => (
-      request: FastifyRequest,
-      reply: FastifyReply,
-    ) => Promise<void>;
+    authorizeRoles: (
+      ...roles: string[]
+    ) => (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
   }
 }
 let fastifyApp: FastifyInstance;
@@ -63,6 +62,7 @@ async function buildServer(): Promise<FastifyInstance> {
   const server = fastify({
     logger: true, // habilita logs bonitos
     // bodyLimit: 10485760, // 10MB
+    disableRequestLogging: true,
   });
   server.setErrorHandler(errorHandler);
   server.get("/", async () => {
@@ -143,10 +143,7 @@ async function buildServer(): Promise<FastifyInstance> {
           throw new AppError("Invalid token", 401);
         }
 
-        if (
-          claims.service === "flow-executor" &&
-          claims.role === "internal"
-        ) {
+        if (claims.service === "flow-executor" && claims.role === "internal") {
           request.isInternalFlow = true;
         }
 

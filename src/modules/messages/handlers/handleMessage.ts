@@ -112,6 +112,7 @@ Obrigado pela compreensão!",
 
       // Validação: verifica se o módulo "Home" existe no flow
       const flowJson = flow.flow_json as unknown as FlowJson;
+      console.log(flowJson);
       const moduleName = "Home";
       if (!hasModule(flowJson, moduleName)) {
         console.warn(`Módulo "${moduleName}" não encontrado no flow.`);

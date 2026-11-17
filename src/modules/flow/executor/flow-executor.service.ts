@@ -98,7 +98,67 @@ export class FlowExecutorService {
     console.log(`[FLOW] Executando node ${node.id} (${node.data.type})`);
 
     const result = await executor.execute(node, executionContext);
+    /**
+     * Delegação para outro módulo (RouterNode).
+     * Reinicia a cadeia no trigger do módulo destino, preservando
+     * o state (orçamento de execução) e o contexto.
+     */
+    if (result?.__delegateToModule) {
+      const historico = context.__historicoModulos || [];
+      if (historico[historico.length - 1] !== moduleName) {
+        historico.push(moduleName); // Guarda a Home/Laudos antes de ir para o próximo
+      }
+      const { __delegateToModule, __delegateContext, ...cleanResult } = result;
+      const targetModule = __delegateToModule;
 
+      // 1. valida que o módulo destino existe e tem trigger
+      const targetNodes = FlowParser.getNodes(flow, targetModule);
+      if (!targetNodes || targetNodes.length === 0) {
+        throw new Error(
+          `[FlowExecutor] Módulo destino "${targetModule}" não encontrado.`,
+        );
+      }
+
+      const targetTrigger = targetNodes.find((n) => n.data.type === "trigger");
+      if (!targetTrigger) {
+        throw new Error(
+          `[FlowExecutor] Módulo "${targetModule}" não possui Trigger.`,
+        );
+      }
+
+      console.log(
+        `[FLOW] Delegando do node ${node.id} (módulo "${moduleName}") → módulo "${targetModule}" (trigger ${targetTrigger.id})`,
+      );
+
+      // 2. persiste o novo moduleName no flowExecution
+      //    (garante que continueFlow retome no módulo correto)
+      if (context.executionId) {
+        await flowExecutionService.updoateFlowExecution(context.executionId, {
+          moduleName: targetModule,
+        });
+      }
+
+      // 3. reinicia a cadeia no trigger do módulo destino,
+      //    com o mesmo `state` (orçamento compartilhado)
+      await this.executeNode(
+        flow,
+        targetTrigger.id.toString(),
+        persistFlowRuntimeMetadata(
+          {
+            ...__delegateContext,
+            ...cleanResult,
+            __historicoModulos: historico,
+          },
+          state,
+        ),
+        targetModule,
+        state,
+        depth + 1,
+        limits,
+      );
+
+      return; // interrompe a cadeia do módulo de origem
+    }
     if (result?.__waitResponse) {
       const { __waitResponse, ...contextToSave } = result;
       const nextNodes = FlowParser.getNextNodes(node);

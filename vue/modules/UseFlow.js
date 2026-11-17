@@ -47,7 +47,29 @@ function useFlow({
       inputs: 0,
       outputs: 1,
     },
-
+    // ========================================
+    // ⏪ RETORNO E TRANSFERÊNCIA
+    // ========================================
+    {
+      type: "voltar_anterior",
+      label: "Voltar Menu Anterior",
+      icon: "⏪",
+      color: "#ff9f0a",
+      sub: "Retorna para o módulo anterior",
+      props: [], // Não precisa de configuração, o backend lê o histórico
+      inputs: 1,
+      outputs: 0, // Não continua para o próximo nó, ele "pula" de módulo
+    },
+    {
+      type: "transferir_humano",
+      label: "Falar com Atendente",
+      icon: "🙋‍♂️",
+      color: "#ff453a",
+      sub: "Encerra o bot e transfere para humano",
+      props: [],
+      inputs: 1,
+      outputs: 0, // O fluxo acaba aqui
+    },
     // ========================================
     // 💬 ENVIO DE MENSAGENS (WhatsApp)
     // ========================================
@@ -70,6 +92,18 @@ function useFlow({
       icon: "📨",
       color: "#0a84ff",
       sub: "Envia resposta final processada pela IA",
+      inputs: 1,
+      outputs: 1,
+    },
+    {
+      type: "router",
+      label: "Direcionar Serviço",
+      icon: "🔀",
+      color: "#ff9f0a",
+      sub: "Encaminha para o módulo escolhido",
+      props: [
+        { k: "Módulo Destino", v: "" }, // nome exato do módulo (ex: "Agendamento")
+      ],
       inputs: 1,
       outputs: 1,
     },
@@ -218,13 +252,17 @@ function useFlow({
   /* ── Estado ── */
   let _drag = null;
   let editor = null;
-
+  const flowAtual = ref(null); // { id, nome } do flow carregado/salvo
+  const salvandoFlow = ref(false);
   const palette = PALETTE;
   const df = ref(null);
   const selectedNode = ref(null);
   const showModal = ref(false);
-  const modulos = ref(["Home"]);
+  const modulos = ref([{ nome: "Home", protegido: true }]);
   const moduloAtivo = ref("Home");
+  const showModalModulo = ref(false);
+  const moduloEditando = ref({ nome: "", original: null });
+  const moduloErro = ref("");
 
   const showModalCarregar = ref(false);
   const flowsDisponiveis = ref([]);
@@ -392,10 +430,12 @@ function useFlow({
   }
 
   /* ── Módulos ── */
-  function criarModulo(nome) {
-    if (!editor || modulos.value.includes(nome)) return;
+  function criarModulo(nome, protegido = false) {
+    if (!editor) return;
+    nome = (nome || "").trim();
+    if (!nome || modulos.value.some((m) => m.nome === nome)) return;
     editor.addModule(nome);
-    modulos.value.push(nome);
+    modulos.value.push({ nome, protegido });
     trocarModulo(nome);
   }
 
@@ -407,11 +447,110 @@ function useFlow({
 
   function removerModulo(nome) {
     if (!editor || nome === "Home") return;
+
+    const mod = modulos.value.find((m) => m.nome === nome);
+    if (mod?.protegido) {
+      sonnerAlert?.warning?.(
+        "Este módulo está protegido e não pode ser excluído.",
+      );
+      return;
+    }
+
+    if (
+      !window.confirm(
+        `Excluir o módulo "${nome}"? Todo o fluxo dentro dele será perdido.`,
+      )
+    ) {
+      return;
+    }
+
     editor.removeModule(nome);
-    modulos.value = modulos.value.filter((m) => m !== nome);
+    modulos.value = modulos.value.filter((m) => m.nome !== nome);
     trocarModulo("Home");
   }
+  /* ── Modal de módulo (criar/editar) ── */
+  function abrirModalModulo(modExistente = null) {
+    moduloErro.value = "";
 
+    if (modExistente) {
+      const m = modulos.value.find((x) => x.nome === modExistente);
+      console.log(m);
+      moduloEditando.value = {
+        nome: modExistente,
+        original: modExistente,
+        protegido: !!m?.protegido,
+      };
+    } else {
+      moduloEditando.value = { nome: "", original: null, protegido: false };
+    }
+    showModalModulo.value = true;
+  }
+
+  function fecharModalModulo() {
+    showModalModulo.value = false;
+    moduloEditando.value = { nome: "", original: null };
+    moduloErro.value = "";
+  }
+
+  function salvarModulo() {
+    if (!editor) return;
+
+    const nome = (moduloEditando.value.nome || "").trim();
+    const original = moduloEditando.value.original;
+
+    if (!nome) {
+      moduloErro.value = "Informe um nome.";
+      return;
+    }
+
+    // valida duplicidade (ignorando o próprio em edição)
+    const jaExiste = modulos.value.some(
+      (m) => m.nome === nome && m.nome !== original,
+    );
+    if (jaExiste) {
+      moduloErro.value = "Já existe um módulo com esse nome.";
+      return;
+    }
+
+    if (original) {
+      if (original === "Home") {
+        moduloErro.value = "O módulo Home não pode ser renomeado.";
+        return;
+      }
+
+      // exporta tudo, troca a chave do módulo, reimporta
+      const exported = editor.export();
+      if (!exported.drawflow[original]) {
+        moduloErro.value = "Módulo não encontrado no editor.";
+        return;
+      }
+
+      // renomeia a chave preservando a ordem
+      const novoDrawflow = {};
+      Object.keys(exported.drawflow).forEach((key) => {
+        novoDrawflow[key === original ? nome : key] = exported.drawflow[key];
+      });
+      exported.drawflow = novoDrawflow;
+
+      // limpa e reimporta
+      editor.clear();
+      editor.import(exported);
+
+      // atualiza lista/ativo
+      const idx = modulos.value.findIndex((m) => m.nome === original);
+      if (idx !== -1) {
+        modulos.value[idx] = {
+          nome,
+          protegido: moduloEditando.value.protegido,
+        };
+      }
+    } else {
+      // CRIAR
+      criarModulo(nome, moduloEditando.value.protegido);
+    }
+
+    fecharModalModulo();
+  }
   /* ── mounted ── */
   onMounted(async () => {
     await nextTick();
@@ -559,7 +698,7 @@ function useFlow({
 
     setBadge(id, "st-running", "⟳ Rodando");
 
-    let result = null;
+    let result = context?.data ?? null;
 
     try {
       // if (type === "trigger") {
@@ -669,28 +808,79 @@ function useFlow({
     editor.import(JSON.parse(raw));
     // sincroniza lista de módulos
     const imported = JSON.parse(raw);
-    modulos.value = Object.keys(imported.drawflow);
+    modulos.value = Object.keys(imported.drawflow).map((nome) => ({
+      nome,
+      protegido: nome === "Home",
+    }));
+    flowAtual.value = null;
   }
 
   async function salvarFlow(nome) {
     if (!editor) return;
+    const exportado = editor.export();
+    exportado.__modulosMeta = modulos.value.map((m) => ({
+      nome: m.nome,
+      protegido: m.protegido,
+    }));
+    const payload = {
+      nome,
+      modulo: moduloAtivo.value,
+      flow: exportado,
+    };
 
-    const resp = await fetch(`${URL_BASE}/api/v1/flows`, {
-      method: "POST",
+    const id = flowAtual.value?.id;
 
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token.value}`,
+    const resp = await fetch(
+      id ? `${URL_BASE}/api/v1/flows/${id}` : `${URL_BASE}/api/v1/flows`,
+      {
+        method: id ? "PUT" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token.value}`,
+        },
+        body: JSON.stringify(payload),
       },
-      body: JSON.stringify({
-        nome,
-        modulo: moduloAtivo.value,
-        flow: editor.export(),
-      }),
-    });
+    );
+
     const saved = await resp.json();
 
+    // guarda o flow atual para próximos salvamentos
+    flowAtual.value = { id: saved.id, nome: saved.nome ?? nome };
+
     return saved;
+  }
+  async function promptSalvar() {
+    if (salvandoFlow.value) return;
+
+    // já existe → salva direto, sem perguntar
+    if (flowAtual.value?.id) {
+      salvandoFlow.value = true;
+      try {
+        await salvarFlow(flowAtual.value.nome);
+        sonnerAlert?.success?.("Flow atualizado com sucesso.");
+      } catch (e) {
+        console.error("Erro ao salvar flow:", e);
+        sonnerAlert?.error?.("Erro ao salvar flow.");
+      } finally {
+        salvandoFlow.value = false;
+      }
+      return;
+    }
+
+    // novo → pergunta o nome
+    const nome = (window.prompt("Nome do flow:") || "").trim();
+    if (!nome) return;
+
+    salvandoFlow.value = true;
+    try {
+      await salvarFlow(nome);
+      sonnerAlert?.success?.("Flow criado com sucesso.");
+    } catch (e) {
+      console.error("Erro ao salvar flow:", e);
+      sonnerAlert?.error?.("Erro ao salvar flow.");
+    } finally {
+      salvandoFlow.value = false;
+    }
   }
   async function abrirModalCarregar() {
     showModalCarregar.value = true;
@@ -722,21 +912,53 @@ function useFlow({
       const record = await resp.json();
       const flowJson = record.flow_json;
 
-      // re-gera o HTML de cada nó antes de importar
-      const modData = flowJson.drawflow;
+      // 1. OBRIGATÓRIO: Limpar o editor ANTES de importar o novo!
+      // Isso remove os módulos do flow anterior da tela.
+      editor.clear();
+
+      // 2. Re-gera o HTML dos nós
+      const modData = flowJson.drawflow || {};
       Object.keys(modData).forEach((modulo) => {
-        const nodes = modData[modulo].data;
+        const nodes = modData[modulo]?.data || {};
         Object.keys(nodes).forEach((nodeId) => {
-          const nodeData = nodes[nodeId].data; // o { ...p } que você salvou
+          const nodeData = nodes[nodeId].data;
           if (nodeData) {
-            nodes[nodeId].html = nodeHTML(nodeData); // ← re-renderiza com CSS atual
+            nodes[nodeId].html = nodeHTML(nodeData);
           }
         });
       });
 
+      // 3. Importa o flow
       editor.import(flowJson);
-      modulos.value = Object.keys(flowJson.drawflow);
-      moduloAtivo.value = modulos.value[0] || "Home";
+
+      // 4. Monta a lista de módulos (com meta nova ou fallback para antigos)
+      const meta = flowJson.__modulosMeta ?? null;
+      const nomes = Object.keys(flowJson.drawflow || {});
+
+      if (Array.isArray(meta) && meta.length) {
+        modulos.value = nomes.map((nome) => {
+          const m = meta.find((x) => x.nome === nome);
+          return {
+            nome,
+            protegido: nome === "Home" ? true : !!m?.protegido,
+          };
+        });
+      } else {
+        // Fallback: para flows antigos (sem meta)
+        modulos.value = nomes.map((nome) => ({
+          nome,
+          protegido: nome === "Home",
+        }));
+      }
+
+      // 5. Força o módulo ativo a ser a String correta
+      const moduloInicial = nomes.includes("Home")
+        ? "Home"
+        : nomes[0] || "Home";
+      moduloAtivo.value = moduloInicial;
+      editor.changeModule(moduloInicial);
+
+      flowAtual.value = { id: record.id, nome: record.nome };
       showModalCarregar.value = false;
     } catch (e) {
       console.error("Erro ao carregar flow:", e);
@@ -851,5 +1073,14 @@ function useFlow({
     editarPrompt,
     salvarPrompt,
     deletarPrompt,
+    showModalModulo,
+    moduloEditando,
+    moduloErro,
+    abrirModalModulo,
+    fecharModalModulo,
+    salvarModulo,
+    flowAtual,
+    salvandoFlow,
+    promptSalvar,
   };
 }

@@ -31,6 +31,20 @@ export async function flowController(fastify: FastifyInstance) {
     );
     reply.status(200).send(saved);
   });
+  fastify.put("/:id", async (request: FastifyRequest, reply: FastifyReply) => {
+    const saved = await flowsService.createOrUpdate(
+      parseFlowWriteData(request.body),
+    );
+    reply.status(200).send(saved);
+  });
+  fastify.post(
+    "/:id/activate",
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { id } = request.params as Params;
+      await flowsService.activate(parseFlowId(id));
+      reply.status(200).send({ ok: true });
+    },
+  );
 
   fastify.delete(
     "/:id",
