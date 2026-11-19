@@ -47,6 +47,7 @@ export const wbotWebListener = async (wbot: Session): Promise<void> => {
       return;
     }
     // Ações de execução de adcionar no grupo
+
     if (
       message.type === "gp2" &&
       message.subtype === "add" &&
@@ -87,10 +88,12 @@ Fique à vontade e boas compras! 🛒✨`,
     if (isBlocked) return;
     if (!message.id) {
       const chat = await wbot.getChatById(message.chatId);
+      const author = message.author.replace(":", "");
       message.id = message.fromMe
-        ? `true_${message.author}_${chat.lastReceivedKey.id}`
+        ? `true_${author}_${chat.lastReceivedKey.id}`
         : `false_${resolveId(message.chatId)}_${chat.lastReceivedKey.id}`;
     }
+
     const messageInternal = toInternalMessage(message);
 
     const session = toInternalSession(wbot);
@@ -105,6 +108,7 @@ Fique à vontade e boas compras! 🛒✨`,
       const contatoSender = await session.getContact(phoneNumber._serialized);
       messageInternal.sender = contatoSender.pushname || null;
     }
+
     await handleMessage(messageInternal, session, contato);
   });
   wbot.onBackendEvent((eventName, ...args) => {
